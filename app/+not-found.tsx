@@ -1,17 +1,29 @@
+/**
+ * +not-found.tsx — Pantalla de error 404.
+ *
+ * Se muestra automáticamente cuando el usuario navega a una ruta
+ * que no existe dentro de la aplicación. Ofrece un enlace para
+ * volver a la pantalla principal.
+ */
+
 import { Link, Stack } from 'expo-router';
 import { StyleSheet } from 'react-native';
 
 import { Text, View } from '@/components/Themed';
 
+/**
+ * NotFoundScreen — Pantalla que se renderiza cuando la ruta solicitada no existe.
+ * Muestra un mensaje de error y un enlace para regresar al inicio.
+ */
 export default function NotFoundScreen() {
   return (
     <>
-      <Stack.Screen options={{ title: 'Oops!' }} />
-      <View style={styles.container}>
-        <Text style={styles.title}>This screen doesn't exist.</Text>
+      <Stack.Screen options={{ title: '¡Ups!' }} />
+      <View style={styles.contenedor}>
+        <Text style={styles.titulo}>Esta pantalla no existe.</Text>
 
-        <Link href="/" style={styles.link}>
-          <Text style={styles.linkText}>Go to home screen!</Text>
+        <Link href="/" style={styles.enlace}>
+          <Text style={styles.textoEnlace}>Volver a la pantalla principal</Text>
         </Link>
       </View>
     </>
@@ -19,21 +31,21 @@ export default function NotFoundScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  contenedor: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
   },
-  title: {
+  titulo: {
     fontSize: 20,
     fontWeight: 'bold',
   },
-  link: {
+  enlace: {
     marginTop: 15,
     paddingVertical: 15,
   },
-  linkText: {
+  textoEnlace: {
     fontSize: 14,
     color: '#2e78b7',
   },
