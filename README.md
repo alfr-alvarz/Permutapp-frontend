@@ -1,4 +1,4 @@
-# ♻ Permutapp — Frontend
+#  Permutapp — Frontend
 
 **Permutapp** es un proyecto de título desarrollado por estudiantes de **Duoc UC** que consiste en una plataforma móvil enfocada en la **economía circular** a través del intercambio y permuta segura de objetos de segunda mano.
 
@@ -6,7 +6,7 @@ Su objetivo principal es prolongar el ciclo de vida de los productos para reduci
 
 ---
 
-## 📐 Arquitectura General
+## Arquitectura General
 
 ```
 Frontend (Expo / React Native)  →  Spring Boot (API Gateway)  →  Supabase (PostgreSQL)
@@ -23,7 +23,7 @@ Frontend (Expo / React Native)  →  Spring Boot (API Gateway)  →  Supabase (P
 
 ---
 
-## 🛠 Stack Tecnológico
+##  Stack Tecnológico
 
 | Tecnología | Versión | Uso |
 |---|---|---|
@@ -36,7 +36,7 @@ Frontend (Expo / React Native)  →  Spring Boot (API Gateway)  →  Supabase (P
 
 ---
 
-## 📁 Estructura del Proyecto
+##  Estructura del Proyecto
 
 ```
 Permutapp-frontend/
@@ -76,7 +76,7 @@ Permutapp-frontend/
 
 ---
 
-## 🚀 Instalación y Ejecución
+##  Instalación y Ejecución
 
 ### Requisitos previos
 
@@ -106,7 +106,7 @@ Esto abre el panel de Expo. Desde ahí puedes:
 
 ---
 
-## 🔐 Flujo de Autenticación
+##  Flujo de Autenticación
 
 ### Modo Invitado
 Los usuarios pueden navegar libremente por el catálogo sin necesidad de crear una cuenta. Los botones de acción (Publicar, Permutar) están protegidos con el componente `<RequireAuth>`, que redirige al login automáticamente.
@@ -124,7 +124,7 @@ Los usuarios pueden navegar libremente por el catálogo sin necesidad de crear u
 
 ---
 
-## 🎨 Paleta de Colores (Brand)
+##  Paleta de Colores (Brand)
 
 La identidad visual usa tonos **verde/esmeralda** que representan sustentabilidad y confianza:
 
@@ -139,7 +139,7 @@ La identidad visual usa tonos **verde/esmeralda** que representan sustentabilida
 
 ---
 
-## 📌 Estado Actual
+##  Estado Actual
 
 ### ✅ Implementado
 - [x] Navegación con Expo Router (tabs + stack)
@@ -153,7 +153,7 @@ La identidad visual usa tonos **verde/esmeralda** que representan sustentabilida
 - [x] Paleta de colores personalizada (brand)
 - [x] Documentación en español de todo el código
 
-### 🔜 Pendiente
+###  Pendiente
 - [ ] Conectar AuthContext con los microservicios de Spring Boot
 - [ ] Implementar `expo-camera` para captura facial (Amazon Rekognition)
 - [ ] Persistencia de tokens de sesión (`expo-secure-store`)
@@ -164,12 +164,12 @@ La identidad visual usa tonos **verde/esmeralda** que representan sustentabilida
 
 ---
 
-## 👥 Equipo
+##  Equipo
 
 Proyecto de título — **Duoc UC**
 
 ---
 
-## 📄 Licencia
+##  Licencia
 
 Este proyecto es parte de un trabajo académico y no tiene licencia de distribución pública.
