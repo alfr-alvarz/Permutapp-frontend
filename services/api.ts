@@ -44,6 +44,14 @@ export class ApiError extends Error {
   }
 }
 
+type ApiErrorPayload = {
+  message?: string;
+  error?: string;
+  detail?: string;
+  reason?: string;
+  errors?: Array<{ field?: string; defaultMessage?: string; message?: string } | string>;
+};
+
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:5001';
 const PRODUCTOS_API_BASE_URL = process.env.EXPO_PUBLIC_PRODUCTOS_API_BASE_URL ?? 'http://localhost:5050';
 const PUBLICACIONES_API_BASE_URL = process.env.EXPO_PUBLIC_PUBLICACIONES_API_BASE_URL ?? 'http://localhost:6000';
@@ -62,6 +70,35 @@ function getServiceName(baseUrl: string): string {
   }
 
   return 'el backend';
+}
+
+function getApiErrorMessage(payload: ApiErrorPayload, fallback: string): string {
+  if (payload.message) {
+    return payload.message;
+  }
+
+  if (payload.detail) {
+    return payload.detail;
+  }
+
+  if (payload.reason) {
+    return payload.reason;
+  }
+
+  const validationError = payload.errors?.find(Boolean);
+  if (typeof validationError === 'string') {
+    return validationError;
+  }
+
+  if (validationError?.defaultMessage) {
+    return validationError.defaultMessage;
+  }
+
+  if (validationError?.message) {
+    return validationError.message;
+  }
+
+  return payload.error ?? fallback;
 }
 
 async function request<TResponse, TBody = undefined>(
@@ -103,8 +140,8 @@ async function request<TResponse, TBody = undefined>(
   if (!response.ok) {
     let message = 'No fue posible completar la solicitud.';
     try {
-      const payload = (await response.json()) as { message?: string; error?: string };
-      message = payload.message ?? payload.error ?? message;
+      const payload = (await response.json()) as ApiErrorPayload;
+      message = getApiErrorMessage(payload, message);
     } catch {
       // Keep the generic message when the backend does not return JSON.
     }

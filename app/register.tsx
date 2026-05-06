@@ -29,7 +29,6 @@ import { useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AuthLayout from '../layouts/AuthLayout';
 import { useAuth } from '../context/AuthContext';
-import { ApiError } from '../services/api';
 
 /** Expresión regular para validar el formato del correo electrónico. */
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -170,7 +169,7 @@ export default function Register() {
     } catch (error) {
       setErrors((prev) => ({
         ...prev,
-        general: error instanceof ApiError ? error.message : 'No fue posible crear la cuenta.',
+        general: error instanceof Error ? error.message : 'No fue posible crear la cuenta.',
       }));
     }
   };
