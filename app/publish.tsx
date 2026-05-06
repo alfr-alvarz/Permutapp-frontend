@@ -1,6 +1,6 @@
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Href, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { crearProducto, crearPublicacion, ApiError } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -17,7 +17,7 @@ interface PublishErrors {
 
 export default function PublishScreen() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isRestoring } = useAuth();
   const [titulo, setTitulo] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [nombre, setNombre] = useState('');
@@ -77,6 +77,12 @@ export default function PublishScreen() {
     }
   };
 
+  useEffect(() => {
+    if (!isRestoring && !isAuthenticated) {
+      router.replace('/login');
+    }
+  }, [isAuthenticated, isRestoring, router]);
+
   const FieldError = ({ message }: { message?: string }) =>
     message ? <Text className="text-red-500 text-xs mt-1.5 ml-1">{message}</Text> : null;
 
@@ -85,6 +91,12 @@ export default function PublishScreen() {
       className="flex-1 bg-white"
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      {isRestoring || !isAuthenticated ? (
+        <View className="flex-1 items-center justify-center px-5">
+          <ActivityIndicator color="#047857" />
+          <Text className="text-neutral-500 text-sm mt-4">Preparando publicación</Text>
+        </View>
+      ) : (
       <ScrollView className="flex-1" keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View className="px-5 pt-6 pb-8">
           <TouchableOpacity
@@ -193,6 +205,7 @@ export default function PublishScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      )}
     </KeyboardAvoidingView>
   );
 }

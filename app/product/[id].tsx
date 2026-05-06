@@ -2,7 +2,7 @@ import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'rea
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { obtenerProductoPorId, Producto } from '../../services/api';
+import { obtenerProductoPorId, obtenerPublicacionPorId, Producto, Publicacion } from '../../services/api';
 import RequireAuth from '../../components/RequireAuth';
 
 export default function ProductDetailScreen() {
@@ -10,6 +10,7 @@ export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const idProducto = useMemo(() => Number(id), [id]);
   const [producto, setProducto] = useState<Producto | null>(null);
+  const [publicacion, setPublicacion] = useState<Publicacion | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,8 +27,10 @@ export default function ProductDetailScreen() {
       try {
         setIsLoading(true);
         const data = await obtenerProductoPorId(idProducto);
+        const detallePublicacion = await obtenerPublicacionPorId(data.publ_id);
         if (mounted) {
           setProducto(data);
+          setPublicacion(detallePublicacion);
           setError(null);
         }
       } catch {
@@ -47,6 +50,14 @@ export default function ProductDetailScreen() {
       mounted = false;
     };
   }, [idProducto]);
+
+  const fechaPublicacion = publicacion?.publ_fech_creacion
+    ? new Date(publicacion.publ_fech_creacion).toLocaleDateString('es-CL', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      })
+    : null;
 
   return (
     <ScrollView className="flex-1 bg-white" showsVerticalScrollIndicator={false}>
@@ -83,13 +94,19 @@ export default function ProductDetailScreen() {
               {producto.prod_nombre}
             </Text>
 
+            {publicacion ? (
+              <Text className="text-neutral-500 text-base leading-6 mb-5">
+                {publicacion.publ_titulo}
+              </Text>
+            ) : null}
+
             <View className="flex-row items-center mb-5">
               <View className="bg-brand-50 border border-brand-100 rounded-full px-3 py-1.5 mr-2">
                 <Text className="text-brand-700 text-xs font-bold">{producto.prod_est}</Text>
               </View>
               <View className="bg-neutral-100 rounded-full px-3 py-1.5">
                 <Text className="text-neutral-500 text-xs font-semibold">
-                  Publicación #{producto.publ_id}
+                  {fechaPublicacion ?? `Publicación #${producto.publ_id}`}
                 </Text>
               </View>
             </View>
@@ -105,11 +122,10 @@ export default function ProductDetailScreen() {
 
             <View className="border border-neutral-100 rounded-2xl p-5 mb-6">
               <Text className="text-neutral-400 text-xs uppercase tracking-widest font-semibold mb-3">
-                Detalles
+                Descripción
               </Text>
               <Text className="text-neutral-600 text-sm leading-6">
-                Producto disponible para permuta. La descripción ampliada e imágenes quedarán
-                disponibles cuando se conecte el detalle completo de publicaciones.
+                {publicacion?.publ_descripcion ?? 'Este producto no tiene descripción disponible.'}
               </Text>
             </View>
 

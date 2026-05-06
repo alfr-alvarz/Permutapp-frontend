@@ -166,6 +166,10 @@ export function obtenerProductoPorId(idProducto: number): Promise<Producto> {
   return request<Producto>(PRODUCTOS_API_BASE_URL, `/producto/${idProducto}`);
 }
 
+export function obtenerPublicacionPorId(idPublicacion: number): Promise<Publicacion> {
+  return request<Publicacion>(PUBLICACIONES_API_BASE_URL, `/publicacion/${idPublicacion}`);
+}
+
 export function crearPublicacion(payload: CrearPublicacionPayload): Promise<Publicacion> {
   return request<Publicacion, CrearPublicacionPayload>(PUBLICACIONES_API_BASE_URL, '/publicacion', {
     method: 'POST',
