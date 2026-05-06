@@ -48,6 +48,22 @@ const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:5
 const PRODUCTOS_API_BASE_URL = process.env.EXPO_PUBLIC_PRODUCTOS_API_BASE_URL ?? 'http://localhost:5050';
 const PUBLICACIONES_API_BASE_URL = process.env.EXPO_PUBLIC_PUBLICACIONES_API_BASE_URL ?? 'http://localhost:6000';
 
+function getServiceName(baseUrl: string): string {
+  if (baseUrl === API_BASE_URL) {
+    return 'ServicioUsuarios';
+  }
+
+  if (baseUrl === PRODUCTOS_API_BASE_URL) {
+    return 'ServicioProducto';
+  }
+
+  if (baseUrl === PUBLICACIONES_API_BASE_URL) {
+    return 'ServicioPublicaciones';
+  }
+
+  return 'el backend';
+}
+
 async function request<TResponse, TBody = undefined>(
   baseUrl: string,
   path: string,
@@ -69,11 +85,20 @@ async function request<TResponse, TBody = undefined>(
     headers.Authorization = `Bearer ${options.token}`;
   }
 
-  const response = await fetch(`${baseUrl}${path}`, {
-    method: options.method ?? 'GET',
-    headers,
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${baseUrl}${path}`, {
+      method: options.method ?? 'GET',
+      headers,
+      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    });
+  } catch {
+    throw new ApiError(
+      `No se pudo conectar con ${getServiceName(baseUrl)} en ${baseUrl}. Verifica que el servicio esté corriendo.`,
+      0,
+    );
+  }
 
   if (!response.ok) {
     let message = 'No fue posible completar la solicitud.';
