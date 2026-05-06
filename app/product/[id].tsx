@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { obtenerProductoPorId, obtenerPublicacionPorId, Producto, Publicacion } from '../../services/api';
 import RequireAuth from '../../components/RequireAuth';
+import MainLayout from '../../layouts/MainLayout';
 
 export default function ProductDetailScreen() {
   const router = useRouter();
@@ -60,8 +61,9 @@ export default function ProductDetailScreen() {
     : null;
 
   return (
-    <ScrollView className="flex-1 bg-white" showsVerticalScrollIndicator={false}>
-      <View className="px-5 pt-6 pb-4">
+    <MainLayout>
+      <ScrollView className="flex-1 bg-white" showsVerticalScrollIndicator={false}>
+        <View className="px-5 pt-6 pb-4">
         <TouchableOpacity
           className="w-11 h-11 rounded-full bg-neutral-100 items-center justify-center mb-5"
           onPress={() => router.back()}
@@ -138,7 +140,8 @@ export default function ProductDetailScreen() {
             </RequireAuth>
           </>
         ) : null}
-      </View>
-    </ScrollView>
+        </View>
+      </ScrollView>
+    </MainLayout>
   );
 }
