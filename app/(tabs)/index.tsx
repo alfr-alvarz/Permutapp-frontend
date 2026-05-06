@@ -13,11 +13,13 @@
  * lo que significa que si el usuario es invitado, será redirigido al Login.
  */
 
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
+import { ActivityIndicator, View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Href, useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import RequireAuth from '@/components/RequireAuth';
 import { useAuth } from '../../context/AuthContext';
+import { obtenerProductos, Producto } from '../../services/api';
 
 // ────────── Datos de ejemplo (mock) ──────────
 // TODO: Reemplazar por datos reales del backend cuando los endpoints estén listos.
@@ -30,54 +32,7 @@ const CATEGORIAS = [
   { id: '4', label: 'Moda',         icon: 'shopping-bag'  as const, color: 'bg-pink-100',    iconColor: '#ec4899' },
 ];
 
-/** Productos de ejemplo para mostrar en el catálogo principal. */
-const PRODUCTOS_MOCK = [
-  {
-    id: '1',
-    title: 'MacBook Air M2',
-    category: 'Electrónica',
-    condition: 'Usado - Como nuevo',
-    icon: 'laptop' as const,
-    color: 'bg-blue-50',
-    iconColor: '#3b82f6',
-  },
-  {
-    id: '2',
-    title: 'Bicicleta Mountain Bike',
-    category: 'Deportes',
-    condition: 'Usado - Buen estado',
-    icon: 'bicycle' as const,
-    color: 'bg-orange-50',
-    iconColor: '#f97316',
-  },
-  {
-    id: '3',
-    title: 'Guitarra Acústica Yamaha',
-    category: 'Música',
-    condition: 'Usado - Como nuevo',
-    icon: 'music' as const,
-    color: 'bg-purple-50',
-    iconColor: '#a855f7',
-  },
-  {
-    id: '4',
-    title: 'Cámara Canon EOS R50',
-    category: 'Electrónica',
-    condition: 'Usado - Buen estado',
-    icon: 'camera' as const,
-    color: 'bg-teal-50',
-    iconColor: '#14b8a6',
-  },
-  {
-    id: '5',
-    title: 'Set de Sartenes T-fal',
-    category: 'Hogar',
-    condition: 'Nuevo sin uso',
-    icon: 'cutlery' as const,
-    color: 'bg-amber-50',
-    iconColor: '#f59e0b',
-  },
-];
+const PRODUCT_ICON = 'cube' as const;
 
 /**
  * HomeScreen — Pantalla principal de la aplicación.
@@ -89,6 +44,38 @@ const PRODUCTOS_MOCK = [
 export default function HomeScreen() {
   const router = useRouter();
   const { isAuthenticated, user, logout } = useAuth();
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [isLoadingProductos, setIsLoadingProductos] = useState(true);
+  const [productosError, setProductosError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function cargarProductos() {
+      try {
+        setIsLoadingProductos(true);
+        const data = await obtenerProductos();
+        if (mounted) {
+          setProductos(data.slice(0, 5));
+          setProductosError(null);
+        }
+      } catch {
+        if (mounted) {
+          setProductosError('No fue posible cargar productos reales.');
+        }
+      } finally {
+        if (mounted) {
+          setIsLoadingProductos(false);
+        }
+      }
+    }
+
+    cargarProductos();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <ScrollView className="flex-1 bg-white" showsVerticalScrollIndicator={false}>
@@ -147,7 +134,7 @@ export default function HomeScreen() {
 
           {/* Botón protegido: solo usuarios autenticados pueden publicar */}
           <RequireAuth
-            onAuthenticated={() => console.log('Navegar a publicar')}
+            onAuthenticated={() => router.push('/publish' as Href)}
             className="bg-white rounded-xl px-5 py-3 self-start flex-row items-center"
           >
             <FontAwesome name="plus" size={12} color="#047857" />
@@ -183,41 +170,60 @@ export default function HomeScreen() {
           <Text className="text-lg font-bold text-neutral-900">
             Disponibles cerca de ti
           </Text>
-          <TouchableOpacity activeOpacity={0.7}>
+          <TouchableOpacity activeOpacity={0.7} onPress={() => router.push('/(tabs)/two')}>
             <Text className="text-brand-600 text-sm font-semibold">Ver todo</Text>
           </TouchableOpacity>
         </View>
 
-        {PRODUCTOS_MOCK.map((producto) => (
+        {isLoadingProductos ? (
+          <View className="py-8 items-center">
+            <ActivityIndicator color="#047857" />
+          </View>
+        ) : null}
+
+        {productosError ? (
+          <View className="bg-red-50 border border-red-100 rounded-2xl p-4 mb-3">
+            <Text className="text-red-500 text-sm">{productosError}</Text>
+          </View>
+        ) : null}
+
+        {!isLoadingProductos && !productosError && productos.length === 0 ? (
+          <View className="bg-neutral-50 rounded-2xl p-5 items-center">
+            <FontAwesome name="inbox" size={22} color="#a3a3a3" />
+            <Text className="text-neutral-400 text-sm mt-3">Aún no hay productos publicados.</Text>
+          </View>
+        ) : null}
+
+        {productos.map((producto) => (
           <View
-            key={producto.id}
+            key={producto.prod_id}
             className="bg-white border border-neutral-100 rounded-2xl p-4 mb-3 flex-row items-center"
           >
             {/* Ícono del producto */}
-            <View className={`w-14 h-14 rounded-2xl ${producto.color} items-center justify-center mr-4`}>
-              <FontAwesome name={producto.icon} size={22} color={producto.iconColor} />
+            <View className="w-14 h-14 rounded-2xl bg-teal-50 items-center justify-center mr-4">
+              <FontAwesome name={PRODUCT_ICON} size={22} color="#14b8a6" />
             </View>
 
             {/* Información del producto */}
             <View className="flex-1 mr-3">
               <Text className="text-neutral-900 font-semibold text-sm" numberOfLines={1}>
-                {producto.title}
+                {producto.prod_nombre}
               </Text>
-              <Text className="text-neutral-400 text-xs mt-1">{producto.category}</Text>
+              <Text className="text-neutral-400 text-xs mt-1">Publicación #{producto.publ_id}</Text>
               <View className="flex-row items-center mt-1.5">
                 <View className="w-1.5 h-1.5 rounded-full bg-brand-500 mr-1.5" />
                 <Text className="text-brand-600 text-xs font-medium">
-                  {producto.condition}
+                  {producto.prod_est}
                 </Text>
               </View>
             </View>
 
             {/* Botón protegido: solo usuarios autenticados pueden permutar */}
             <RequireAuth
-              onAuthenticated={() => console.log(`Permutar: ${producto.title}`)}
+              onAuthenticated={() => router.push(`/product/${producto.prod_id}` as Href)}
               className="bg-brand-50 border border-brand-200 rounded-xl px-4 py-2.5"
             >
-              <Text className="text-brand-700 font-bold text-xs">Permutar</Text>
+              <Text className="text-brand-700 font-bold text-xs">Ver</Text>
             </RequireAuth>
           </View>
         ))}

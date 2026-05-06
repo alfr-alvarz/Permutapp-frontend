@@ -29,6 +29,7 @@ import { useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AuthLayout from '../layouts/AuthLayout';
 import { useAuth } from '../context/AuthContext';
+import { ApiError } from '../services/api';
 
 /** Expresión regular para validar el formato del correo electrónico. */
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -38,14 +39,17 @@ const SPECIAL_CHAR_REGEX = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/;
 
 /** Tipo que define los posibles errores de validación por campo. */
 interface FieldErrors {
-  /** Error del campo nombre. */
-  name?: string;
+  usu_numrun?: string;
+  usu_dvrun?: string;
+  usu_pri_nombre?: string;
+  usu_pri_apellido?: string;
   /** Error del campo correo electrónico. */
   email?: string;
   /** Error del campo contraseña. */
   password?: string;
   /** Error del campo confirmar contraseña. */
   confirmPassword?: string;
+  general?: string;
 }
 
 /**
@@ -57,8 +61,12 @@ interface FieldErrors {
 export default function Register() {
   /** Paso actual del registro: 'form' (formulario) o 'biometric' (verificación facial). */
   const [step, setStep] = useState<'form' | 'biometric'>('form');
-  /** Nombre completo ingresado por el usuario. */
-  const [name, setName] = useState('');
+  const [run, setRun] = useState('');
+  const [dv, setDv] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [secondName, setSecondName] = useState('');
+  const [firstLastName, setFirstLastName] = useState('');
+  const [secondLastName, setSecondLastName] = useState('');
   /** Correo electrónico ingresado por el usuario. */
   const [email, setEmail] = useState('');
   /** Contraseña ingresada por el usuario. */
@@ -70,7 +78,7 @@ export default function Register() {
   /** Errores de validación por campo. */
   const [errors, setErrors] = useState<FieldErrors>({});
   /** Estado de carga del contexto de autenticación. */
-  const { isLoading } = useAuth();
+  const { register, isLoading } = useAuth();
   /** Hook de navegación de Expo Router. */
   const router = useRouter();
 
@@ -99,7 +107,22 @@ export default function Register() {
   const validate = (): boolean => {
     const e: FieldErrors = {};
 
-    if (!name.trim()) e.name = 'El nombre es obligatorio.';
+    const numericRun = Number(run.replace(/\D/g, ''));
+
+    if (!run.trim()) {
+      e.usu_numrun = 'El RUN es obligatorio.';
+    } else if (!Number.isInteger(numericRun) || numericRun <= 0) {
+      e.usu_numrun = 'Ingresa un RUN válido sin puntos.';
+    }
+
+    if (!dv.trim()) {
+      e.usu_dvrun = 'El dígito verificador es obligatorio.';
+    } else if (!/^[0-9kK]$/.test(dv.trim())) {
+      e.usu_dvrun = 'Usa un solo dígito o K.';
+    }
+
+    if (!firstName.trim()) e.usu_pri_nombre = 'El primer nombre es obligatorio.';
+    if (!firstLastName.trim()) e.usu_pri_apellido = 'El primer apellido es obligatorio.';
 
     if (!email.trim()) {
       e.email = 'El correo es obligatorio.';
@@ -129,9 +152,27 @@ export default function Register() {
    * handleRegister — Procesa el envío del formulario de registro.
    * Si la validación pasa, avanza al paso de verificación biométrica.
    */
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!validate()) return;
-    setStep('biometric');
+
+    try {
+      await register({
+        usu_numrun: Number(run.replace(/\D/g, '')),
+        usu_dvrun: dv.trim(),
+        usu_pri_nombre: firstName.trim(),
+        usu_seg_nombre: secondName.trim() || undefined,
+        usu_pri_apellido: firstLastName.trim(),
+        usu_seg_apellido: secondLastName.trim() || undefined,
+        usu_email: email.trim(),
+        usu_pass: password,
+      });
+      setStep('biometric');
+    } catch (error) {
+      setErrors((prev) => ({
+        ...prev,
+        general: error instanceof ApiError ? error.message : 'No fue posible crear la cuenta.',
+      }));
+    }
   };
 
   /**
@@ -142,8 +183,7 @@ export default function Register() {
    * Amazon Rekognition para validar la identidad del usuario.
    */
   const handleCaptureFace = () => {
-    console.log('Capturar rostro para Amazon Rekognition');
-    router.replace('/login');
+    router.replace('/(tabs)');
   };
 
   /**
@@ -151,7 +191,7 @@ export default function Register() {
    * El usuario podrá completarla más adelante desde su perfil.
    */
   const handleSkipBiometric = () => {
-    router.replace('/login');
+    router.replace('/(tabs)');
   };
 
   /** Componente auxiliar para mostrar error inline */
@@ -292,28 +332,146 @@ export default function Register() {
             Únete a la comunidad de intercambio
           </Text>
 
-          {/* Input: Nombre */}
+          {errors.general ? (
+            <View className="bg-red-50 border border-red-100 rounded-2xl p-4 mb-5 flex-row items-center">
+              <FontAwesome name="exclamation-circle" size={16} color="#ef4444" />
+              <Text className="text-red-500 ml-3 text-sm flex-1">{errors.general}</Text>
+            </View>
+          ) : null}
+
+          {/* Input: RUN */}
           <View className="mb-4">
             <Text className="text-neutral-700 font-semibold mb-2 text-sm">
-              Nombre completo
+              RUN
             </Text>
             <View
               className={`flex-row items-center bg-neutral-50 border rounded-2xl px-4 h-14 ${
-                errors.name ? 'border-red-400' : 'border-neutral-200'
+                errors.usu_numrun ? 'border-red-400' : 'border-neutral-200'
               }`}
             >
-              <FontAwesome name="user-o" size={16} color={errors.name ? '#f87171' : '#a3a3a3'} />
+              <FontAwesome name="id-card-o" size={16} color={errors.usu_numrun ? '#f87171' : '#a3a3a3'} />
               <TextInput
                 className="flex-1 text-neutral-900 text-base ml-3"
-                placeholder="Juan Pérez"
+                placeholder="12345678"
                 placeholderTextColor="#a3a3a3"
-                value={name}
-                onChangeText={(t) => { setName(t); clearError('name'); }}
+                value={run}
+                onChangeText={(t) => { setRun(t); clearError('usu_numrun'); }}
+                keyboardType="number-pad"
+                editable={!isLoading}
+              />
+            </View>
+            <FieldError message={errors.usu_numrun} />
+          </View>
+
+          {/* Input: DV */}
+          <View className="mb-4">
+            <Text className="text-neutral-700 font-semibold mb-2 text-sm">
+              Dígito verificador
+            </Text>
+            <View
+              className={`flex-row items-center bg-neutral-50 border rounded-2xl px-4 h-14 ${
+                errors.usu_dvrun ? 'border-red-400' : 'border-neutral-200'
+              }`}
+            >
+              <FontAwesome name="check-circle-o" size={16} color={errors.usu_dvrun ? '#f87171' : '#a3a3a3'} />
+              <TextInput
+                className="flex-1 text-neutral-900 text-base ml-3"
+                placeholder="K"
+                placeholderTextColor="#a3a3a3"
+                value={dv}
+                onChangeText={(t) => { setDv(t.slice(0, 1).toUpperCase()); clearError('usu_dvrun'); }}
+                autoCapitalize="characters"
+                maxLength={1}
+                editable={!isLoading}
+              />
+            </View>
+            <FieldError message={errors.usu_dvrun} />
+          </View>
+
+          {/* Input: Primer nombre */}
+          <View className="mb-4">
+            <Text className="text-neutral-700 font-semibold mb-2 text-sm">
+              Primer nombre
+            </Text>
+            <View
+              className={`flex-row items-center bg-neutral-50 border rounded-2xl px-4 h-14 ${
+                errors.usu_pri_nombre ? 'border-red-400' : 'border-neutral-200'
+              }`}
+            >
+              <FontAwesome name="user-o" size={16} color={errors.usu_pri_nombre ? '#f87171' : '#a3a3a3'} />
+              <TextInput
+                className="flex-1 text-neutral-900 text-base ml-3"
+                placeholder="Juan"
+                placeholderTextColor="#a3a3a3"
+                value={firstName}
+                onChangeText={(t) => { setFirstName(t); clearError('usu_pri_nombre'); }}
                 autoCapitalize="words"
                 editable={!isLoading}
               />
             </View>
-            <FieldError message={errors.name} />
+            <FieldError message={errors.usu_pri_nombre} />
+          </View>
+
+          {/* Input: Segundo nombre */}
+          <View className="mb-4">
+            <Text className="text-neutral-700 font-semibold mb-2 text-sm">
+              Segundo nombre
+            </Text>
+            <View className="flex-row items-center bg-neutral-50 border rounded-2xl px-4 h-14 border-neutral-200">
+              <FontAwesome name="user-o" size={16} color="#a3a3a3" />
+              <TextInput
+                className="flex-1 text-neutral-900 text-base ml-3"
+                placeholder="Opcional"
+                placeholderTextColor="#a3a3a3"
+                value={secondName}
+                onChangeText={setSecondName}
+                autoCapitalize="words"
+                editable={!isLoading}
+              />
+            </View>
+          </View>
+
+          {/* Input: Primer apellido */}
+          <View className="mb-4">
+            <Text className="text-neutral-700 font-semibold mb-2 text-sm">
+              Primer apellido
+            </Text>
+            <View
+              className={`flex-row items-center bg-neutral-50 border rounded-2xl px-4 h-14 ${
+                errors.usu_pri_apellido ? 'border-red-400' : 'border-neutral-200'
+              }`}
+            >
+              <FontAwesome name="user-o" size={16} color={errors.usu_pri_apellido ? '#f87171' : '#a3a3a3'} />
+              <TextInput
+                className="flex-1 text-neutral-900 text-base ml-3"
+                placeholder="Pérez"
+                placeholderTextColor="#a3a3a3"
+                value={firstLastName}
+                onChangeText={(t) => { setFirstLastName(t); clearError('usu_pri_apellido'); }}
+                autoCapitalize="words"
+                editable={!isLoading}
+              />
+            </View>
+            <FieldError message={errors.usu_pri_apellido} />
+          </View>
+
+          {/* Input: Segundo apellido */}
+          <View className="mb-4">
+            <Text className="text-neutral-700 font-semibold mb-2 text-sm">
+              Segundo apellido
+            </Text>
+            <View className="flex-row items-center bg-neutral-50 border rounded-2xl px-4 h-14 border-neutral-200">
+              <FontAwesome name="user-o" size={16} color="#a3a3a3" />
+              <TextInput
+                className="flex-1 text-neutral-900 text-base ml-3"
+                placeholder="Opcional"
+                placeholderTextColor="#a3a3a3"
+                value={secondLastName}
+                onChangeText={setSecondLastName}
+                autoCapitalize="words"
+                editable={!isLoading}
+              />
+            </View>
           </View>
 
           {/* Input: Email */}

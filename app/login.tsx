@@ -29,6 +29,7 @@ import { useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AuthLayout from '../layouts/AuthLayout';
 import { useAuth } from '../context/AuthContext';
+import { ApiError } from '../services/api';
 
 /** Expresión regular para validar el formato del correo electrónico. */
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -99,8 +100,12 @@ export default function Login() {
     try {
       await login(email, password);
       router.replace('/(tabs)');
-    } catch (e) {
-      setErrors({ general: 'Credenciales incorrectas. Inténtalo de nuevo.' });
+    } catch (error) {
+      setErrors({
+        general: error instanceof ApiError
+          ? error.message
+          : 'Credenciales incorrectas. Inténtalo de nuevo.',
+      });
     }
   };
 

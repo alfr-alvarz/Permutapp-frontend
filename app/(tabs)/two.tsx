@@ -12,23 +12,17 @@
  * redirigiendo al login si el usuario no está autenticado.
  */
 
-import { View, Text, ScrollView, TextInput, TouchableOpacity } from 'react-native';
-import { useState } from 'react';
+import { ActivityIndicator, View, Text, ScrollView, TextInput, TouchableOpacity } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Href, useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import RequireAuth from '@/components/RequireAuth';
+import { obtenerProductos, Producto } from '../../services/api';
 
 // ────────── Datos de ejemplo (mock) ──────────
 // TODO: Reemplazar por datos reales del backend cuando los endpoints estén listos.
 
-/** Productos disponibles en el catálogo. */
-const ITEMS_CATALOGO = [
-  { id: '1', title: 'Nintendo Switch OLED',      category: 'Electrónica', condition: 'Usado - Como nuevo',  icon: 'gamepad'     as const, bgColor: 'bg-indigo-50',  iconColor: '#6366f1' },
-  { id: '2', title: 'Mochila North Face',        category: 'Accesorios',  condition: 'Usado - Buen estado', icon: 'suitcase'    as const, bgColor: 'bg-sky-50',     iconColor: '#0ea5e9' },
-  { id: '3', title: 'Teclado Mecánico RGB',       category: 'Electrónica', condition: 'Nuevo sin uso',       icon: 'keyboard-o' as const, bgColor: 'bg-violet-50',  iconColor: '#8b5cf6' },
-  { id: '4', title: 'Balón de Fútbol Adidas',     category: 'Deportes',    condition: 'Usado - Buen estado', icon: 'futbol-o'   as const, bgColor: 'bg-rose-50',    iconColor: '#f43f5e' },
-  { id: '5', title: 'Audífonos Sony WH-1000XM5',  category: 'Electrónica', condition: 'Usado - Como nuevo',  icon: 'headphones' as const, bgColor: 'bg-amber-50',   iconColor: '#f59e0b' },
-  { id: '6', title: 'Libro "Clean Code"',         category: 'Libros',      condition: 'Usado - Buen estado', icon: 'book'       as const, bgColor: 'bg-emerald-50', iconColor: '#10b981' },
-];
+const PRODUCT_ICON = 'cube' as const;
 
 /**
  * CatalogScreen — Pantalla del catálogo con búsqueda y filtros.
@@ -38,12 +32,49 @@ const ITEMS_CATALOGO = [
  * con el título de cada producto (insensible a mayúsculas/minúsculas).
  */
 export default function CatalogScreen() {
+  const router = useRouter();
   /** Texto actual de la barra de búsqueda. */
   const [busqueda, setBusqueda] = useState('');
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function cargarProductos() {
+      try {
+        setIsLoading(true);
+        const data = await obtenerProductos();
+        if (mounted) {
+          setProductos(data);
+          setError(null);
+        }
+      } catch {
+        if (mounted) {
+          setError('No fue posible cargar el catálogo.');
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    cargarProductos();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   /** Lista de productos filtrados según el texto de búsqueda. */
-  const itemsFiltrados = ITEMS_CATALOGO.filter((item) =>
-    item.title.toLowerCase().includes(busqueda.toLowerCase())
+  const itemsFiltrados = useMemo(
+    () => productos.filter((item) =>
+      item.prod_nombre.toLowerCase().includes(busqueda.toLowerCase())
+        || item.prod_est.toLowerCase().includes(busqueda.toLowerCase())
+    ),
+    [busqueda, productos],
   );
 
   return (
@@ -77,58 +108,50 @@ export default function CatalogScreen() {
         </View>
       </View>
 
-      {/* ── Chips de filtro por categoría ── */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-5 mb-5">
-        {['Todos', 'Electrónica', 'Deportes', 'Hogar', 'Libros', 'Moda'].map((etiqueta, i) => (
-          <TouchableOpacity
-            key={etiqueta}
-            className={`mr-2 px-4 py-2 rounded-full ${
-              i === 0 ? 'bg-brand-700' : 'bg-neutral-100'
-            }`}
-            activeOpacity={0.7}
-          >
-            <Text
-              className={`text-xs font-semibold ${
-                i === 0 ? 'text-white' : 'text-neutral-600'
-              }`}
-            >
-              {etiqueta}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
       {/* ── Listado de resultados ── */}
       <View className="px-5 pb-6">
         <Text className="text-neutral-400 text-xs mb-4 uppercase tracking-widest font-semibold">
           {itemsFiltrados.length} productos disponibles
         </Text>
 
+        {isLoading ? (
+          <View className="items-center py-16">
+            <ActivityIndicator color="#047857" />
+            <Text className="text-neutral-400 mt-4 text-sm">Cargando catálogo</Text>
+          </View>
+        ) : null}
+
+        {error ? (
+          <View className="bg-red-50 border border-red-100 rounded-2xl p-4 mb-3">
+            <Text className="text-red-500 text-sm">{error}</Text>
+          </View>
+        ) : null}
+
         {itemsFiltrados.map((item) => (
           <View
-            key={item.id}
+            key={item.prod_id}
             className="bg-white border border-neutral-100 rounded-2xl p-4 mb-3 flex-row items-center"
           >
             {/* Ícono del producto */}
-            <View className={`w-14 h-14 rounded-2xl ${item.bgColor} items-center justify-center mr-4`}>
-              <FontAwesome name={item.icon} size={22} color={item.iconColor} />
+            <View className="w-14 h-14 rounded-2xl bg-teal-50 items-center justify-center mr-4">
+              <FontAwesome name={PRODUCT_ICON} size={22} color="#14b8a6" />
             </View>
 
             {/* Información del producto */}
             <View className="flex-1 mr-3">
               <Text className="text-neutral-900 font-semibold text-sm" numberOfLines={1}>
-                {item.title}
+                {item.prod_nombre}
               </Text>
-              <Text className="text-neutral-400 text-xs mt-0.5">{item.category}</Text>
+              <Text className="text-neutral-400 text-xs mt-0.5">Publicación #{item.publ_id}</Text>
               <View className="flex-row items-center mt-1.5">
                 <View className="w-1.5 h-1.5 rounded-full bg-brand-500 mr-1.5" />
-                <Text className="text-brand-600 text-xs font-medium">{item.condition}</Text>
+                <Text className="text-brand-600 text-xs font-medium">{item.prod_est}</Text>
               </View>
             </View>
 
             {/* Botón protegido: redirige a login si el usuario es invitado */}
             <RequireAuth
-              onAuthenticated={() => console.log(`Detalle: ${item.title}`)}
+              onAuthenticated={() => router.push(`/product/${item.prod_id}` as Href)}
               className="bg-brand-50 border border-brand-200 rounded-xl px-4 py-2.5"
             >
               <Text className="text-brand-700 font-bold text-xs">Ver</Text>
@@ -137,7 +160,7 @@ export default function CatalogScreen() {
         ))}
 
         {/* Estado vacío: cuando la búsqueda no arroja resultados */}
-        {itemsFiltrados.length === 0 && (
+        {!isLoading && !error && itemsFiltrados.length === 0 && (
           <View className="items-center py-16">
             <FontAwesome name="search" size={32} color="#d4d4d4" />
             <Text className="text-neutral-400 mt-4 text-sm">

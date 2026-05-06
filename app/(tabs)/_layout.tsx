@@ -78,6 +78,15 @@ export default function TabLayout() {
             tabBarIcon: ({ color }) => <TabBarIcon name="th-large" color={color} />,
           }}
         />
+
+        {/* Pestaña: Perfil */}
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: 'Perfil',
+            tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />,
+          }}
+        />
       </Tabs>
     </MainLayout>
   );
