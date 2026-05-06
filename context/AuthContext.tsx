@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react';
-import * as SecureStore from 'expo-secure-store';
 import { login as apiLogin, register as apiRegister, RegisterPayload } from '../services/api';
+import { deleteSessionItem, getSessionItem, setSessionItem } from '../services/sessionStorage';
 
 export interface User {
   id: string;
@@ -45,15 +45,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const persistSession = useCallback(async (token: string, user: User) => {
     await Promise.all([
-      SecureStore.setItemAsync(AUTH_TOKEN_KEY, token),
-      SecureStore.setItemAsync(AUTH_USER_KEY, JSON.stringify(user)),
+      setSessionItem(AUTH_TOKEN_KEY, token),
+      setSessionItem(AUTH_USER_KEY, JSON.stringify(user)),
     ]);
   }, []);
 
   const clearSession = useCallback(async () => {
     await Promise.all([
-      SecureStore.deleteItemAsync(AUTH_TOKEN_KEY),
-      SecureStore.deleteItemAsync(AUTH_USER_KEY),
+      deleteSessionItem(AUTH_TOKEN_KEY),
+      deleteSessionItem(AUTH_USER_KEY),
     ]);
   }, []);
 
@@ -63,8 +63,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     async function restoreSession() {
       try {
         const [token, storedUser] = await Promise.all([
-          SecureStore.getItemAsync(AUTH_TOKEN_KEY),
-          SecureStore.getItemAsync(AUTH_USER_KEY),
+          getSessionItem(AUTH_TOKEN_KEY),
+          getSessionItem(AUTH_USER_KEY),
         ]);
 
         if (!mounted) return;

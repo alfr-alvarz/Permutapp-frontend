@@ -88,8 +88,8 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
 
       {/* ═══════════ Panel del Formulario ═══════════ */}
       {/* En móvil ocupa el 100%, en PC ocupa la mitad derecha */}
-      <View className="flex-1 justify-center items-center bg-white">
-        <View className="w-full max-w-sm px-6">
+      <View className="flex-1 bg-white">
+        <View className="w-full max-w-md px-6 flex-1 self-center">
           {children}
         </View>
       </View>

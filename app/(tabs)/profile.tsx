@@ -1,4 +1,4 @@
-import { Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { Href, useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useAuth } from '../../context/AuthContext';
@@ -9,7 +9,11 @@ export default function ProfileScreen() {
 
   if (!isAuthenticated || !user) {
     return (
-      <View className="flex-1 bg-white px-5 pt-10">
+      <ScrollView
+        className="flex-1 bg-white"
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 40, paddingBottom: 96 }}
+        showsVerticalScrollIndicator={false}
+      >
         <View className="items-center py-16">
           <View className="w-20 h-20 rounded-full bg-neutral-100 items-center justify-center mb-5">
             <FontAwesome name="user-o" size={30} color="#a3a3a3" />
@@ -26,12 +30,16 @@ export default function ProfileScreen() {
             <Text className="text-white font-bold text-sm">Iniciar sesión</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
     );
   }
 
   return (
-    <View className="flex-1 bg-white px-5 pt-8">
+    <ScrollView
+      className="flex-1 bg-white"
+      contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 32, paddingBottom: 96 }}
+      showsVerticalScrollIndicator={false}
+    >
       <Text className="text-2xl font-bold text-neutral-900 mb-6">Perfil</Text>
 
       <View className="items-center mb-7">
@@ -86,6 +94,6 @@ export default function ProfileScreen() {
         <FontAwesome name="sign-out" size={14} color="#525252" />
         <Text className="text-neutral-700 font-bold text-base ml-3">Cerrar sesión</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }

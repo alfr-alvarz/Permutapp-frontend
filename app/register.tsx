@@ -310,9 +310,10 @@ export default function Register() {
         className="flex-1"
       >
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+          className="flex-1"
+          contentContainerStyle={{ flexGrow: 1, paddingTop: 40, paddingBottom: 40 }}
           keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator
         >
           {/* Logo móvil */}
           <View className="items-center mb-10 md:hidden">

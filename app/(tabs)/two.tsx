@@ -78,7 +78,11 @@ export default function CatalogScreen() {
   );
 
   return (
-    <ScrollView className="flex-1 bg-white" showsVerticalScrollIndicator={false}>
+    <ScrollView
+      className="flex-1 bg-white"
+      contentContainerStyle={{ paddingBottom: 96 }}
+      showsVerticalScrollIndicator={false}
+    >
 
       {/* ── Encabezado ── */}
       <View className="px-5 pt-6 pb-2">

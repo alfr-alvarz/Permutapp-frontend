@@ -50,9 +50,9 @@ export default function TabLayout() {
             backgroundColor: '#ffffff',
             elevation: 0,                       // Sin sombra en Android
             shadowOpacity: 0,                   // Sin sombra en iOS
-            height: 56,
-            paddingBottom: 6,
-            paddingTop: 6,
+            height: 74,
+            paddingBottom: 16,
+            paddingTop: 8,
           },
           tabBarLabelStyle: {
             fontSize: 11,
