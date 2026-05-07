@@ -54,7 +54,7 @@ type ApiErrorPayload = {
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:5001';
 const PRODUCTOS_API_BASE_URL = process.env.EXPO_PUBLIC_PRODUCTOS_API_BASE_URL ?? 'http://localhost:5050';
-const PUBLICACIONES_API_BASE_URL = process.env.EXPO_PUBLIC_PUBLICACIONES_API_BASE_URL ?? 'http://localhost:6000';
+const PUBLICACIONES_API_BASE_URL = process.env.EXPO_PUBLIC_PUBLICACIONES_API_BASE_URL ?? 'http://localhost:6001';
 
 function getServiceName(baseUrl: string): string {
   if (baseUrl === API_BASE_URL) {
