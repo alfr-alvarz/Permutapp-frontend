@@ -1,46 +1,20 @@
-/**
- * index.tsx — Pantalla de Inicio (Home) de Permutapp.
- *
- * Es la primera vista que ve el usuario al abrir la app.
- * Muestra:
- * - Un header con saludo personalizado (si está logueado) o genérico (invitado).
- * - Un banner hero con llamado a la acción para publicar un producto.
- * - Una barra horizontal de categorías para explorar.
- * - Un listado de productos disponibles con botones "Permutar".
- * - Un footer para invitados que invita a registrarse.
- *
- * Los botones de acción (Publicar, Permutar) están envueltos con <RequireAuth>,
- * lo que significa que si el usuario es invitado, será redirigido al Login.
- */
-
-import { ActivityIndicator, View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useEffect, useState } from 'react';
 import { Href, useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+
 import RequireAuth from '@/components/RequireAuth';
+import { BrandMark, EmptyState, InfoBanner, ProductCard, SectionHeader } from '@/components/ui';
 import { useAuth } from '../../context/AuthContext';
 import { obtenerProductos, Producto } from '../../services/api';
 
-// ────────── Datos de ejemplo (mock) ──────────
-// TODO: Reemplazar por datos reales del backend cuando los endpoints estén listos.
-
-/** Categorías disponibles para filtrar productos. */
 const CATEGORIAS = [
-  { id: '1', label: 'Electrónica',  icon: 'laptop'       as const, color: 'bg-blue-100',   iconColor: '#3b82f6' },
-  { id: '2', label: 'Deportes',     icon: 'futbol-o'      as const, color: 'bg-orange-100',  iconColor: '#f97316' },
-  { id: '3', label: 'Hogar',        icon: 'home'          as const, color: 'bg-purple-100',  iconColor: '#a855f7' },
-  { id: '4', label: 'Moda',         icon: 'shopping-bag'  as const, color: 'bg-pink-100',    iconColor: '#ec4899' },
+  { id: '1', label: 'Electrónica', icon: 'laptop' as const, color: 'bg-sky-50 border-sky-100', iconColor: '#0284c7' },
+  { id: '2', label: 'Deportes', icon: 'futbol-o' as const, color: 'bg-orange-50 border-orange-100', iconColor: '#ea580c' },
+  { id: '3', label: 'Hogar', icon: 'home' as const, color: 'bg-violet-50 border-violet-100', iconColor: '#7c3aed' },
+  { id: '4', label: 'Moda', icon: 'shopping-bag' as const, color: 'bg-rose-50 border-rose-100', iconColor: '#e11d48' },
 ];
 
-const PRODUCT_ICON = 'cube' as const;
-
-/**
- * HomeScreen — Pantalla principal de la aplicación.
- *
- * Accesible tanto para usuarios autenticados como para invitados.
- * Los invitados pueden ver el catálogo pero no pueden interactuar
- * con los botones de acción (Publicar, Permutar).
- */
 export default function HomeScreen() {
   const router = useRouter();
   const { isAuthenticated, user, logout } = useAuth();
@@ -60,197 +34,121 @@ export default function HomeScreen() {
           setProductosError(null);
         }
       } catch {
-        if (mounted) {
-          setProductosError('No fue posible cargar productos reales.');
-        }
+        if (mounted) setProductosError('No fue posible cargar productos reales.');
       } finally {
-        if (mounted) {
-          setIsLoadingProductos(false);
-        }
+        if (mounted) setIsLoadingProductos(false);
       }
     }
 
     cargarProductos();
-
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, []);
 
   return (
-    <ScrollView
-      className="flex-1 bg-white"
-      contentContainerStyle={{ paddingBottom: 96 }}
-      showsVerticalScrollIndicator={false}
-    >
-
-      {/* ═══════════ Encabezado ═══════════ */}
+    <ScrollView className="flex-1 bg-neutral-50" contentContainerStyle={{ paddingBottom: 104 }} showsVerticalScrollIndicator={false}>
       <View className="px-5 pt-6 pb-2">
-        <View className="flex-row items-center justify-between mb-1">
-          <View className="flex-1">
-            <Text className="text-sm text-neutral-400">
-              {isAuthenticated ? 'Bienvenido de vuelta' : 'Explora libremente'}
-            </Text>
-            <Text className="text-2xl font-bold text-neutral-900 mt-1">
-              {isAuthenticated ? `${user?.name} 👋` : 'Descubre permutas'}
-            </Text>
+        <View className="flex-row items-center justify-between">
+          <View className="flex-row items-center flex-1 pr-3">
+            <BrandMark size="sm" />
+            <View className="ml-3 flex-1">
+              <Text className="text-xs text-neutral-500 font-semibold">
+                {isAuthenticated ? 'Bienvenido de vuelta' : 'Explora en modo invitado'}
+              </Text>
+              <Text className="text-2xl font-bold text-neutral-950 mt-0.5" numberOfLines={1}>
+                {isAuthenticated ? user?.name : 'Permutas circulares'}
+              </Text>
+            </View>
           </View>
 
-          {/* Botón de avatar (logueado) o botón de ingresar (invitado) */}
           {isAuthenticated ? (
-            <TouchableOpacity
-              className="w-11 h-11 rounded-full bg-brand-100 items-center justify-center"
-              onPress={logout}
-              activeOpacity={0.7}
-            >
-              <Text className="text-brand-700 font-bold text-base">
-                {user?.name?.charAt(0) ?? 'U'}
-              </Text>
+            <TouchableOpacity className="w-11 h-11 rounded-2xl bg-white border border-neutral-100 items-center justify-center" onPress={logout} activeOpacity={0.75}>
+              <Text className="text-brand-700 font-bold text-base">{user?.name?.charAt(0) ?? 'U'}</Text>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity
-              className="bg-brand-700 rounded-full px-5 py-2.5"
-              onPress={() => router.push('/login')}
-              activeOpacity={0.85}
-            >
-              <Text className="text-white font-semibold text-sm">Ingresar</Text>
+            <TouchableOpacity className="bg-brand-700 rounded-2xl px-4 h-11 items-center justify-center" onPress={() => router.push('/login')} activeOpacity={0.85}>
+              <Text className="text-white font-bold text-sm">Ingresar</Text>
             </TouchableOpacity>
           )}
         </View>
       </View>
 
-      {/* ═══════════ Banner hero ═══════════ */}
-      <View className="mx-5 mt-4 bg-brand-800 rounded-3xl p-6 overflow-hidden">
-        {/* Formas decorativas de fondo */}
-        <View className="absolute -top-6 -right-6 w-32 h-32 rounded-full bg-brand-700 opacity-50" />
-        <View className="absolute bottom-2 right-8 w-20 h-20 rounded-full bg-brand-600 opacity-30" />
+      <View className="mx-5 mt-5 bg-brand-900 rounded-3xl p-6 overflow-hidden">
+        <View className="absolute top-0 right-0 w-32 h-full bg-teal-800 opacity-60" />
+        <View className="absolute -bottom-6 -left-4 w-36 h-16 bg-brand-700 opacity-70 rotate-12" />
 
         <View className="z-10">
-          <Text className="text-brand-200 text-xs font-semibold uppercase tracking-widest mb-2">
-            Economía Circular
-          </Text>
-          <Text className="text-white text-xl font-bold mb-2 leading-7">
-            Intercambia lo que ya{'\n'}no usas por algo mejor
-          </Text>
-          <Text className="text-brand-300 text-sm mb-5 leading-5">
-            Publica tus productos y encuentra permutas cerca de ti.
+          <View className="self-start bg-white/10 border border-white/10 rounded-full px-3 py-1.5 mb-4">
+            <Text className="text-brand-100 text-xs font-bold uppercase tracking-widest">Economía circular</Text>
+          </View>
+          <Text className="text-white text-3xl font-bold leading-9 mb-3">Dale otra vida a lo que ya no usas</Text>
+          <Text className="text-brand-100 text-sm leading-6 mb-6">
+            Publica productos, descubre oportunidades cercanas y propone intercambios con una comunidad verificada.
           </Text>
 
-          {/* Botón protegido: solo usuarios autenticados pueden publicar */}
-          <RequireAuth
-            onAuthenticated={() => router.push('/publish' as Href)}
-            className="bg-white rounded-xl px-5 py-3 self-start flex-row items-center"
-          >
+          <RequireAuth onAuthenticated={() => router.push('/publish' as Href)} className="bg-white rounded-2xl px-5 h-12 self-start flex-row items-center">
             <FontAwesome name="plus" size={12} color="#047857" />
-            <Text className="text-brand-800 font-bold text-sm ml-2">
-              Publicar producto
-            </Text>
+            <Text className="text-brand-800 font-bold text-sm ml-2">Publicar producto</Text>
           </RequireAuth>
         </View>
       </View>
 
-      {/* ═══════════ Categorías ═══════════ */}
+      <View className="px-5 mt-5">
+        <InfoBanner icon="shield" title="Intercambios con más confianza" body="Permutapp prioriza identidad, reputación y encuentros seguros para que la permuta sea simple y responsable." />
+      </View>
+
       <View className="px-5 mt-7">
-        <Text className="text-lg font-bold text-neutral-900 mb-4">Categorías</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-2">
+        <SectionHeader title="Explora por categoría" eyebrow="Descubre" />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 20 }}>
           {CATEGORIAS.map((cat) => (
-            <TouchableOpacity
-              key={cat.id}
-              className="items-center mr-5"
-              activeOpacity={0.7}
-            >
-              <View className={`w-14 h-14 rounded-2xl ${cat.color} items-center justify-center mb-2`}>
+            <TouchableOpacity key={cat.id} className="items-center mr-4" activeOpacity={0.75}>
+              <View className={`w-16 h-16 rounded-3xl ${cat.color} border items-center justify-center mb-2`}>
                 <FontAwesome name={cat.icon} size={22} color={cat.iconColor} />
               </View>
-              <Text className="text-neutral-600 text-xs font-medium">{cat.label}</Text>
+              <Text className="text-neutral-700 text-xs font-bold">{cat.label}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
       </View>
 
-      {/* ═══════════ Productos disponibles ═══════════ */}
-      <View className="px-5 mt-6 pb-6">
-        <View className="flex-row items-center justify-between mb-4">
-          <Text className="text-lg font-bold text-neutral-900">
-            Disponibles cerca de ti
-          </Text>
-          <TouchableOpacity activeOpacity={0.7} onPress={() => router.push('/(tabs)/two')}>
-            <Text className="text-brand-600 text-sm font-semibold">Ver todo</Text>
-          </TouchableOpacity>
-        </View>
+      <View className="px-5 mt-7 pb-6">
+        <SectionHeader title="Disponibles cerca de ti" eyebrow="Catálogo" actionLabel="Ver todo" onActionPress={() => router.push('/(tabs)/two')} />
 
         {isLoadingProductos ? (
-          <View className="py-8 items-center">
+          <View className="py-10 items-center bg-white rounded-3xl border border-neutral-100">
             <ActivityIndicator color="#047857" />
+            <Text className="text-neutral-500 mt-4 text-sm">Buscando productos disponibles</Text>
           </View>
         ) : null}
 
-        {productosError ? (
-          <View className="bg-red-50 border border-red-100 rounded-2xl p-4 mb-3">
-            <Text className="text-red-500 text-sm">{productosError}</Text>
-          </View>
-        ) : null}
+        {productosError ? <InfoBanner icon="exclamation-circle" title="Catálogo no disponible" body={productosError} tone="red" /> : null}
 
         {!isLoadingProductos && !productosError && productos.length === 0 ? (
-          <View className="bg-neutral-50 rounded-2xl p-5 items-center">
-            <FontAwesome name="inbox" size={22} color="#a3a3a3" />
-            <Text className="text-neutral-400 text-sm mt-3">Aún no hay productos publicados.</Text>
-          </View>
+          <EmptyState icon="inbox" title="Aún no hay publicaciones" body="Cuando la comunidad publique productos, aparecerán aquí para iniciar nuevas permutas." />
         ) : null}
 
         {productos.map((producto) => (
-          <View
+          <ProductCard
             key={producto.prod_id}
-            className="bg-white border border-neutral-100 rounded-2xl p-4 mb-3 flex-row items-center"
-          >
-            {/* Ícono del producto */}
-            <View className="w-14 h-14 rounded-2xl bg-teal-50 items-center justify-center mr-4">
-              <FontAwesome name={PRODUCT_ICON} size={22} color="#14b8a6" />
-            </View>
-
-            {/* Información del producto */}
-            <View className="flex-1 mr-3">
-              <Text className="text-neutral-900 font-semibold text-sm" numberOfLines={1}>
-                {producto.prod_nombre}
-              </Text>
-              <Text className="text-neutral-400 text-xs mt-1">Publicación #{producto.publ_id}</Text>
-              <View className="flex-row items-center mt-1.5">
-                <View className="w-1.5 h-1.5 rounded-full bg-brand-500 mr-1.5" />
-                <Text className="text-brand-600 text-xs font-medium">
-                  {producto.prod_est}
-                </Text>
-              </View>
-            </View>
-
-            {/* Botón protegido: solo usuarios autenticados pueden permutar */}
-            <RequireAuth
-              onAuthenticated={() => router.push(`/product/${producto.prod_id}` as Href)}
-              className="bg-brand-50 border border-brand-200 rounded-xl px-4 py-2.5"
-            >
-              <Text className="text-brand-700 font-bold text-xs">Ver</Text>
-            </RequireAuth>
-          </View>
+            title={producto.prod_nombre}
+            subtitle={`Publicación #${producto.publ_id}`}
+            status={producto.prod_est}
+            price={producto.prod_precio}
+            onPress={() => router.push(`/product/${producto.prod_id}` as Href)}
+          />
         ))}
       </View>
 
-      {/* ═══════════ Footer para invitados ═══════════ */}
-      {!isAuthenticated && (
-        <View className="px-5 pb-8 items-center">
-          <View className="w-full bg-neutral-50 rounded-2xl p-5 items-center">
-            <FontAwesome name="lock" size={20} color="#a3a3a3" />
-            <Text className="text-neutral-500 text-sm mt-3 text-center leading-5">
-              Inicia sesión para publicar productos,{'\n'}proponer permutas y chatear.
-            </Text>
-            <TouchableOpacity
-              className="bg-brand-700 rounded-xl px-6 py-3 mt-4"
-              onPress={() => router.push('/login')}
-              activeOpacity={0.85}
-            >
+      {!isAuthenticated ? (
+        <View className="px-5 pb-8">
+          <View className="bg-white rounded-3xl p-5 border border-neutral-100">
+            <Text className="text-neutral-950 font-bold text-lg">¿Listo para permutar?</Text>
+            <Text className="text-neutral-500 text-sm mt-2 leading-5">Crea una cuenta para publicar, guardar tu sesión y proponer intercambios.</Text>
+            <TouchableOpacity className="bg-brand-700 rounded-2xl h-12 items-center justify-center mt-4" onPress={() => router.push('/register')} activeOpacity={0.85}>
               <Text className="text-white font-bold text-sm">Crear cuenta gratis</Text>
             </TouchableOpacity>
           </View>
         </View>
-      )}
+      ) : null}
     </ScrollView>
   );
 }

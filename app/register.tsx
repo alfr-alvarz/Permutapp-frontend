@@ -28,6 +28,7 @@ import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AuthLayout from '../layouts/AuthLayout';
+import { BrandMark } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 
 /** Expresión regular para validar el formato del correo electrónico. */
@@ -207,14 +208,12 @@ export default function Register() {
     return (
       <AuthLayout>
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24 }}
           showsVerticalScrollIndicator={false}
         >
           {/* Logo móvil */}
           <View className="items-center mb-10 md:hidden">
-            <View className="w-16 h-16 rounded-2xl bg-brand-800 items-center justify-center">
-              <Text className="text-white text-3xl">♻</Text>
-            </View>
+            <BrandMark />
           </View>
 
           {/* Icono central */}
@@ -310,15 +309,13 @@ export default function Register() {
       >
         <ScrollView
           className="flex-1"
-          contentContainerStyle={{ flexGrow: 1, paddingTop: 40, paddingBottom: 40 }}
+          contentContainerStyle={{ flexGrow: 1, paddingTop: 40, paddingBottom: 40, paddingHorizontal: 24 }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator
         >
           {/* Logo móvil */}
           <View className="items-center mb-10 md:hidden">
-            <View className="w-16 h-16 rounded-2xl bg-brand-800 items-center justify-center mb-4">
-              <Text className="text-white text-3xl">♻</Text>
-            </View>
+            <BrandMark />
             <Text className="text-brand-900 text-xl font-bold tracking-tight">
               Permutapp
             </Text>
@@ -326,10 +323,10 @@ export default function Register() {
 
           {/* Encabezado */}
           <Text className="text-3xl font-bold text-neutral-900 mb-1">
-            Crear cuenta
+            Crear cuenta segura
           </Text>
           <Text className="text-neutral-500 mb-8 text-base leading-6">
-            Únete a la comunidad de intercambio
+            Únete a una comunidad de intercambio circular y verificada
           </Text>
 
           {errors.general ? (
