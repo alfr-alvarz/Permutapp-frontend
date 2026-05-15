@@ -1,8 +1,11 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { ReactNode } from 'react';
-import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, Text, TouchableOpacity, View } from 'react-native';
 
 type IconName = React.ComponentProps<typeof FontAwesome>['name'];
+
+const brandIcon = require('../assets/images/permutapp-app-icon.png');
+const brandBanner = require('../assets/images/permutapp-brand-banner.png');
 
 interface BrandMarkProps {
   size?: 'sm' | 'md' | 'lg';
@@ -10,11 +13,18 @@ interface BrandMarkProps {
 
 export function BrandMark({ size = 'md' }: BrandMarkProps) {
   const boxSize = size === 'lg' ? 'w-20 h-20 rounded-3xl' : size === 'sm' ? 'w-11 h-11 rounded-2xl' : 'w-16 h-16 rounded-3xl';
-  const iconSize = size === 'lg' ? 34 : size === 'sm' ? 18 : 26;
 
   return (
-    <View className={`${boxSize} bg-brand-800 items-center justify-center border border-brand-700`}>
-      <FontAwesome name="refresh" size={iconSize} color="#d1fae5" />
+    <View className={`${boxSize} bg-white items-center justify-center overflow-hidden`}>
+      <Image source={brandIcon} className="w-full h-full" resizeMode="cover" />
+    </View>
+  );
+}
+
+export function BrandBanner() {
+  return (
+    <View className="w-full rounded-3xl bg-white overflow-hidden border border-neutral-100">
+      <Image source={brandBanner} className="w-full h-32" resizeMode="contain" />
     </View>
   );
 }

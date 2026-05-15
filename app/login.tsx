@@ -28,7 +28,7 @@ import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AuthLayout from '../layouts/AuthLayout';
-import { BrandMark } from '../components/ui';
+import { BrandBanner } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 import { ApiError } from '../services/api';
 
@@ -132,11 +132,8 @@ export default function Login() {
           showsVerticalScrollIndicator={false}
         >
           {/* ── Logo móvil ── */}
-          <View className="items-center mb-10 md:hidden">
-            <BrandMark />
-            <Text className="text-brand-900 text-xl font-bold tracking-tight">
-              Permutapp
-            </Text>
+          <View className="mb-8 md:hidden">
+            <BrandBanner />
           </View>
 
           {/* ── Encabezado ── */}

@@ -6,7 +6,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { ReactNode } from 'react';
 import { Text, View } from 'react-native';
 
-import { BrandMark } from '../components/ui';
+import { BrandBanner } from '../components/ui';
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -20,13 +20,9 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
         <View className="absolute left-0 bottom-0 right-0 h-44 bg-teal-900 opacity-60" />
 
         <View className="z-10 max-w-md">
-          <View className="items-center mb-8">
-            <BrandMark size="lg" />
+          <View className="mb-8">
+            <BrandBanner />
           </View>
-
-          <Text className="text-white text-5xl font-bold mb-4 text-center">
-            Permutapp
-          </Text>
           <Text className="text-brand-100 text-lg text-center leading-7">
             Intercambia objetos con confianza, reutiliza recursos y coordina encuentros seguros dentro de tu comunidad.
           </Text>

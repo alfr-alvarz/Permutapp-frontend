@@ -4,7 +4,7 @@ import { Href, useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import RequireAuth from '@/components/RequireAuth';
-import { BrandMark, EmptyState, InfoBanner, ProductCard, SectionHeader } from '@/components/ui';
+import { BrandBanner, BrandMark, EmptyState, InfoBanner, ProductCard, SectionHeader } from '@/components/ui';
 import { useAuth } from '../../context/AuthContext';
 import { obtenerProductos, Producto } from '../../services/api';
 
@@ -70,6 +70,10 @@ export default function HomeScreen() {
             </TouchableOpacity>
           )}
         </View>
+      </View>
+
+      <View className="px-5 mt-5">
+        <BrandBanner />
       </View>
 
       <View className="mx-5 mt-5 bg-brand-900 rounded-3xl p-6 overflow-hidden">
