@@ -1,5 +1,12 @@
 import React, { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react';
-import { login as apiLogin, register as apiRegister, RegisterPayload } from '../services/api';
+import {
+  LocalImageFile,
+  RegisterPayload,
+  VerificacionIdentidad,
+  login as apiLogin,
+  register as apiRegister,
+  verificarIdentidad as apiVerificarIdentidad,
+} from '../services/api';
 import { deleteSessionItem, getSessionItem, setSessionItem } from '../services/sessionStorage';
 
 export interface User {
@@ -8,6 +15,7 @@ export interface User {
   name: string;
   avatarUrl?: string;
   biometricVerified: boolean;
+  identityStatus?: VerificacionIdentidad['ver_estado'] | null;
 }
 
 interface AuthState {
@@ -22,7 +30,7 @@ interface AuthContextValue extends AuthState {
   login: (email: string, password: string) => Promise<void>;
   register: (payload: RegisterPayload) => Promise<void>;
   logout: () => void;
-  verifyBiometric: () => Promise<void>;
+  verifyIdentity: (carnet: LocalImageFile, selfie: LocalImageFile) => Promise<VerificacionIdentidad>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -32,6 +40,16 @@ const AUTH_USER_KEY = 'permutapp.auth.user';
 
 interface AuthProviderProps {
   children: ReactNode;
+}
+
+function mapUsuarioToUser(usuario: import('../services/api').Usuario): User {
+  return {
+    id: String(usuario.usu_id),
+    email: usuario.usu_email,
+    name: `${usuario.usu_pri_nombre} ${usuario.usu_pri_apellido}`.trim(),
+    biometricVerified: usuario.usu_identidad_verificada,
+    identityStatus: usuario.usu_identidad_verificada ? 'APROBADA' : null,
+  };
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
@@ -100,12 +118,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setState((prev) => ({ ...prev, isLoading: true }));
     try {
       const response = await apiLogin({ email: email.trim().toLowerCase(), password });
-      const user: User = {
-        id: String(response.usuario.usu_id),
-        email: response.usuario.usu_email,
-        name: `${response.usuario.usu_pri_nombre} ${response.usuario.usu_pri_apellido}`.trim(),
-        biometricVerified: false,
-      };
+      const user = mapUsuarioToUser(response.usuario);
       await persistSession(response.token, user);
       setState({
         user,
@@ -128,12 +141,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         usu_dvrun: payload.usu_dvrun.trim().toUpperCase(),
         usu_email: payload.usu_email.trim().toLowerCase(),
       });
-      const user: User = {
-        id: String(response.usuario.usu_id),
-        email: response.usuario.usu_email,
-        name: `${response.usuario.usu_pri_nombre} ${response.usuario.usu_pri_apellido}`.trim(),
-        biometricVerified: false,
-      };
+      const user = mapUsuarioToUser(response.usuario);
       await persistSession(response.token, user);
       setState({
         user,
@@ -159,18 +167,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
     });
   }, [clearSession]);
 
-  const verifyBiometric = useCallback(async () => {
+  const verifyIdentity = useCallback(async (carnet: LocalImageFile, selfie: LocalImageFile) => {
+    if (!state.user || !state.token) {
+      throw new Error('Debes iniciar sesión para verificar tu identidad.');
+    }
+
     setState((prev) => ({ ...prev, isLoading: true }));
     try {
-      const updatedUser = state.user ? { ...state.user, biometricVerified: true } : null;
-      if (updatedUser && state.token) {
-        await persistSession(state.token, updatedUser);
-      }
+      const result = await apiVerificarIdentidad({
+        usuarioId: Number(state.user.id),
+        carnet,
+        selfie,
+        token: state.token,
+      });
+      const updatedUser = {
+        ...state.user,
+        biometricVerified: result.ver_estado === 'APROBADA',
+        identityStatus: result.ver_estado,
+      };
+      await persistSession(state.token, updatedUser);
       setState((prev) => ({
         ...prev,
         isLoading: false,
         user: updatedUser,
       }));
+      return result;
     } catch (error) {
       setState((prev) => ({ ...prev, isLoading: false }));
       throw error;
@@ -178,7 +199,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [persistSession, state.token, state.user]);
 
   return (
-    <AuthContext.Provider value={{ ...state, login, register, logout, verifyBiometric }}>
+    <AuthContext.Provider value={{ ...state, login, register, logout, verifyIdentity }}>
       {children}
     </AuthContext.Provider>
   );

@@ -3,7 +3,7 @@
  *
  * Implementa un flujo de registro en dos pasos:
  * 1. Formulario de datos personales: nombre, email, contraseña, confirmar contraseña.
- * 2. Verificación biométrica: captura del rostro para validar identidad con Amazon Rekognition.
+ * 2. Verificación de identidad: carga de carnet y selfie para comparar rostro y RUN.
  *
  * La validación de campos es inline (debajo de cada input) con:
  * - Nombre: obligatorio.
@@ -25,9 +25,10 @@ import {
   ScrollView,
 } from 'react-native';
 import { useState } from 'react';
-import { useRouter } from 'expo-router';
+import { Href, useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AuthLayout from '../layouts/AuthLayout';
+import { BrandBanner } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 
 /** Expresión regular para validar el formato del correo electrónico. */
@@ -177,12 +178,10 @@ export default function Register() {
   /**
    * handleCaptureFace — Inicia la captura del rostro para verificación biométrica.
    *
-   * TODO: Implementar con expo-camera para capturar la foto del rostro
-   * y enviarla al microservicio de Spring Boot, que la procesará con
-   * Amazon Rekognition para validar la identidad del usuario.
+   * Envía al usuario al flujo real de verificación de identidad.
    */
   const handleCaptureFace = () => {
-    router.replace('/(tabs)');
+    router.replace('/verify-identity' as Href);
   };
 
   /**
@@ -207,14 +206,12 @@ export default function Register() {
     return (
       <AuthLayout>
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24 }}
           showsVerticalScrollIndicator={false}
         >
           {/* Logo móvil */}
-          <View className="items-center mb-10 md:hidden">
-            <View className="w-16 h-16 rounded-2xl bg-brand-800 items-center justify-center">
-              <Text className="text-white text-3xl">♻</Text>
-            </View>
+          <View className="mb-8 md:hidden">
+            <BrandBanner />
           </View>
 
           {/* Icono central */}
@@ -226,8 +223,8 @@ export default function Register() {
               Verifica tu identidad
             </Text>
             <Text className="text-neutral-500 text-sm text-center leading-5 max-w-xs">
-              Para tu seguridad y la de la comunidad, necesitamos verificar tu rostro
-              mediante reconocimiento facial.
+              Para tu seguridad y la de la comunidad, compararemos tu selfie con el carnet
+              y validaremos el RUN mediante OCR.
             </Text>
           </View>
 
@@ -238,7 +235,7 @@ export default function Register() {
                 <Text className="text-brand-800 text-xs font-bold">1</Text>
               </View>
               <Text className="text-neutral-700 text-sm flex-1">
-                Coloca tu rostro dentro del marco
+                Sube una foto clara de tu carnet
               </Text>
             </View>
             <View className="flex-row items-center mb-3">
@@ -246,7 +243,7 @@ export default function Register() {
                 <Text className="text-brand-800 text-xs font-bold">2</Text>
               </View>
               <Text className="text-neutral-700 text-sm flex-1">
-                Asegúrate de tener buena iluminación
+                Toma una selfie con buena iluminación
               </Text>
             </View>
             <View className="flex-row items-center">
@@ -254,7 +251,7 @@ export default function Register() {
                 <Text className="text-brand-800 text-xs font-bold">3</Text>
               </View>
               <Text className="text-neutral-700 text-sm flex-1">
-                No uses lentes de sol ni cubrebocas
+                El RUN del carnet debe coincidir con tu registro
               </Text>
             </View>
           </View>
@@ -267,12 +264,12 @@ export default function Register() {
           >
             <FontAwesome name="camera" size={18} color="#fff" />
             <Text className="text-white font-bold text-base ml-3">
-              Abrir cámara
+              Verificar ahora
             </Text>
           </TouchableOpacity>
 
           <Text className="text-neutral-400 text-xs text-center mb-6 leading-4">
-            Tecnología de Amazon Rekognition · Datos protegidos
+            Amazon Rekognition + OCR · Datos protegidos
           </Text>
 
           {/* Botón: Verificar más tarde */}
@@ -310,26 +307,21 @@ export default function Register() {
       >
         <ScrollView
           className="flex-1"
-          contentContainerStyle={{ flexGrow: 1, paddingTop: 40, paddingBottom: 40 }}
+          contentContainerStyle={{ flexGrow: 1, paddingTop: 40, paddingBottom: 40, paddingHorizontal: 24 }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator
         >
           {/* Logo móvil */}
-          <View className="items-center mb-10 md:hidden">
-            <View className="w-16 h-16 rounded-2xl bg-brand-800 items-center justify-center mb-4">
-              <Text className="text-white text-3xl">♻</Text>
-            </View>
-            <Text className="text-brand-900 text-xl font-bold tracking-tight">
-              Permutapp
-            </Text>
+          <View className="mb-8 md:hidden">
+            <BrandBanner />
           </View>
 
           {/* Encabezado */}
           <Text className="text-3xl font-bold text-neutral-900 mb-1">
-            Crear cuenta
+            Crear cuenta segura
           </Text>
           <Text className="text-neutral-500 mb-8 text-base leading-6">
-            Únete a la comunidad de intercambio
+            Únete a una comunidad de intercambio circular y verificada
           </Text>
 
           {errors.general ? (
