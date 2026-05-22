@@ -90,7 +90,7 @@ function resolveLocalApiUrl(url: string): string {
 
 const API_BASE_URL = resolveLocalApiUrl(process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:5001');
 const PRODUCTOS_API_BASE_URL = resolveLocalApiUrl(process.env.EXPO_PUBLIC_PRODUCTOS_API_BASE_URL ?? 'http://localhost:5050');
-const PUBLICACIONES_API_BASE_URL = resolveLocalApiUrl(process.env.EXPO_PUBLIC_PUBLICACIONES_API_BASE_URL ?? 'http://localhost:6001');
+const PUBLICACIONES_API_BASE_URL = resolveLocalApiUrl(process.env.EXPO_PUBLIC_PUBLICACIONES_API_BASE_URL ?? 'http://localhost:6000');
 
 function getServiceName(baseUrl: string): string {
   if (baseUrl === API_BASE_URL) {
@@ -292,17 +292,19 @@ export function obtenerPublicacionPorId(idPublicacion: number): Promise<Publicac
   return request<Publicacion>(PUBLICACIONES_API_BASE_URL, `/publicacion/${idPublicacion}`);
 }
 
-export function crearPublicacion(payload: CrearPublicacionPayload): Promise<Publicacion> {
+export function crearPublicacion(payload: CrearPublicacionPayload, token?: string): Promise<Publicacion> {
   return request<Publicacion, CrearPublicacionPayload>(PUBLICACIONES_API_BASE_URL, '/publicacion', {
     method: 'POST',
     body: payload,
+    token,
   });
 }
 
-export function crearProducto(payload: CrearProductoPayload): Promise<Producto> {
+export function crearProducto(payload: CrearProductoPayload, token?: string): Promise<Producto> {
   return request<Producto, CrearProductoPayload>(PRODUCTOS_API_BASE_URL, '/producto', {
     method: 'POST',
     body: payload,
+    token,
   });
 }
 

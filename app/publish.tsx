@@ -20,7 +20,7 @@ interface PublishErrors {
 
 export default function PublishScreen() {
   const router = useRouter();
-  const { user, isAuthenticated, isRestoring } = useAuth();
+  const { user, token, isAuthenticated, isRestoring } = useAuth();
   const [titulo, setTitulo] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [nombre, setNombre] = useState('');
@@ -47,7 +47,7 @@ export default function PublishScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!isAuthenticated || !user) {
+    if (!isAuthenticated || !user || !token) {
       router.replace('/login');
       return;
     }
@@ -60,13 +60,13 @@ export default function PublishScreen() {
         publ_titulo: titulo.trim(),
         publ_descripcion: descripcion.trim(),
         usu_id: Number(user.id),
-      });
+      }, token);
       const producto = await crearProducto({
         prod_nombre: nombre.trim(),
         prod_est: estado,
         prod_precio: Number(precio.replace(/\D/g, '')),
         publ_id: publicacion.publ_id,
-      });
+      }, token);
       router.replace(`/product/${producto.prod_id}` as Href);
     } catch (error) {
       setErrors((prev) => ({

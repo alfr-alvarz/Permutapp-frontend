@@ -1,17 +1,8 @@
 /**
- * login.tsx — Pantalla de inicio de sesión de Permutapp.
+ * Pantalla de inicio de sesión.
  *
- * Ofrece dos métodos de autenticación:
- * 1. Autenticación tradicional: correo electrónico + contraseña.
- * 2. Verificación biométrica facial: a través de Amazon Rekognition (vía Spring Boot).
- *
- * También permite:
- * - Continuar como invitado (navega a las pestañas principales).
- * - Navegar a la pantalla de registro (/register).
- *
- * La validación de campos es inline (debajo de cada input) con:
- * - Email: formato válido con regex.
- * - Contraseña: mínimo 8 caracteres + al menos 1 carácter especial.
+ * Este flujo solo autentica con correo y contraseña. La verificación con carnet,
+ * selfie y OCR se realiza después desde registro o perfil, cuando ya existe una cuenta.
  */
 
 import {
@@ -108,16 +99,6 @@ export default function Login() {
           : 'Credenciales incorrectas. Inténtalo de nuevo.',
       });
     }
-  };
-
-  /**
-   * handleBiometricLogin — Inicia el flujo de verificación biométrica.
-   *
-   * TODO: Implementar la captura de rostro con expo-camera y enviar
-   * la imagen al microservicio de Spring Boot para validar con Amazon Rekognition.
-   */
-  const handleBiometricLogin = () => {
-    console.log('Iniciar flujo biométrico con Amazon Rekognition');
   };
 
   return (
@@ -244,34 +225,6 @@ export default function Login() {
               <Text className="text-white font-bold text-base">Continuar</Text>
             )}
           </TouchableOpacity>
-
-          {/* ── Separador ── */}
-          <View className="flex-row items-center my-5">
-            <View className="flex-1 h-px bg-neutral-200" />
-            <Text className="mx-4 text-neutral-400 text-xs uppercase tracking-widest">
-              o bien
-            </Text>
-            <View className="flex-1 h-px bg-neutral-200" />
-          </View>
-
-          {/* ── Botón: Verificación Biométrica ── */}
-          <TouchableOpacity
-            className="w-full border border-neutral-200 rounded-2xl h-14 flex-row items-center justify-center mb-4 bg-neutral-50"
-            onPress={handleBiometricLogin}
-            disabled={isLoading}
-            activeOpacity={0.8}
-          >
-            <View className="w-8 h-8 rounded-full bg-brand-100 items-center justify-center mr-3">
-              <FontAwesome name="camera" size={14} color="#047857" />
-            </View>
-            <Text className="text-neutral-800 font-semibold text-sm">
-              Verificación facial
-            </Text>
-          </TouchableOpacity>
-
-          <Text className="text-neutral-400 text-xs text-center mb-8 leading-4">
-            Validación de identidad con Amazon Rekognition
-          </Text>
 
           {/* ── Enlace: Continuar como invitado ── */}
           <TouchableOpacity
