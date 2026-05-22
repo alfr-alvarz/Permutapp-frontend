@@ -163,6 +163,8 @@ export default function VerifyIdentityScreen() {
           <View className="bg-white border border-neutral-100 rounded-3xl p-4 mt-3">
             <Text className="text-neutral-900 font-bold mb-2">Resultado</Text>
             <Text className="text-neutral-500 text-sm">RUN detectado: {result.ver_ocr_run_detectado || 'No detectado'}</Text>
+            <Text className="text-neutral-500 text-sm mt-1">Nombre detectado: {result.ver_ocr_nombre_detectado || 'No confirmado'}</Text>
+            <Text className="text-neutral-500 text-sm mt-1">Coincidencia de nombre: {result.ver_nombre_match ? 'Si' : 'No confirmada'}</Text>
           </View>
         </View>
       ) : null}

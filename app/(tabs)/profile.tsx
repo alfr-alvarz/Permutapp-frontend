@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { Href, useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -5,9 +6,42 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { BrandMark, InfoBanner, PrimaryButton, SectionHeader } from '@/components/ui';
 import { useAuth } from '../../context/AuthContext';
 
+function getIdentityBadge(status: string | null | undefined, verified: boolean): string {
+  if (verified || status === 'APROBADA') return 'Cuenta verificada';
+  if (status === 'REVISION_MANUAL') return 'En revisión manual';
+  if (status === 'RECHAZADA') return 'Verificación rechazada';
+  return 'Verificación pendiente';
+}
+
+function getIdentityMessage(status: string | null | undefined, verified: boolean): string {
+  if (verified || status === 'APROBADA') return 'Tu cuenta ya cuenta con verificación de rostro, RUN y nombre.';
+  if (status === 'REVISION_MANUAL') return 'Tu verificación quedó pendiente para que el equipo revise los datos del carnet.';
+  if (status === 'RECHAZADA') return 'La verificación fue rechazada. Puedes intentar nuevamente con imágenes claras.';
+  return 'Completa la verificación con carnet y selfie para aumentar la confianza al permutar.';
+}
+
+function getIdentityTone(status: string | null | undefined, verified: boolean): 'brand' | 'amber' | 'red' {
+  if (verified || status === 'APROBADA') return 'brand';
+  if (status === 'RECHAZADA') return 'red';
+  return 'amber';
+}
+
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, token, isAuthenticated, logout } = useAuth();
+  const { user, token, isAuthenticated, logout, refreshIdentityStatus } = useAuth();
+  const [identityError, setIdentityError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
+      return;
+    }
+
+    refreshIdentityStatus()
+      .then(() => setIdentityError(null))
+      .catch(() => {
+        setIdentityError('No se pudo actualizar el estado de verificación.');
+      });
+  }, [isAuthenticated, refreshIdentityStatus, user?.id]);
 
   if (!isAuthenticated || !user) {
     return (
@@ -40,7 +74,7 @@ export default function ProfileScreen() {
             <Text className="text-white text-xl font-bold" numberOfLines={2}>{user.name}</Text>
             <Text className="text-brand-100 text-sm mt-1" numberOfLines={1}>{user.email}</Text>
             <View className="self-start bg-white/10 rounded-full px-3 py-1 mt-3">
-              <Text className="text-brand-100 text-xs font-bold">{user.biometricVerified ? 'Cuenta verificada' : 'Verificación pendiente'}</Text>
+              <Text className="text-brand-100 text-xs font-bold">{getIdentityBadge(user.identityStatus, user.biometricVerified)}</Text>
             </View>
           </View>
         </View>
@@ -50,9 +84,17 @@ export default function ProfileScreen() {
         <InfoBanner
           icon={user.biometricVerified ? 'check-circle' : 'shield'}
           title="Verificación de identidad"
-          body={user.biometricVerified ? 'Tu cuenta ya cuenta con verificación de rostro y RUN.' : 'Completa la verificación con carnet y selfie para aumentar la confianza al permutar.'}
-          tone={user.biometricVerified ? 'brand' : 'amber'}
+          body={getIdentityMessage(user.identityStatus, user.biometricVerified)}
+          tone={getIdentityTone(user.identityStatus, user.biometricVerified)}
         />
+        {identityError ? (
+          <InfoBanner
+            icon="exclamation-circle"
+            title="Estado no actualizado"
+            body={identityError}
+            tone="amber"
+          />
+        ) : null}
         <InfoBanner
           icon="key"
           title="Sesión segura"

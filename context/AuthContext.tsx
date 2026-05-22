@@ -3,7 +3,9 @@ import {
   LocalImageFile,
   RegisterPayload,
   VerificacionIdentidad,
+  ApiError,
   login as apiLogin,
+  obtenerEstadoIdentidad as apiObtenerEstadoIdentidad,
   register as apiRegister,
   verificarIdentidad as apiVerificarIdentidad,
 } from '../services/api';
@@ -31,6 +33,7 @@ interface AuthContextValue extends AuthState {
   register: (payload: RegisterPayload) => Promise<void>;
   logout: () => void;
   verifyIdentity: (carnet: LocalImageFile, selfie: LocalImageFile) => Promise<VerificacionIdentidad>;
+  refreshIdentityStatus: () => Promise<VerificacionIdentidad | null>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -167,6 +170,43 @@ export function AuthProvider({ children }: AuthProviderProps) {
     });
   }, [clearSession]);
 
+
+  const refreshIdentityStatus = useCallback(async () => {
+    const usuarioId = state.user?.id;
+    const token = state.token;
+    if (!usuarioId || !token) {
+      return null;
+    }
+
+    try {
+      const result = await apiObtenerEstadoIdentidad(Number(usuarioId), token);
+      let updatedUser: User | null = null;
+      setState((prev) => {
+        if (!prev.user || prev.user.id !== usuarioId) {
+          return prev;
+        }
+        updatedUser = {
+          ...prev.user,
+          biometricVerified: result.ver_estado === 'APROBADA',
+          identityStatus: result.ver_estado,
+        };
+        return {
+          ...prev,
+          user: updatedUser,
+        };
+      });
+      if (updatedUser) {
+        await persistSession(token, updatedUser);
+      }
+      return result;
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  }, [persistSession, state.token, state.user?.id]);
+
   const verifyIdentity = useCallback(async (carnet: LocalImageFile, selfie: LocalImageFile) => {
     if (!state.user || !state.token) {
       throw new Error('Debes iniciar sesión para verificar tu identidad.');
@@ -199,7 +239,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [persistSession, state.token, state.user]);
 
   return (
-    <AuthContext.Provider value={{ ...state, login, register, logout, verifyIdentity }}>
+    <AuthContext.Provider value={{ ...state, login, register, logout, verifyIdentity, refreshIdentityStatus }}>
       {children}
     </AuthContext.Provider>
   );

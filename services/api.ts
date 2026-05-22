@@ -26,9 +26,12 @@ export interface VerificacionIdentidad {
   ver_ocr_run_detectado?: string | null;
   ver_ocr_nombre_detectado?: string | null;
   ver_run_match: boolean;
+  ver_nombre_match?: boolean | null;
   ver_ocr_provider: string;
   ver_fecha: string;
   ver_observacion?: string | null;
+  ver_revisor_email?: string | null;
+  ver_fecha_revision?: string | null;
 }
 
 export interface LocalImageFile {
@@ -332,4 +335,26 @@ export function verificarIdentidad(payload: {
 
 export function obtenerEstadoIdentidad(usuarioId: number, token: string): Promise<VerificacionIdentidad> {
   return request<VerificacionIdentidad>(API_BASE_URL, `/identidad/estado/${usuarioId}`, { token });
+}
+
+
+export interface ResolverRevisionIdentidadPayload {
+  estado: 'APROBADA' | 'RECHAZADA';
+  observacion?: string;
+}
+
+export function listarRevisionManualIdentidad(token: string): Promise<VerificacionIdentidad[]> {
+  return request<VerificacionIdentidad[]>(API_BASE_URL, '/identidad/revision-manual', { token });
+}
+
+export function resolverRevisionManualIdentidad(
+  verificacionId: number,
+  payload: ResolverRevisionIdentidadPayload,
+  token: string,
+): Promise<VerificacionIdentidad> {
+  return request<VerificacionIdentidad, ResolverRevisionIdentidadPayload>(
+    API_BASE_URL,
+    `/identidad/revision-manual/${verificacionId}/resolver`,
+    { method: 'POST', body: payload, token },
+  );
 }
