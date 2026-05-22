@@ -1,175 +1,164 @@
-#  Permutapp — Frontend
+# PermutApp Frontend
 
-**Permutapp** es un proyecto de título desarrollado por estudiantes de **Duoc UC** que consiste en una plataforma móvil enfocada en la **economía circular** a través del intercambio y permuta segura de objetos de segunda mano.
+Frontend movil y web de PermutApp construido con Expo, React Native, Expo Router y TypeScript.
 
-Su objetivo principal es prolongar el ciclo de vida de los productos para reducir la huella ecológica y mitigar barreras económicas como la inflación, diferenciándose de otras plataformas al actuar como un mediador que garantiza la seguridad mediante la recomendación de "puntos de encuentro seguros" y un sistema de **validación de identidad biométrica** (Amazon Rekognition).
+La app consume directamente tres microservicios Spring Boot:
 
----
+- `ServicioUsuarios`: registro, login, JWT y verificacion de identidad.
+- `ServicioPublicaciones`: creacion y consulta de publicaciones.
+- `ServicioProducto`: creacion y consulta de productos.
 
-## Arquitectura General
+## Requisitos
 
-```
-Frontend (Expo / React Native)  →  Spring Boot (API Gateway)  →  Supabase (PostgreSQL)
-                                         ↕
-                                  Amazon Rekognition
-                                (Verificación biométrica)
-```
+- Node.js 18 o superior
+- npm
+- Expo Go o Android Studio/Xcode si se quiere probar en emulador
+- Backend corriendo localmente o desplegado
 
-- **Frontend:** Expo + React Native + Expo Router (navegación basada en archivos).
-- **Estilos:** Tailwind CSS vía NativeWind (clases de utilidad como `className="bg-brand-700 rounded-2xl"`).
-- **Backend:** Microservicios en Spring Boot (Java) que actúan como API Gateway.
-- **Base de datos:** PostgreSQL alojada en Supabase.
-- **Verificación biométrica:** Amazon Rekognition integrado vía Spring Boot.
-
----
-
-##  Stack Tecnológico
-
-| Tecnología | Versión | Uso |
-|---|---|---|
-| Expo | SDK 52 | Framework base para desarrollo multiplataforma |
-| React Native | 0.76.x | Motor de renderizado nativo |
-| Expo Router | v4 | Navegación basada en archivos (file-based routing) |
-| NativeWind | v4 | Tailwind CSS para React Native |
-| TypeScript | 5.x | Tipado estático para mayor robustez |
-| FontAwesome | — | Íconos vectoriales |
-
----
-
-##  Estructura del Proyecto
-
-```
-Permutapp-frontend/
-├── app/                        # Pantallas (Expo Router - file-based routing)
-│   ├── _layout.tsx             # Layout raíz: carga fuentes, AuthProvider, Stack de rutas
-│   ├── +html.tsx               # Plantilla HTML para la versión web
-│   ├── +not-found.tsx          # Pantalla 404
-│   ├── login.tsx               # Pantalla de inicio de sesión
-│   ├── register.tsx            # Pantalla de registro (2 pasos + verificación biométrica)
-│   ├── modal.tsx               # Pantalla modal genérica
-│   └── (tabs)/                 # Grupo de pestañas principales
-│       ├── _layout.tsx         # Configuración del Tab Bar (Inicio, Catálogo)
-│       ├── index.tsx           # Pestaña Inicio: banner hero, categorías, productos
-│       └── two.tsx             # Pestaña Catálogo: búsqueda, filtros, listado
-│
-├── components/                 # Componentes reutilizables
-│   ├── RequireAuth.tsx         # Wrapper que protege acciones (redirige a login si es invitado)
-│   ├── Themed.tsx              # Componentes Text/View con soporte para tema claro/oscuro
-│   ├── EditScreenInfo.tsx      # Componente de info de pantalla (plantilla Expo)
-│   └── useColorScheme.tsx      # Hook para detectar el esquema de color del dispositivo
-│
-├── context/                    # Contextos de React (estado global)
-│   └── AuthContext.tsx         # Contexto de autenticación: login, logout, verificación biométrica
-│
-├── layouts/                    # Layouts reutilizables
-│   ├── AuthLayout.tsx          # Layout de autenticación: 2 columnas en PC, full en móvil
-│   └── MainLayout.tsx          # Layout principal: columna central con ancho máximo
-│
-├── assets/                     # Recursos estáticos (fuentes, imágenes)
-├── global.css                  # Archivo CSS de entrada para Tailwind (NativeWind)
-├── tailwind.config.js          # Configuración de Tailwind: paleta brand, rutas de escaneo
-├── metro.config.js             # Configuración de Metro Bundler + NativeWind
-├── babel.config.js             # Configuración de Babel + NativeWind
-├── tsconfig.json               # Configuración de TypeScript
-└── package.json                # Dependencias y scripts del proyecto
-```
-
----
-
-##  Instalación y Ejecución
-
-### Requisitos previos
-
-- [Node.js](https://nodejs.org/) v18 o superior
-- [npm](https://www.npmjs.com/) o [yarn](https://yarnpkg.com/)
-- [Expo CLI](https://docs.expo.dev/get-started/installation/) (se instala automáticamente con `npx`)
-
-### Pasos
+## Instalar dependencias
 
 ```bash
-# 1. Clonar el repositorio
-git clone https://github.com/alfr-alvarz/Permutapp-frontend.git
-cd Permutapp-frontend
-
-# 2. Instalar dependencias
 npm install
-
-# 3. Iniciar el servidor de desarrollo
-npx expo start
 ```
 
-Esto abre el panel de Expo. Desde ahí puedes:
-- Presionar `w` para abrir en el **navegador web**.
-- Escanear el QR con **Expo Go** en tu celular (iOS/Android).
-- Presionar `a` para abrir en un **emulador Android**.
-- Presionar `i` para abrir en un **simulador iOS** (solo macOS).
+## Variables de entorno
 
----
+Crear o revisar el archivo `.env` en la raiz del frontend.
 
-##  Flujo de Autenticación
+Para entorno local:
 
-### Modo Invitado
-Los usuarios pueden navegar libremente por el catálogo sin necesidad de crear una cuenta. Los botones de acción (Publicar, Permutar) están protegidos con el componente `<RequireAuth>`, que redirige al login automáticamente.
+```env
+EXPO_PUBLIC_API_BASE_URL=http://localhost:5001
+EXPO_PUBLIC_PRODUCTOS_API_BASE_URL=http://localhost:5050
+EXPO_PUBLIC_PUBLICACIONES_API_BASE_URL=http://localhost:6000
+```
 
-### Login
-- Autenticación tradicional con **email + contraseña**.
-- Opción de **verificación facial** con Amazon Rekognition.
-- Validación inline de campos:
-  - Email: formato válido (regex).
-  - Contraseña: mínimo 8 caracteres + carácter especial.
+Estas URLs apuntan a:
 
-### Registro (2 pasos)
-1. **Formulario:** nombre, email, contraseña, confirmar contraseña.
-2. **Verificación biométrica:** captura facial con instrucciones paso a paso. Puede omitirse y completarse después.
+- `5001`: ServicioUsuarios
+- `5050`: ServicioProducto
+- `6000`: ServicioPublicaciones
 
----
+En Android Emulator, el codigo convierte automaticamente `localhost` y `127.0.0.1` a `10.0.2.2`, por lo que se pueden mantener las URLs anteriores en `.env`.
 
-##  Paleta de Colores (Brand)
+Cuando se despliegue, estas variables deben cambiar a las URLs reales del backend en Render.
 
-La identidad visual usa tonos **verde/esmeralda** que representan sustentabilidad y confianza:
+## Correr el proyecto
 
-| Token | Hex | Uso principal |
-|---|---|---|
-| `brand-50` | `#ecfdf5` | Fondos muy sutiles |
-| `brand-100` | `#d1fae5` | Fondos suaves (badges, alertas) |
-| `brand-200` | `#a7f3d0` | Bordes y acentos |
-| `brand-500` | `#10b981` | Color intermedio |
-| `brand-700` | `#047857` | **Botones principales** |
-| `brand-800` | `#065f46` | Fondos oscuros (branding, hero) |
+```bash
+npm run start
+```
 
----
+Tambien se puede correr directo por plataforma:
 
-##  Estado Actual
+```bash
+npm run android
+npm run ios
+npm run web
+```
 
-### ✅ Implementado
-- [x] Navegación con Expo Router (tabs + stack)
-- [x] Contexto de autenticación (AuthContext) con modo invitado
-- [x] Componente RequireAuth para proteger acciones
-- [x] Pantalla de Login con validación inline
-- [x] Pantalla de Registro en 2 pasos (formulario + verificación biométrica)
-- [x] Home con banner hero, categorías y productos
-- [x] Catálogo con búsqueda en tiempo real y filtros
-- [x] Diseño responsivo (móvil + web/PC)
-- [x] Paleta de colores personalizada (brand)
-- [x] Documentación en español de todo el código
+Con Expo abierto:
 
-###  Pendiente
-- [ ] Conectar AuthContext con los microservicios de Spring Boot
-- [ ] Implementar `expo-camera` para captura facial (Amazon Rekognition)
-- [ ] Persistencia de tokens de sesión (`expo-secure-store`)
-- [ ] Pantalla de perfil de usuario
-- [ ] Sistema de chat entre usuarios
-- [ ] Mapa con puntos de encuentro seguros (geolocalización)
-- [ ] Publicación de productos con imágenes
+- `w`: abre version web
+- `a`: abre Android Emulator
+- `i`: abre iOS Simulator en macOS
+- QR: abre en Expo Go desde celular
 
----
+## Validar TypeScript
 
-##  Equipo
+El proyecto no tiene script propio para typecheck, pero se puede ejecutar:
 
-Proyecto de título — **Duoc UC**
+```bash
+npx tsc --noEmit
+```
 
----
+## Flujo principal de la app
 
-##  Licencia
+1. Registro de usuario.
+2. Login con email y contrasena.
+3. Perfil con estado de verificacion de identidad.
+4. Verificacion de identidad con foto de carnet y selfie.
+5. Creacion de publicacion.
+6. Creacion de producto asociado a la publicacion.
+7. Listado y detalle de productos.
 
-Este proyecto es parte de un trabajo académico y no tiene licencia de distribución pública.
+## Verificacion de identidad
+
+La pantalla `verify-identity` permite subir una foto del carnet y tomar una selfie.
+
+El frontend envia ambas imagenes a `ServicioUsuarios` mediante `multipart/form-data`.
+
+El backend responde con un estado:
+
+- `APROBADA`
+- `RECHAZADA`
+- `REVISION_MANUAL`
+- `PENDIENTE`
+
+La app muestra el resultado en pantalla y actualiza el perfil con el estado real consultado al backend.
+
+## Rutas principales
+
+```txt
+/login                 Inicio de sesion
+/register              Registro de usuario
+/verify-identity       Verificacion de identidad
+/publish               Crear publicacion y producto
+/product/[id]          Detalle de producto
+/(tabs)                Navegacion principal
+/(tabs)/index          Inicio
+/(tabs)/two            Catalogo
+/(tabs)/profile        Perfil
+```
+
+## Servicios usados
+
+Archivo principal de consumo API:
+
+```txt
+services/api.ts
+```
+
+Funciones importantes:
+
+- `login`
+- `register`
+- `verificarIdentidad`
+- `obtenerEstadoIdentidad`
+- `crearPublicacion`
+- `crearProducto`
+- `obtenerProductos`
+- `obtenerProductoPorId`
+- `listarRevisionManualIdentidad`
+- `resolverRevisionManualIdentidad`
+
+## Autenticacion
+
+El backend entrega un JWT al iniciar sesion o registrarse.
+
+El frontend guarda la sesion y envia el token en endpoints privados con:
+
+```http
+Authorization: Bearer TOKEN
+```
+
+## Estructura basica
+
+```txt
+app/                  Pantallas y rutas Expo Router
+components/           Componentes reutilizables
+context/              AuthContext y estado global de sesion
+services/             Cliente API y almacenamiento de sesion
+assets/               Imagenes y recursos estaticos
+tailwind.config.js    Configuracion de estilos
+```
+
+## Orden recomendado para probar local
+
+1. Levantar `ServicioUsuarios` en `http://localhost:5001`.
+2. Levantar `ServicioPublicaciones` en `http://localhost:6000`.
+3. Levantar `ServicioProducto` en `http://localhost:5050`.
+4. Iniciar Expo con `npm run start`.
+5. Registrar o iniciar sesion.
+6. Probar verificacion de identidad.
+7. Crear publicacion y producto.
