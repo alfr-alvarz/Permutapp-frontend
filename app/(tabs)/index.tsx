@@ -61,7 +61,7 @@ export default function HomeScreen() {
           </View>
 
           {isAuthenticated ? (
-            <TouchableOpacity className="w-11 h-11 rounded-2xl bg-white border border-neutral-100 items-center justify-center" onPress={logout} activeOpacity={0.75}>
+            <TouchableOpacity className="w-11 h-11 rounded-2xl bg-white border border-neutral-100 items-center justify-center" onPress={() => router.push('/(tabs)/profile' as Href)} activeOpacity={0.75}>
               <Text className="text-brand-700 font-bold text-base">{user?.name?.charAt(0) ?? 'U'}</Text>
             </TouchableOpacity>
           ) : (

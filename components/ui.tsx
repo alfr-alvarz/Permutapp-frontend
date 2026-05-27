@@ -12,11 +12,26 @@ interface BrandMarkProps {
 }
 
 export function BrandMark({ size = 'md' }: BrandMarkProps) {
-  const boxSize = size === 'lg' ? 'w-20 h-20 rounded-3xl' : size === 'sm' ? 'w-11 h-11 rounded-2xl' : 'w-16 h-16 rounded-3xl';
+  const dim = size === 'lg' ? 80 : size === 'sm' ? 44 : 64;
+  const radius = size === 'sm' ? 16 : 24;
 
   return (
-    <View className={`${boxSize} bg-white items-center justify-center overflow-hidden`}>
-      <Image source={brandIcon} className="w-full h-full" resizeMode="cover" />
+    <View
+      style={{
+        width: dim,
+        height: dim,
+        borderRadius: radius,
+        backgroundColor: '#fff',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+      }}
+    >
+      <Image
+        source={brandIcon}
+        style={{ width: dim, height: dim }}
+        resizeMode="cover"
+      />
     </View>
   );
 }
@@ -24,7 +39,11 @@ export function BrandMark({ size = 'md' }: BrandMarkProps) {
 export function BrandBanner() {
   return (
     <View className="w-full rounded-3xl bg-white overflow-hidden border border-neutral-100">
-      <Image source={brandBanner} className="w-full h-32" resizeMode="contain" />
+      <Image
+        source={brandBanner}
+        style={{ width: '100%', aspectRatio: 2.9 }}
+        resizeMode="contain"
+      />
     </View>
   );
 }

@@ -7,7 +7,7 @@ import { BrandMark, InfoBanner, PrimaryButton, SectionHeader } from '@/component
 import { useAuth } from '../../context/AuthContext';
 
 function getIdentityBadge(status: string | null | undefined, verified: boolean): string {
-  if (verified || status === 'APROBADA') return 'Cuenta verificada';
+  if (verified || status === 'APROBADA') return 'Perfil verificado';
   if (status === 'REVISION_MANUAL') return 'En revisión manual';
   if (status === 'RECHAZADA') return 'Verificación rechazada';
   return 'Verificación pendiente';
@@ -71,7 +71,12 @@ export default function ProfileScreen() {
             <Text className="text-white font-bold text-3xl">{user.name.charAt(0).toUpperCase()}</Text>
           </View>
           <View className="flex-1">
-            <Text className="text-white text-xl font-bold" numberOfLines={2}>{user.name}</Text>
+            <View className="flex-row items-center flex-wrap gap-2">
+              <Text className="text-white text-xl font-bold">{user.name}</Text>
+              {(user.biometricVerified || user.identityStatus === 'APROBADA') && (
+                <FontAwesome name="check-circle" size={18} color="#34d399" />
+              )}
+            </View>
             <Text className="text-brand-100 text-sm mt-1" numberOfLines={1}>{user.email}</Text>
             <View className="self-start bg-white/10 rounded-full px-3 py-1 mt-3">
               <Text className="text-brand-100 text-xs font-bold">{getIdentityBadge(user.identityStatus, user.biometricVerified)}</Text>

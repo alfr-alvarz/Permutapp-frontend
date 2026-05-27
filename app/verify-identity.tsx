@@ -93,6 +93,11 @@ export default function VerifyIdentityScreen() {
     try {
       const verification = await verifyIdentity(carnet, selfie);
       setResult(verification);
+      if (verification.ver_estado === 'APROBADA') {
+        setTimeout(() => {
+          router.replace('/(tabs)/profile' as Href);
+        }, 1500);
+      }
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'No fue posible verificar la identidad.');
     }

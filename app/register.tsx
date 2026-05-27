@@ -347,8 +347,13 @@ export default function Register() {
                 placeholder="12345678"
                 placeholderTextColor="#a3a3a3"
                 value={run}
-                onChangeText={(t) => { setRun(t); clearError('usu_numrun'); }}
+                onChangeText={(t) => {
+                  const cleaned = t.replace(/\D/g, '').slice(0, 8);
+                  setRun(cleaned);
+                  clearError('usu_numrun');
+                }}
                 keyboardType="number-pad"
+                maxLength={8}
                 editable={!isLoading}
               />
             </View>

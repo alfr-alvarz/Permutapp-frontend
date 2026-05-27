@@ -311,7 +311,12 @@ export function crearProducto(payload: CrearProductoPayload, token?: string): Pr
   });
 }
 
-export function verificarIdentidad(payload: {
+async function uriToBlob(uri: string): Promise<Blob> {
+  const response = await fetch(uri);
+  return response.blob();
+}
+
+export async function verificarIdentidad(payload: {
   usuarioId: number;
   carnet: LocalImageFile;
   selfie: LocalImageFile;
@@ -319,16 +324,26 @@ export function verificarIdentidad(payload: {
 }): Promise<VerificacionIdentidad> {
   const formData = new FormData();
   formData.append('usuarioId', String(payload.usuarioId));
-  formData.append('carnet', {
-    uri: payload.carnet.uri,
-    name: payload.carnet.name || getImageName(payload.carnet.uri, 'carnet.jpg'),
-    type: payload.carnet.type || 'image/jpeg',
-  } as unknown as Blob);
-  formData.append('selfie', {
-    uri: payload.selfie.uri,
-    name: payload.selfie.name || getImageName(payload.selfie.uri, 'selfie.jpg'),
-    type: payload.selfie.type || 'image/jpeg',
-  } as unknown as Blob);
+
+  if (Platform.OS === 'web') {
+    // On web, FormData needs real Blob/File objects
+    const carnetBlob = await uriToBlob(payload.carnet.uri);
+    const selfieBlob = await uriToBlob(payload.selfie.uri);
+    formData.append('carnet', carnetBlob, payload.carnet.name || getImageName(payload.carnet.uri, 'carnet.jpg'));
+    formData.append('selfie', selfieBlob, payload.selfie.name || getImageName(payload.selfie.uri, 'selfie.jpg'));
+  } else {
+    // On native, React Native accepts {uri, name, type} objects
+    formData.append('carnet', {
+      uri: payload.carnet.uri,
+      name: payload.carnet.name || getImageName(payload.carnet.uri, 'carnet.jpg'),
+      type: payload.carnet.type || 'image/jpeg',
+    } as unknown as Blob);
+    formData.append('selfie', {
+      uri: payload.selfie.uri,
+      name: payload.selfie.name || getImageName(payload.selfie.uri, 'selfie.jpg'),
+      type: payload.selfie.type || 'image/jpeg',
+    } as unknown as Blob);
+  }
 
   return multipartRequest<VerificacionIdentidad>(API_BASE_URL, '/identidad/verificar', formData, payload.token);
 }
