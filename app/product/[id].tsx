@@ -1,21 +1,26 @@
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ActivityIndicator, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Href, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import { EmptyState, InfoBanner, PrimaryButton } from '@/components/ui';
-import { obtenerProductoPorId, obtenerPublicacionPorId, Producto, Publicacion } from '../../services/api';
+import { ApiError, iniciarConversacion, obtenerProductoPorId, obtenerPublicacionPorId, Producto, Publicacion } from '../../services/api';
 import RequireAuth from '../../components/RequireAuth';
+import { useAuth } from '../../context/AuthContext';
 import MainLayout from '../../layouts/MainLayout';
 
 export default function ProductDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const idProducto = useMemo(() => Number(id), [id]);
+  const { user, token } = useAuth();
   const [producto, setProducto] = useState<Producto | null>(null);
   const [publicacion, setPublicacion] = useState<Publicacion | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreatingChat, setIsCreatingChat] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [publicacionError, setPublicacionError] = useState<string | null>(null);
+  const [chatError, setChatError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -30,14 +35,30 @@ export default function ProductDetailScreen() {
       try {
         setIsLoading(true);
         const data = await obtenerProductoPorId(idProducto);
-        const detallePublicacion = await obtenerPublicacionPorId(data.publ_id);
         if (mounted) {
           setProducto(data);
-          setPublicacion(detallePublicacion);
           setError(null);
+          setPublicacionError(null);
+        }
+
+        try {
+          const detallePublicacion = await obtenerPublicacionPorId(data.publ_id);
+          if (mounted) {
+            setPublicacion(detallePublicacion);
+          }
+        } catch {
+          if (mounted) {
+            setPublicacion(null);
+            setPublicacionError('La publicación asociada a este producto no está disponible. Publica un producto nuevo o revisa que exista la publicación relacionada.');
+          }
         }
       } catch {
-        if (mounted) setError('No fue posible cargar el detalle del producto.');
+        if (mounted) {
+          setProducto(null);
+          setPublicacion(null);
+          setPublicacionError(null);
+          setError('No fue posible cargar el detalle del producto.');
+        }
       } finally {
         if (mounted) setIsLoading(false);
       }
@@ -47,9 +68,42 @@ export default function ProductDetailScreen() {
     return () => { mounted = false; };
   }, [idProducto]);
 
+  const handleProponerPermuta = async () => {
+    if (!producto) {
+      return;
+    }
+
+    if (!publicacion) {
+      setChatError('No se puede iniciar una permuta porque la publicación asociada no está disponible.');
+      return;
+    }
+
+    if (!user || !token) {
+      router.push('/login');
+      return;
+    }
+
+    try {
+      setIsCreatingChat(true);
+      setChatError(null);
+      const conversacion = await iniciarConversacion({
+        publ_id: publicacion.publ_id,
+        interesado_id: Number(user.id),
+        mensaje_inicial: `Hola, me interesa ${producto.prod_nombre}. ¿Te gustaría coordinar una permuta?`,
+      }, token);
+      router.push(`/chat/${conversacion.conv_id}` as Href);
+    } catch (err) {
+      setChatError(err instanceof ApiError ? err.message : 'No fue posible iniciar la conversación.');
+    } finally {
+      setIsCreatingChat(false);
+    }
+  };
+
   const fechaPublicacion = publicacion?.publ_fech_creacion
     ? new Date(publicacion.publ_fech_creacion).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' })
     : null;
+
+  const esMiPublicacion = Boolean(user && publicacion && Number(user.id) === publicacion.publ_autor_id);
 
   return (
     <MainLayout>
@@ -70,11 +124,29 @@ export default function ProductDetailScreen() {
 
           {producto ? (
             <>
-              <View className="h-64 rounded-3xl bg-teal-50 items-center justify-center mb-6 border border-teal-100 overflow-hidden">
-                <View className="absolute top-0 right-0 w-28 h-full bg-brand-100 opacity-70" />
-                <View className="w-28 h-28 rounded-3xl bg-white border border-teal-100 items-center justify-center">
-                  <FontAwesome name="cube" size={64} color="#0f766e" />
+              <View className="mb-6">
+                <View className="h-64 rounded-3xl bg-teal-50 items-center justify-center border border-teal-100 overflow-hidden">
+                  {producto.prod_imagenes?.[0] ? (
+                    <Image source={{ uri: producto.prod_imagenes[0] }} className="w-full h-full" resizeMode="cover" />
+                  ) : (
+                    <>
+                      <View className="absolute top-0 right-0 w-28 h-full bg-brand-100 opacity-70" />
+                      <View className="w-28 h-28 rounded-3xl bg-white border border-teal-100 items-center justify-center">
+                        <FontAwesome name="cube" size={64} color="#0f766e" />
+                      </View>
+                    </>
+                  )}
                 </View>
+
+                {producto.prod_imagenes && producto.prod_imagenes.length > 1 ? (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-3" contentContainerStyle={{ paddingRight: 12 }}>
+                    {producto.prod_imagenes.map((imagen, index) => (
+                      <View key={`${imagen}-${index}`} className="w-20 h-20 rounded-2xl overflow-hidden border border-neutral-100 mr-3 bg-neutral-100">
+                        <Image source={{ uri: imagen }} className="w-full h-full" resizeMode="cover" />
+                      </View>
+                    ))}
+                  </ScrollView>
+                ) : null}
               </View>
 
               <View className="bg-white border border-neutral-100 rounded-3xl p-5 mb-4">
@@ -113,12 +185,30 @@ export default function ProductDetailScreen() {
                 </Text>
               </View>
 
+              {publicacionError ? <InfoBanner icon="exclamation-circle" title="Publicación no disponible" body={publicacionError} tone="amber" /> : null}
               <InfoBanner icon="map-marker" title="Próximo paso" body="Cuando propongas una permuta, coordina siempre en un punto de encuentro seguro y conserva el registro de la conversación." tone="amber" />
+              {chatError ? <View className="mt-4"><InfoBanner icon="exclamation-circle" title="No se pudo iniciar el chat" body={chatError} tone="red" /></View> : null}
 
-              <RequireAuth className="w-full bg-brand-700 rounded-2xl h-14 flex-row items-center justify-center mt-5" onAuthenticated={() => console.log(`Contactar por producto ${producto.prod_id}`)}>
-                <FontAwesome name="exchange" size={16} color="#fff" />
-                <Text className="text-white text-base font-bold ml-3">Proponer permuta</Text>
-              </RequireAuth>
+              {esMiPublicacion ? (
+                <PrimaryButton icon="user" disabled onPress={() => {}} className="mt-5">
+                  Esta es tu publicación
+                </PrimaryButton>
+              ) : !publicacion ? (
+                <PrimaryButton icon="exclamation-circle" disabled onPress={() => {}} className="mt-5">
+                  Publicación no disponible
+                </PrimaryButton>
+              ) : (
+                <RequireAuth className="w-full bg-brand-700 rounded-2xl h-14 flex-row items-center justify-center mt-5" onAuthenticated={handleProponerPermuta}>
+                  {isCreatingChat ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <>
+                      <FontAwesome name="exchange" size={16} color="#fff" />
+                      <Text className="text-white text-base font-bold ml-3">Proponer permuta</Text>
+                    </>
+                  )}
+                </RequireAuth>
+              )}
             </>
           ) : null}
 

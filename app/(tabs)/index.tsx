@@ -137,6 +137,7 @@ export default function HomeScreen() {
             subtitle={`Publicación #${producto.publ_id}`}
             status={producto.prod_est}
             price={producto.prod_precio}
+            thumbnailUrl={producto.prod_imagenes?.[0]}
             onPress={() => router.push(`/product/${producto.prod_id}` as Href)}
           />
         ))}

@@ -1,4 +1,5 @@
-import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { Href, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -9,13 +10,48 @@ import { useAuth } from '../context/AuthContext';
 import MainLayout from '../layouts/MainLayout';
 
 const ESTADOS = ['Nuevo', 'Como nuevo', 'Buen estado', 'Aceptable'];
+const MAX_PRODUCT_PHOTOS = 5;
+
+interface SelectedProductPhoto {
+  id: string;
+  uri: string;
+  dataUrl: string;
+}
 
 interface PublishErrors {
   titulo?: string;
   descripcion?: string;
   nombre?: string;
   precio?: string;
+  fotos?: string;
   general?: string;
+}
+
+async function uriToDataUrl(uri: string, mimeType: string): Promise<string> {
+  if (uri.startsWith('data:')) {
+    return uri;
+  }
+
+  const response = await fetch(uri);
+  const blob = await response.blob();
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error('No fue posible leer la imagen.'));
+    reader.readAsDataURL(blob.type ? blob : new Blob([blob], { type: mimeType }));
+  });
+}
+
+async function toSelectedProductPhoto(asset: ImagePicker.ImagePickerAsset, index: number): Promise<SelectedProductPhoto> {
+  const mimeType = asset.mimeType || (asset.uri.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg');
+  const dataUrl = asset.base64 ? `data:${mimeType};base64,${asset.base64}` : await uriToDataUrl(asset.uri, mimeType);
+
+  return {
+    id: `${Date.now()}-${index}-${asset.uri}`,
+    uri: asset.uri,
+    dataUrl,
+  };
 }
 
 export default function PublishScreen() {
@@ -26,11 +62,56 @@ export default function PublishScreen() {
   const [nombre, setNombre] = useState('');
   const [estado, setEstado] = useState(ESTADOS[1]);
   const [precio, setPrecio] = useState('');
+  const [fotos, setFotos] = useState<SelectedProductPhoto[]>([]);
+  const [isPickingPhotos, setIsPickingPhotos] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<PublishErrors>({});
 
   const clearError = (field: keyof PublishErrors) => {
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+  };
+
+  const pickPhotos = async () => {
+    clearError('fotos');
+    setIsPickingPhotos(true);
+
+    try {
+      const remainingSlots = MAX_PRODUCT_PHOTOS - fotos.length;
+      if (remainingSlots <= 0) {
+        setErrors((prev) => ({ ...prev, fotos: 'Puedes subir hasta 5 fotos por producto.' }));
+        return;
+      }
+
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        setErrors((prev) => ({ ...prev, fotos: 'Permite acceder a tus fotos para agregar imágenes del producto.' }));
+        return;
+      }
+
+      const response = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: true,
+        selectionLimit: remainingSlots,
+        quality: 0.75,
+        base64: true,
+      });
+
+      if (response.canceled || response.assets.length === 0) {
+        return;
+      }
+
+      const selected = await Promise.all(response.assets.slice(0, remainingSlots).map(toSelectedProductPhoto));
+      setFotos((prev) => [...prev, ...selected].slice(0, MAX_PRODUCT_PHOTOS));
+    } catch {
+      setErrors((prev) => ({ ...prev, fotos: 'No fue posible cargar las fotos seleccionadas.' }));
+    } finally {
+      setIsPickingPhotos(false);
+    }
+  };
+
+  const removePhoto = (photoId: string) => {
+    setFotos((prev) => prev.filter((photo) => photo.id !== photoId));
+    clearError('fotos');
   };
 
   const validate = () => {
@@ -66,6 +147,7 @@ export default function PublishScreen() {
         prod_est: estado,
         prod_precio: Number(precio.replace(/\D/g, '')),
         publ_id: publicacion.publ_id,
+        prod_imagenes: fotos.map((foto) => foto.dataUrl),
       }, token);
       router.replace(`/product/${producto.prod_id}` as Href);
     } catch (error) {
@@ -132,6 +214,45 @@ export default function PublishScreen() {
                       </TouchableOpacity>
                     ))}
                   </View>
+                </View>
+
+
+                <View className="mb-4">
+                  <View className="flex-row items-center justify-between mb-2">
+                    <Text className="text-neutral-800 font-bold text-sm">Fotos del producto</Text>
+                    <Text className="text-neutral-500 text-xs font-bold">{fotos.length}/{MAX_PRODUCT_PHOTOS}</Text>
+                  </View>
+
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 12 }}>
+                    {fotos.map((foto, index) => (
+                      <View key={foto.id} className="w-24 h-24 rounded-2xl overflow-hidden border border-neutral-200 mr-3 bg-neutral-50">
+                        <Image source={{ uri: foto.uri }} className="w-full h-full" resizeMode="cover" />
+                        <TouchableOpacity className="absolute top-1 right-1 w-7 h-7 rounded-full bg-black/60 items-center justify-center" onPress={() => removePhoto(foto.id)} activeOpacity={0.8} disabled={isSubmitting}>
+                          <FontAwesome name="times" size={12} color="#fff" />
+                        </TouchableOpacity>
+                        {index === 0 ? (
+                          <View className="absolute left-1 bottom-1 bg-brand-700 rounded-full px-2 py-0.5">
+                            <Text className="text-white text-[11px] font-bold">Portada</Text>
+                          </View>
+                        ) : null}
+                      </View>
+                    ))}
+
+                    {fotos.length < MAX_PRODUCT_PHOTOS ? (
+                      <TouchableOpacity className="w-24 h-24 rounded-2xl border border-dashed border-brand-200 bg-brand-50 items-center justify-center" onPress={pickPhotos} activeOpacity={0.8} disabled={isSubmitting || isPickingPhotos}>
+                        {isPickingPhotos ? (
+                          <ActivityIndicator color="#047857" />
+                        ) : (
+                          <>
+                            <FontAwesome name="camera" size={18} color="#047857" />
+                            <Text className="text-brand-700 text-xs font-bold mt-2 text-center">Agregar</Text>
+                          </>
+                        )}
+                      </TouchableOpacity>
+                    ) : null}
+                  </ScrollView>
+                  <Text className="text-neutral-500 text-xs leading-5 mt-2">Puedes agregar hasta 5 fotos. La primera será la portada.</Text>
+                  <FieldError message={errors.fotos} />
                 </View>
 
                 <View className="mb-6">

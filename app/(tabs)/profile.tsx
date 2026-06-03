@@ -39,6 +39,11 @@ export default function ProfileScreen() {
     refreshIdentityStatus()
       .then(() => setIdentityError(null))
       .catch(() => {
+        if (user.biometricVerified || user.identityStatus === 'APROBADA') {
+          setIdentityError(null);
+          return;
+        }
+
         setIdentityError('No se pudo actualizar el estado de verificación.');
       });
   }, [isAuthenticated, refreshIdentityStatus, user?.id]);

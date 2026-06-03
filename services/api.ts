@@ -82,6 +82,10 @@ type ApiErrorPayload = {
 };
 
 function resolveLocalApiUrl(url: string): string {
+  if (Platform.OS === 'web') {
+    return url.replace('http://127.0.0.1:', 'http://localhost:');
+  }
+
   if (Platform.OS !== 'android') {
     return url;
   }
@@ -94,6 +98,7 @@ function resolveLocalApiUrl(url: string): string {
 const API_BASE_URL = resolveLocalApiUrl(process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:5001');
 const PRODUCTOS_API_BASE_URL = resolveLocalApiUrl(process.env.EXPO_PUBLIC_PRODUCTOS_API_BASE_URL ?? 'http://localhost:5050');
 const PUBLICACIONES_API_BASE_URL = resolveLocalApiUrl(process.env.EXPO_PUBLIC_PUBLICACIONES_API_BASE_URL ?? 'http://localhost:6000');
+const MENSAJERIA_API_BASE_URL = resolveLocalApiUrl(process.env.EXPO_PUBLIC_MENSAJERIA_API_BASE_URL ?? 'http://localhost:7000');
 
 function getServiceName(baseUrl: string): string {
   if (baseUrl === API_BASE_URL) {
@@ -106,6 +111,10 @@ function getServiceName(baseUrl: string): string {
 
   if (baseUrl === PUBLICACIONES_API_BASE_URL) {
     return 'ServicioPublicaciones';
+  }
+
+  if (baseUrl === MENSAJERIA_API_BASE_URL) {
+    return 'ServicioMensajeria';
   }
 
   return 'el backend';
@@ -259,6 +268,7 @@ export interface Producto {
   prod_est: string;
   prod_precio: number;
   publ_id: number;
+  prod_imagenes?: string[];
 }
 
 export interface CrearPublicacionPayload {
@@ -281,6 +291,7 @@ export interface CrearProductoPayload {
   prod_est: string;
   prod_precio: number;
   publ_id: number;
+  prod_imagenes?: string[];
 }
 
 export function obtenerProductos(): Promise<Producto[]> {
@@ -372,4 +383,63 @@ export function resolverRevisionManualIdentidad(
     `/identidad/revision-manual/${verificacionId}/resolver`,
     { method: 'POST', body: payload, token },
   );
+}
+
+export interface Conversacion {
+  conv_id: number;
+  publ_id: number;
+  publ_titulo: string;
+  publ_autor_id: number;
+  interesado_id: number;
+  conv_fech_creacion: string;
+  conv_ultima_actividad: string;
+  conv_activa: boolean;
+  ultimo_mensaje?: string | null;
+}
+
+export interface Mensaje {
+  mens_id: number;
+  conv_id: number;
+  emisor_id: number;
+  mens_contenido: string;
+  mens_fech_envio: string;
+}
+
+export interface CrearConversacionPayload {
+  publ_id: number;
+  interesado_id: number;
+  mensaje_inicial: string;
+}
+
+export interface EnviarMensajePayload {
+  emisor_id: number;
+  contenido: string;
+}
+
+export function iniciarConversacion(payload: CrearConversacionPayload, token: string): Promise<Conversacion> {
+  return request<Conversacion, CrearConversacionPayload>(MENSAJERIA_API_BASE_URL, '/chat/conversaciones', {
+    method: 'POST',
+    body: payload,
+    token,
+  });
+}
+
+export function listarConversaciones(usuarioId: number, token: string): Promise<Conversacion[]> {
+  return request<Conversacion[]>(MENSAJERIA_API_BASE_URL, `/chat/conversaciones/usuario/${usuarioId}`, { token });
+}
+
+export function obtenerConversacion(conversacionId: number, usuarioId: number, token: string): Promise<Conversacion> {
+  return request<Conversacion>(MENSAJERIA_API_BASE_URL, `/chat/conversaciones/${conversacionId}?usuarioId=${usuarioId}`, { token });
+}
+
+export function obtenerMensajes(conversacionId: number, usuarioId: number, token: string): Promise<Mensaje[]> {
+  return request<Mensaje[]>(MENSAJERIA_API_BASE_URL, `/chat/conversaciones/${conversacionId}/mensajes?usuarioId=${usuarioId}`, { token });
+}
+
+export function enviarMensaje(conversacionId: number, payload: EnviarMensajePayload, token: string): Promise<Mensaje> {
+  return request<Mensaje, EnviarMensajePayload>(MENSAJERIA_API_BASE_URL, `/chat/conversaciones/${conversacionId}/mensajes`, {
+    method: 'POST',
+    body: payload,
+    token,
+  });
 }

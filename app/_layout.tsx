@@ -91,6 +91,7 @@ function RootLayoutNav() {
           <Stack.Screen name="publish" options={{ headerShown: false }} />
           <Stack.Screen name="verify-identity" options={{ headerShown: false }} />
           <Stack.Screen name="product/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="chat/[id]" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
         </Stack>
       </ThemeProvider>

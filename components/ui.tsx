@@ -170,14 +170,19 @@ interface ProductCardProps {
   subtitle: string;
   status: string;
   price?: number;
+  thumbnailUrl?: string;
   onPress: () => void;
 }
 
-export function ProductCard({ title, subtitle, status, price, onPress }: ProductCardProps) {
+export function ProductCard({ title, subtitle, status, price, thumbnailUrl, onPress }: ProductCardProps) {
   return (
     <View className="bg-white border border-neutral-100 rounded-3xl p-4 mb-3 flex-row items-center">
-      <View className="w-16 h-16 rounded-3xl bg-teal-50 items-center justify-center mr-4 border border-teal-100">
-        <FontAwesome name="cube" size={24} color="#0f766e" />
+      <View className="w-16 h-16 rounded-3xl bg-teal-50 items-center justify-center mr-4 border border-teal-100 overflow-hidden">
+        {thumbnailUrl ? (
+          <Image source={{ uri: thumbnailUrl }} className="w-full h-full" resizeMode="cover" />
+        ) : (
+          <FontAwesome name="cube" size={24} color="#0f766e" />
+        )}
       </View>
 
       <View className="flex-1 mr-3">
