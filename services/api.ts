@@ -97,8 +97,9 @@ function resolveLocalApiUrl(url: string): string {
 
 const API_BASE_URL = resolveLocalApiUrl(process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:5001');
 const PRODUCTOS_API_BASE_URL = resolveLocalApiUrl(process.env.EXPO_PUBLIC_PRODUCTOS_API_BASE_URL ?? 'http://localhost:5050');
-const PUBLICACIONES_API_BASE_URL = resolveLocalApiUrl(process.env.EXPO_PUBLIC_PUBLICACIONES_API_BASE_URL ?? 'http://localhost:6000');
-const MENSAJERIA_API_BASE_URL = resolveLocalApiUrl(process.env.EXPO_PUBLIC_MENSAJERIA_API_BASE_URL ?? 'http://localhost:7000');
+const PUBLICACIONES_API_BASE_URL = resolveLocalApiUrl(process.env.EXPO_PUBLIC_PUBLICACIONES_API_BASE_URL ?? 'http://localhost:6001');
+const MENSAJERIA_API_BASE_URL = resolveLocalApiUrl(process.env.EXPO_PUBLIC_MENSAJERIA_API_BASE_URL ?? 'http://localhost:7001');
+const LOCALIZACION_API_BASE_URL = resolveLocalApiUrl(process.env.EXPO_PUBLIC_LOCALIZACION_API_BASE_URL ?? 'http://localhost:5002');
 
 function getServiceName(baseUrl: string): string {
   if (baseUrl === API_BASE_URL) {
@@ -115,6 +116,10 @@ function getServiceName(baseUrl: string): string {
 
   if (baseUrl === MENSAJERIA_API_BASE_URL) {
     return 'ServicioMensajeria';
+  }
+
+  if (baseUrl === LOCALIZACION_API_BASE_URL) {
+    return 'ServicioLocalizacion';
   }
 
   return 'el backend';
@@ -262,6 +267,14 @@ export function register(payload: RegisterPayload): Promise<AuthResponse> {
   });
 }
 
+export function obtenerUsuarioPorId(usuarioId: number, token?: string): Promise<Usuario> {
+  return request<Usuario>(API_BASE_URL, `/usuario/${usuarioId}`, { token });
+}
+
+export function eliminarUsuario(usuarioId: number, token?: string): Promise<string> {
+  return request<string>(API_BASE_URL, `/usuario/${usuarioId}`, { method: 'DELETE', token });
+}
+
 export interface Producto {
   prod_id: number;
   prod_nombre: string;
@@ -269,6 +282,10 @@ export interface Producto {
   prod_precio: number;
   publ_id: number;
   prod_imagenes?: string[];
+  prod_ubicacion_comuna?: string | null;
+  prod_ubicacion_referencia?: string | null;
+  prod_latitud_aprox?: number | null;
+  prod_longitud_aprox?: number | null;
 }
 
 export interface CrearPublicacionPayload {
@@ -292,6 +309,25 @@ export interface CrearProductoPayload {
   prod_precio: number;
   publ_id: number;
   prod_imagenes?: string[];
+  prod_ubicacion_comuna?: string;
+  prod_ubicacion_referencia?: string;
+  prod_latitud_aprox?: number;
+  prod_longitud_aprox?: number;
+}
+
+export interface ActualizarPublicacionPayload {
+  publ_titulo: string;
+  publ_descripcion: string;
+}
+
+export interface ActualizarProductoPayload {
+  prod_nombre: string;
+  prod_est: string;
+  prod_precio: number;
+  prod_ubicacion_comuna?: string | null;
+  prod_ubicacion_referencia?: string | null;
+  prod_latitud_aprox?: number | null;
+  prod_longitud_aprox?: number | null;
 }
 
 export function obtenerProductos(): Promise<Producto[]> {
@@ -306,6 +342,10 @@ export function obtenerPublicacionPorId(idPublicacion: number): Promise<Publicac
   return request<Publicacion>(PUBLICACIONES_API_BASE_URL, `/publicacion/${idPublicacion}`);
 }
 
+export function obtenerPublicaciones(): Promise<Publicacion[]> {
+  return request<Publicacion[]>(PUBLICACIONES_API_BASE_URL, '/publicacion');
+}
+
 export function crearPublicacion(payload: CrearPublicacionPayload, token?: string): Promise<Publicacion> {
   return request<Publicacion, CrearPublicacionPayload>(PUBLICACIONES_API_BASE_URL, '/publicacion', {
     method: 'POST',
@@ -314,12 +354,36 @@ export function crearPublicacion(payload: CrearPublicacionPayload, token?: strin
   });
 }
 
+export function actualizarPublicacion(idPublicacion: number, payload: ActualizarPublicacionPayload, token?: string): Promise<Publicacion> {
+  return request<Publicacion, ActualizarPublicacionPayload>(PUBLICACIONES_API_BASE_URL, `/publicacion/${idPublicacion}`, {
+    method: 'PUT',
+    body: payload,
+    token,
+  });
+}
+
+export function eliminarPublicacion(idPublicacion: number, token?: string): Promise<string> {
+  return request<string>(PUBLICACIONES_API_BASE_URL, `/publicacion/${idPublicacion}`, { method: 'DELETE', token });
+}
+
 export function crearProducto(payload: CrearProductoPayload, token?: string): Promise<Producto> {
   return request<Producto, CrearProductoPayload>(PRODUCTOS_API_BASE_URL, '/producto', {
     method: 'POST',
     body: payload,
     token,
   });
+}
+
+export function actualizarProducto(idProducto: number, payload: ActualizarProductoPayload, token?: string): Promise<Producto> {
+  return request<Producto, ActualizarProductoPayload>(PRODUCTOS_API_BASE_URL, `/producto/${idProducto}`, {
+    method: 'PUT',
+    body: payload,
+    token,
+  });
+}
+
+export function eliminarProducto(idProducto: number, token?: string): Promise<string> {
+  return request<string>(PRODUCTOS_API_BASE_URL, `/producto/${idProducto}`, { method: 'DELETE', token });
 }
 
 async function uriToBlob(uri: string): Promise<Blob> {
@@ -441,5 +505,46 @@ export function enviarMensaje(conversacionId: number, payload: EnviarMensajePayl
     method: 'POST',
     body: payload,
     token,
+  });
+}
+
+
+export interface EstacionMetro {
+  id: number;
+  nombre: string;
+  linea: string;
+  orden?: number | null;
+  esCombinacion?: boolean | null;
+  latitud?: number | null;
+  longitud?: number | null;
+  direccion?: string | null;
+  comuna?: string | null;
+}
+
+export interface SugerenciaPuntoMedioPayload {
+  latitudOrigen: number;
+  longitudOrigen: number;
+  latitudDestino: number;
+  longitudDestino: number;
+}
+
+export interface SugerenciaPuntoMedio {
+  puntoMedioLatitud: number;
+  puntoMedioLongitud: number;
+  estacionSugerida: EstacionMetro;
+  distanciaPuntoMedioKm: number;
+  distanciaOrigenKm: number;
+  distanciaDestinoKm: number;
+  criterio: string;
+}
+
+export function obtenerEstacionesMetro(): Promise<EstacionMetro[]> {
+  return request<EstacionMetro[]>(LOCALIZACION_API_BASE_URL, '/localizacion/metro/estaciones');
+}
+
+export function sugerirMetroPuntoMedio(payload: SugerenciaPuntoMedioPayload): Promise<SugerenciaPuntoMedio> {
+  return request<SugerenciaPuntoMedio, SugerenciaPuntoMedioPayload>(LOCALIZACION_API_BASE_URL, '/localizacion/metro/punto-medio', {
+    method: 'POST',
+    body: payload,
   });
 }

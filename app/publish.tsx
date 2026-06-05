@@ -1,16 +1,31 @@
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Href, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import { InfoBanner, PrimaryButton, SectionHeader } from '@/components/ui';
-import { crearProducto, crearPublicacion, ApiError } from '../services/api';
+import { crearProducto, crearPublicacion, ApiError, EstacionMetro, obtenerEstacionesMetro } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import MainLayout from '../layouts/MainLayout';
 
 const ESTADOS = ['Nuevo', 'Como nuevo', 'Buen estado', 'Aceptable'];
 const MAX_PRODUCT_PHOTOS = 5;
+
+const METRO_LINEAS = [
+  { id: 'L1', label: 'Línea 1', color: '#C8102E' },
+  { id: 'L2', label: 'Línea 2', color: '#F2C300' },
+  { id: 'L3', label: 'Línea 3', color: '#7A432A' },
+  { id: 'L4', label: 'Línea 4', color: '#003DA5' },
+  { id: 'L4A', label: 'Línea 4A', color: '#3F7DBD' },
+  { id: 'L5', label: 'Línea 5', color: '#009A6A' },
+  { id: 'L6', label: 'Línea 6', color: '#8E3A97' },
+  { id: 'L7', label: 'Línea 7', color: '#8A8D8F' },
+  { id: 'L8', label: 'Línea 8', color: '#D8752E' },
+  { id: 'L9', label: 'Línea 9', color: '#D67DAA' },
+];
+
+const LINEA_FALLBACK = '#047857';
 
 interface SelectedProductPhoto {
   id: string;
@@ -23,6 +38,8 @@ interface PublishErrors {
   descripcion?: string;
   nombre?: string;
   precio?: string;
+  ubicacionComuna?: string;
+  metro?: string;
   fotos?: string;
   general?: string;
 }
@@ -62,6 +79,12 @@ export default function PublishScreen() {
   const [nombre, setNombre] = useState('');
   const [estado, setEstado] = useState(ESTADOS[1]);
   const [precio, setPrecio] = useState('');
+  const [ubicacionComuna, setUbicacionComuna] = useState('');
+  const [ubicacionReferencia, setUbicacionReferencia] = useState('');
+  const [estacionesMetro, setEstacionesMetro] = useState<EstacionMetro[]>([]);
+  const [estacionSeleccionada, setEstacionSeleccionada] = useState<EstacionMetro | null>(null);
+  const [lineaSeleccionada, setLineaSeleccionada] = useState('L1');
+  const [isLoadingMetro, setIsLoadingMetro] = useState(false);
   const [fotos, setFotos] = useState<SelectedProductPhoto[]>([]);
   const [isPickingPhotos, setIsPickingPhotos] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -122,6 +145,9 @@ export default function PublishScreen() {
     if (!descripcion.trim()) nextErrors.descripcion = 'La descripción es obligatoria.';
     if (!nombre.trim()) nextErrors.nombre = 'El nombre del producto es obligatorio.';
     if (!Number.isInteger(precioNumerico) || precioNumerico < 0) nextErrors.precio = 'Ingresa un valor referencial válido.';
+    if (!ubicacionComuna.trim()) nextErrors.ubicacionComuna = 'Indica una comuna o sector aproximado.';
+
+    if (!estacionSeleccionada) nextErrors.metro = 'Selecciona un Metro cercano para calcular puntos seguros.';
 
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -142,12 +168,19 @@ export default function PublishScreen() {
         publ_descripcion: descripcion.trim(),
         usu_id: Number(user.id),
       }, token);
+      const referenciaMetro = estacionSeleccionada
+        ? `cerca de Metro ${estacionSeleccionada.nombre} (${estacionSeleccionada.linea})`
+        : undefined;
       const producto = await crearProducto({
         prod_nombre: nombre.trim(),
         prod_est: estado,
         prod_precio: Number(precio.replace(/\D/g, '')),
         publ_id: publicacion.publ_id,
         prod_imagenes: fotos.map((foto) => foto.dataUrl),
+        prod_ubicacion_comuna: ubicacionComuna.trim(),
+        prod_ubicacion_referencia: ubicacionReferencia.trim() || referenciaMetro,
+        prod_latitud_aprox: estacionSeleccionada?.latitud ?? undefined,
+        prod_longitud_aprox: estacionSeleccionada?.longitud ?? undefined,
       }, token);
       router.replace(`/product/${producto.prod_id}` as Href);
     } catch (error) {
@@ -163,6 +196,40 @@ export default function PublishScreen() {
   useEffect(() => {
     if (!isRestoring && !isAuthenticated) router.replace('/login');
   }, [isAuthenticated, isRestoring, router]);
+
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function cargarEstacionesMetro() {
+      try {
+        setIsLoadingMetro(true);
+        const data = await obtenerEstacionesMetro();
+        if (mounted) {
+          setEstacionesMetro(data.filter((estacion) => estacion.latitud !== null && estacion.longitud !== null));
+        }
+      } catch {
+        if (mounted) {
+          setErrors((prev) => ({ ...prev, metro: 'No fue posible cargar estaciones de Metro.' }));
+        }
+      } finally {
+        if (mounted) setIsLoadingMetro(false);
+      }
+    }
+
+    cargarEstacionesMetro();
+    return () => { mounted = false; };
+  }, []);
+
+  const estacionesPorLinea = useMemo(
+    () => estacionesMetro
+      .filter((estacion) => estacion.linea === lineaSeleccionada)
+      .sort((a, b) => (a.orden ?? 999) - (b.orden ?? 999) || a.nombre.localeCompare(b.nombre)),
+    [estacionesMetro, lineaSeleccionada],
+  );
+
+  const lineaActiva = METRO_LINEAS.find((linea) => linea.id === lineaSeleccionada);
+  const colorLineaActiva = lineaActiva?.color ?? LINEA_FALLBACK;
 
   const FieldError = ({ message }: { message?: string }) => message ? <Text className="text-red-500 text-xs mt-1.5 ml-1">{message}</Text> : null;
 
@@ -253,6 +320,83 @@ export default function PublishScreen() {
                   </ScrollView>
                   <Text className="text-neutral-500 text-xs leading-5 mt-2">Puedes agregar hasta 5 fotos. La primera será la portada.</Text>
                   <FieldError message={errors.fotos} />
+                </View>
+
+
+                <View className="mb-4">
+                  <Text className="text-neutral-800 font-bold mb-2 text-sm">Ubicación aproximada</Text>
+                  <TextInput className={`bg-neutral-50 border rounded-2xl px-4 h-14 text-neutral-900 text-base ${errors.ubicacionComuna ? 'border-red-400' : 'border-neutral-200'}`} placeholder="Ej: Providencia, RM" placeholderTextColor="#a3a3a3" value={ubicacionComuna} onChangeText={(text) => { setUbicacionComuna(text); clearError('ubicacionComuna'); }} editable={!isSubmitting} />
+                  <FieldError message={errors.ubicacionComuna} />
+                  <TextInput className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 h-14 text-neutral-900 text-base mt-3" placeholder="Referencia opcional: sector, barrio o cruce cercano" placeholderTextColor="#a3a3a3" value={ubicacionReferencia} onChangeText={setUbicacionReferencia} editable={!isSubmitting} />
+
+                  <View className="mt-4">
+                    <View className="flex-row items-center justify-between mb-2">
+                      <Text className="text-neutral-800 font-bold text-sm">Metro cercano</Text>
+                      <Text className="text-neutral-500 text-xs font-bold">{isLoadingMetro ? 'Cargando' : `${estacionesPorLinea.length} estaciones`}</Text>
+                    </View>
+
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 12, paddingBottom: 2 }}>
+                      {METRO_LINEAS.map((linea) => {
+                        const selected = linea.id === lineaSeleccionada;
+                        const count = estacionesMetro.filter((estacion) => estacion.linea === linea.id).length;
+                        return (
+                          <TouchableOpacity
+                            key={linea.id}
+                            className="mr-2 px-3 h-11 rounded-2xl border items-center justify-center"
+                            style={{
+                              backgroundColor: selected ? linea.color : '#fafafa',
+                              borderColor: count === 0 ? '#e5e5e5' : linea.color,
+                              opacity: count === 0 ? 0.45 : 1,
+                            }}
+                            onPress={() => {
+                              if (count === 0) return;
+                              setLineaSeleccionada(linea.id);
+                              if (estacionSeleccionada?.linea !== linea.id) setEstacionSeleccionada(null);
+                            }}
+                            activeOpacity={0.75}
+                            disabled={isSubmitting || count === 0}
+                          >
+                            <Text className={`text-xs font-bold ${selected ? 'text-white' : 'text-neutral-800'}`}>{linea.id}</Text>
+                            <Text className={`text-[10px] mt-0.5 ${selected ? 'text-white' : 'text-neutral-400'}`}>{count}</Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+
+                    <View className="mt-3 rounded-2xl border bg-neutral-50 p-3" style={{ borderColor: colorLineaActiva }}>
+                      <View className="flex-row items-center mb-3">
+                        <View className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: colorLineaActiva }} />
+                        <Text className="text-neutral-900 text-sm font-bold">{lineaActiva?.label ?? lineaSeleccionada}</Text>
+                      </View>
+
+                      {estacionesPorLinea.length === 0 ? (
+                        <Text className="text-neutral-500 text-xs leading-5">Esta línea todavía no tiene estaciones cargadas en Supabase.</Text>
+                      ) : (
+                        <View className="flex-row flex-wrap">
+                          {estacionesPorLinea.map((estacion) => {
+                            const selected = estacionSeleccionada?.id === estacion.id;
+                            return (
+                              <TouchableOpacity
+                                key={`${estacion.id}-${estacion.linea}`}
+                                className="mr-2 mb-2 px-3 min-h-10 rounded-2xl border items-center justify-center"
+                                style={{
+                                  backgroundColor: selected ? colorLineaActiva : '#ffffff',
+                                  borderColor: colorLineaActiva,
+                                }}
+                                onPress={() => { setEstacionSeleccionada(estacion); clearError('metro'); }}
+                                activeOpacity={0.75}
+                                disabled={isSubmitting}
+                              >
+                                <Text className={`text-xs font-bold ${selected ? 'text-white' : 'text-neutral-800'}`}>{estacion.nombre}</Text>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      )}
+                    </View>
+                    <FieldError message={errors.metro} />
+                  </View>
+                  <Text className="text-neutral-500 text-xs leading-5 mt-2">Elige la línea y estación más cercana. Usamos sus coordenadas para sugerir después un punto seguro intermedio.</Text>
                 </View>
 
                 <View className="mb-6">

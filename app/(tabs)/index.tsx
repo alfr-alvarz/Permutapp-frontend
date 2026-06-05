@@ -134,7 +134,7 @@ export default function HomeScreen() {
           <ProductCard
             key={producto.prod_id}
             title={producto.prod_nombre}
-            subtitle={`Publicación #${producto.publ_id}`}
+            subtitle={producto.prod_ubicacion_comuna ?? `Publicación #${producto.publ_id}`}
             status={producto.prod_est}
             price={producto.prod_precio}
             thumbnailUrl={producto.prod_imagenes?.[0]}

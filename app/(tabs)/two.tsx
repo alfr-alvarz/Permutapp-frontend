@@ -89,7 +89,7 @@ export default function CatalogScreen() {
         {error ? <InfoBanner icon="exclamation-circle" title="Sin conexión al catálogo" body={error} tone="red" /> : null}
         {!isLoading && !error && itemsFiltrados.length === 0 ? <EmptyState icon="search" title="No encontramos resultados" body="Prueba con otro nombre o limpia los filtros para ver más productos." /> : null}
         {itemsFiltrados.map((item) => (
-          <ProductCard key={item.prod_id} title={item.prod_nombre} subtitle={`Publicación #${item.publ_id}`} status={item.prod_est} price={item.prod_precio} thumbnailUrl={item.prod_imagenes?.[0]} onPress={() => router.push(`/product/${item.prod_id}` as Href)} />
+          <ProductCard key={item.prod_id} title={item.prod_nombre} subtitle={item.prod_ubicacion_comuna ?? `Publicación #${item.publ_id}`} status={item.prod_est} price={item.prod_precio} thumbnailUrl={item.prod_imagenes?.[0]} onPress={() => router.push(`/product/${item.prod_id}` as Href)} />
         ))}
       </View>
     </ScrollView>

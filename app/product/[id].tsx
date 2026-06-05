@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import { EmptyState, InfoBanner, PrimaryButton } from '@/components/ui';
-import { ApiError, iniciarConversacion, obtenerProductoPorId, obtenerPublicacionPorId, Producto, Publicacion } from '../../services/api';
+import { ApiError, iniciarConversacion, obtenerProductoPorId, obtenerPublicacionPorId, obtenerUsuarioPorId, Producto, Publicacion, Usuario } from '../../services/api';
 import RequireAuth from '../../components/RequireAuth';
 import { useAuth } from '../../context/AuthContext';
 import MainLayout from '../../layouts/MainLayout';
@@ -16,6 +16,7 @@ export default function ProductDetailScreen() {
   const { user, token } = useAuth();
   const [producto, setProducto] = useState<Producto | null>(null);
   const [publicacion, setPublicacion] = useState<Publicacion | null>(null);
+  const [vendedor, setVendedor] = useState<Usuario | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreatingChat, setIsCreatingChat] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,9 +47,21 @@ export default function ProductDetailScreen() {
           if (mounted) {
             setPublicacion(detallePublicacion);
           }
+
+          try {
+            const detalleVendedor = await obtenerUsuarioPorId(detallePublicacion.publ_autor_id, token ?? undefined);
+            if (mounted) {
+              setVendedor(detalleVendedor);
+            }
+          } catch {
+            if (mounted) {
+              setVendedor(null);
+            }
+          }
         } catch {
           if (mounted) {
             setPublicacion(null);
+            setVendedor(null);
             setPublicacionError('La publicación asociada a este producto no está disponible. Publica un producto nuevo o revisa que exista la publicación relacionada.');
           }
         }
@@ -56,6 +69,7 @@ export default function ProductDetailScreen() {
         if (mounted) {
           setProducto(null);
           setPublicacion(null);
+          setVendedor(null);
           setPublicacionError(null);
           setError('No fue posible cargar el detalle del producto.');
         }
@@ -66,7 +80,7 @@ export default function ProductDetailScreen() {
 
     cargarDetalle();
     return () => { mounted = false; };
-  }, [idProducto]);
+  }, [idProducto, token]);
 
   const handleProponerPermuta = async () => {
     if (!producto) {
@@ -104,6 +118,10 @@ export default function ProductDetailScreen() {
     : null;
 
   const esMiPublicacion = Boolean(user && publicacion && Number(user.id) === publicacion.publ_autor_id);
+  const vendedorNoVerificado = Boolean(vendedor && !vendedor.usu_identidad_verificada && !esMiPublicacion);
+  const ubicacionProducto = [producto?.prod_ubicacion_comuna, producto?.prod_ubicacion_referencia]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <MainLayout>
@@ -172,19 +190,42 @@ export default function ProductDetailScreen() {
                 <View className="flex-1 bg-white border border-neutral-100 rounded-3xl p-5">
                   <Text className="text-neutral-400 text-xs uppercase tracking-widest font-bold mb-2">Seguridad</Text>
                   <View className="flex-row items-center">
-                    <FontAwesome name="shield" size={15} color="#047857" />
-                    <Text className="text-brand-700 text-sm font-bold ml-2">Revisar perfil</Text>
+                    <FontAwesome name={vendedorNoVerificado ? 'exclamation-triangle' : 'shield'} size={15} color={vendedorNoVerificado ? '#d97706' : '#047857'} />
+                    <Text className={`text-sm font-bold ml-2 ${vendedorNoVerificado ? 'text-amber-700' : 'text-brand-700'}`}>
+                      {vendedorNoVerificado ? 'No verificado' : 'Revisar perfil'}
+                    </Text>
                   </View>
                 </View>
               </View>
 
-              <View className="bg-white border border-neutral-100 rounded-3xl p-5 mb-5">
+              <View className="bg-white border border-neutral-100 rounded-3xl p-5 mb-4">
                 <Text className="text-neutral-400 text-xs uppercase tracking-widest font-bold mb-3">Descripción</Text>
                 <Text className="text-neutral-700 text-sm leading-6">
                   {publicacion?.publ_descripcion ?? 'Este producto no tiene descripción disponible.'}
                 </Text>
               </View>
 
+              {ubicacionProducto ? (
+                <View className="bg-white border border-neutral-100 rounded-3xl p-5 mb-5">
+                  <Text className="text-neutral-400 text-xs uppercase tracking-widest font-bold mb-3">Ubicación aproximada</Text>
+                  <View className="flex-row items-start">
+                    <FontAwesome name="map-marker" size={16} color="#047857" />
+                    <View className="flex-1 ml-3">
+                      <Text className="text-neutral-950 text-base font-bold">{ubicacionProducto}</Text>
+                      <Text className="text-neutral-500 text-xs leading-5 mt-1">La ubicación es aproximada. El punto seguro final se coordina por chat.</Text>
+                    </View>
+                  </View>
+                </View>
+              ) : null}
+
+              {vendedorNoVerificado ? (
+                <InfoBanner
+                  icon="exclamation-triangle"
+                  title="Perfil no verificado"
+                  body="Este vendedor todavía no completa la verificación de identidad con carnet y selfie. Coordina con cuidado y usa solo puntos seguros para la permuta."
+                  tone="amber"
+                />
+              ) : null}
               {publicacionError ? <InfoBanner icon="exclamation-circle" title="Publicación no disponible" body={publicacionError} tone="amber" /> : null}
               <InfoBanner icon="map-marker" title="Próximo paso" body="Cuando propongas una permuta, coordina siempre en un punto de encuentro seguro y conserva el registro de la conversación." tone="amber" />
               {chatError ? <View className="mt-4"><InfoBanner icon="exclamation-circle" title="No se pudo iniciar el chat" body={chatError} tone="red" /></View> : null}
