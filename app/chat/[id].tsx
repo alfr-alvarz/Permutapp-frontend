@@ -1,6 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { useFocusEffect } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 import { EmptyState, InfoBanner, PrimaryButton, SectionHeader } from '@/components/ui';
@@ -12,8 +13,21 @@ function formatMessageDate(value: string) {
   return new Date(value).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
 }
 
+function mergeMessages(current: Mensaje[], incoming: Mensaje[]) {
+  const messagesById = new Map<number, Mensaje>();
+
+  [...current, ...incoming].forEach((message) => {
+    messagesById.set(message.mens_id, message);
+  });
+
+  return [...messagesById.values()].sort(
+    (left, right) => new Date(left.mens_fech_envio).getTime() - new Date(right.mens_fech_envio).getTime(),
+  );
+}
+
 export default function ChatDetailScreen() {
   const router = useRouter();
+  const scrollViewRef = useRef<ScrollView>(null);
   const { id } = useLocalSearchParams<{ id: string }>();
   const conversacionId = useMemo(() => Number(id), [id]);
   const { user, token, isAuthenticated, isRestoring } = useAuth();
@@ -24,7 +38,7 @@ export default function ChatDetailScreen() {
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const cargarChat = async () => {
+  const cargarChat = useCallback(async () => {
     if (!user || !token || !Number.isInteger(conversacionId) || conversacionId <= 0) return;
     try {
       setIsLoading(true);
@@ -33,22 +47,73 @@ export default function ChatDetailScreen() {
         obtenerMensajes(conversacionId, Number(user.id), token),
       ]);
       setConversacion(detalle);
-      setMensajes(lista);
+      setMensajes((current) => mergeMessages(
+        current.filter((message) => message.conv_id === conversacionId),
+        lista,
+      ));
       setError(null);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No fue posible cargar la conversación.');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [conversacionId, token, user]);
 
   useEffect(() => {
     if (!isRestoring && !isAuthenticated) {
       router.replace('/login');
       return;
     }
-    if (isAuthenticated) cargarChat();
-  }, [conversacionId, isAuthenticated, isRestoring]);
+    if (isAuthenticated) {
+      setConversacion(null);
+      setMensajes([]);
+      cargarChat();
+    }
+  }, [cargarChat, isAuthenticated, isRestoring, router]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!isAuthenticated || !user || !token || !Number.isInteger(conversacionId) || conversacionId <= 0) {
+        return undefined;
+      }
+
+      let isActive = true;
+      let isPolling = false;
+
+      const refreshMessages = async () => {
+        if (isPolling) return;
+
+        isPolling = true;
+        try {
+          const latestMessages = await obtenerMensajes(conversacionId, Number(user.id), token);
+          if (isActive) {
+            setMensajes((current) => mergeMessages(current, latestMessages));
+          }
+        } catch {
+          // Keep the current messages when a background refresh fails.
+        } finally {
+          isPolling = false;
+        }
+      };
+
+      const intervalId = setInterval(refreshMessages, 2000);
+
+      return () => {
+        isActive = false;
+        clearInterval(intervalId);
+      };
+    }, [conversacionId, isAuthenticated, token, user]),
+  );
+
+  useEffect(() => {
+    if (mensajes.length === 0) return;
+
+    const timeoutId = setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: !isLoading });
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
+  }, [isLoading, mensajes.length]);
 
   const handleEnviar = async () => {
     if (!user || !token || !contenido.trim()) return;
@@ -58,7 +123,7 @@ export default function ChatDetailScreen() {
         emisor_id: Number(user.id),
         contenido: contenido.trim(),
       }, token);
-      setMensajes((prev) => [...prev, nuevo]);
+      setMensajes((current) => mergeMessages(current, [nuevo]));
       setContenido('');
       setError(null);
     } catch (err) {
@@ -71,7 +136,12 @@ export default function ChatDetailScreen() {
   return (
     <MainLayout>
       <KeyboardAvoidingView className="flex-1 bg-neutral-50" behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          ref={scrollViewRef}
+          className="flex-1"
+          contentContainerStyle={{ paddingBottom: 24 }}
+          showsVerticalScrollIndicator={false}
+        >
           <View className="px-5 pt-6 pb-4">
             <TouchableOpacity className="w-11 h-11 rounded-2xl bg-white border border-neutral-100 items-center justify-center mb-5" onPress={() => router.back()} activeOpacity={0.75}>
               <FontAwesome name="chevron-left" size={14} color="#404040" />
@@ -119,9 +189,15 @@ export default function ChatDetailScreen() {
               multiline
               editable={!isSending}
             />
-            <PrimaryButton icon="send" loading={isSending} disabled={!contenido.trim()} onPress={handleEnviar} className="w-14 ml-3 px-0">
-              {''}
-            </PrimaryButton>
+            <PrimaryButton
+              icon="send"
+              iconOnly
+              accessibilityLabel="Enviar mensaje"
+              loading={isSending}
+              disabled={!contenido.trim()}
+              onPress={handleEnviar}
+              className="w-14 ml-3 px-0"
+            />
           </View>
         </View>
       </KeyboardAvoidingView>

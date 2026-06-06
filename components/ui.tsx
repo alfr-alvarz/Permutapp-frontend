@@ -49,8 +49,10 @@ export function BrandBanner() {
 }
 
 interface PrimaryButtonProps {
-  children: ReactNode;
+  children?: ReactNode;
   icon?: IconName;
+  iconOnly?: boolean;
+  accessibilityLabel?: string;
   loading?: boolean;
   disabled?: boolean;
   variant?: 'primary' | 'secondary' | 'ghost';
@@ -61,6 +63,8 @@ interface PrimaryButtonProps {
 export function PrimaryButton({
   children,
   icon,
+  iconOnly = false,
+  accessibilityLabel,
   loading,
   disabled,
   variant = 'primary',
@@ -81,13 +85,17 @@ export function PrimaryButton({
       onPress={onPress}
       disabled={disabled || loading}
       activeOpacity={0.85}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
     >
       {loading ? (
         <ActivityIndicator color={variant === 'primary' ? '#fff' : '#047857'} />
       ) : (
         <>
           {icon ? <FontAwesome name={icon} size={15} color={iconColor} /> : null}
-          <Text className={`${textClass} font-bold text-base ${icon ? 'ml-3' : ''}`}>{children}</Text>
+          {!iconOnly ? (
+            <Text className={`${textClass} font-bold text-base ${icon ? 'ml-3' : ''}`}>{children}</Text>
+          ) : null}
         </>
       )}
     </TouchableOpacity>

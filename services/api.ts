@@ -100,6 +100,7 @@ const PRODUCTOS_API_BASE_URL = resolveLocalApiUrl(process.env.EXPO_PUBLIC_PRODUC
 const PUBLICACIONES_API_BASE_URL = resolveLocalApiUrl(process.env.EXPO_PUBLIC_PUBLICACIONES_API_BASE_URL ?? 'http://localhost:6001');
 const MENSAJERIA_API_BASE_URL = resolveLocalApiUrl(process.env.EXPO_PUBLIC_MENSAJERIA_API_BASE_URL ?? 'http://localhost:7001');
 const LOCALIZACION_API_BASE_URL = resolveLocalApiUrl(process.env.EXPO_PUBLIC_LOCALIZACION_API_BASE_URL ?? 'http://localhost:5002');
+const NOTIFICACIONES_API_BASE_URL = resolveLocalApiUrl(process.env.EXPO_PUBLIC_NOTIFICACIONES_API_BASE_URL ?? 'http://localhost:7002');
 
 function getServiceName(baseUrl: string): string {
   if (baseUrl === API_BASE_URL) {
@@ -120,6 +121,10 @@ function getServiceName(baseUrl: string): string {
 
   if (baseUrl === LOCALIZACION_API_BASE_URL) {
     return 'ServicioLocalizacion';
+  }
+
+  if (baseUrl === NOTIFICACIONES_API_BASE_URL) {
+    return 'ServicioNotificaciones';
   }
 
   return 'el backend';
@@ -207,7 +212,7 @@ async function request<TResponse, TBody = undefined>(
   baseUrl: string,
   path: string,
   options: {
-    method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+    method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
     body?: TBody;
     token?: string;
   } = {},
@@ -250,7 +255,17 @@ async function request<TResponse, TBody = undefined>(
     throw new ApiError(message, response.status);
   }
 
-  return (await response.json()) as TResponse;
+  if (response.status === 204) {
+    return undefined as TResponse;
+  }
+
+  const responseText = await response.text();
+  if (!responseText) {
+    return undefined as TResponse;
+  }
+
+  const contentType = response.headers.get('content-type') ?? '';
+  return (contentType.includes('application/json') ? JSON.parse(responseText) : responseText) as TResponse;
 }
 
 export function login(payload: LoginPayload): Promise<AuthResponse> {
@@ -547,4 +562,73 @@ export function sugerirMetroPuntoMedio(payload: SugerenciaPuntoMedioPayload): Pr
     method: 'POST',
     body: payload,
   });
+}
+
+export type TipoNotificacion =
+  | 'MENSAJE_NUEVO'
+  | 'PROPUESTA_PERMUTA'
+  | 'IDENTIDAD_APROBADA'
+  | 'IDENTIDAD_RECHAZADA'
+  | 'IDENTIDAD_REVISION';
+
+export interface Notificacion {
+  notif_id: number;
+  notif_tipo: TipoNotificacion;
+  notif_titulo: string;
+  notif_cuerpo: string;
+  notif_datos: {
+    tipo?: TipoNotificacion;
+    ruta?: string;
+    conversacionId?: number;
+    publicacionId?: number;
+  };
+  notif_fecha: string;
+  notif_leida: boolean;
+}
+
+export interface RegistrarSuscripcionNotificacionPayload {
+  canal: 'EXPO' | 'WEB';
+  destino: string;
+  p256dh?: string;
+  auth?: string;
+  plataforma: string;
+}
+
+export function listarNotificaciones(token: string): Promise<Notificacion[]> {
+  return request<Notificacion[]>(NOTIFICACIONES_API_BASE_URL, '/notificaciones', { token });
+}
+
+export async function contarNotificacionesNoLeidas(token: string): Promise<number> {
+  const response = await request<{ cantidad: number }>(NOTIFICACIONES_API_BASE_URL, '/notificaciones/no-leidas', { token });
+  return response.cantidad;
+}
+
+export function marcarNotificacionLeida(notificacionId: number, token: string): Promise<void> {
+  return request<void>(NOTIFICACIONES_API_BASE_URL, `/notificaciones/${notificacionId}/leer`, {
+    method: 'PATCH',
+    token,
+  });
+}
+
+export function marcarTodasNotificacionesLeidas(token: string): Promise<void> {
+  return request<void>(NOTIFICACIONES_API_BASE_URL, '/notificaciones/leer-todas', {
+    method: 'POST',
+    token,
+  });
+}
+
+export function registrarSuscripcionNotificacion(
+  payload: RegistrarSuscripcionNotificacionPayload,
+  token: string,
+): Promise<{ id: number; canal: 'EXPO' | 'WEB'; plataforma: string; activa: boolean }> {
+  return request(NOTIFICACIONES_API_BASE_URL, '/notificaciones/suscripciones', {
+    method: 'POST',
+    body: payload,
+    token,
+  });
+}
+
+export async function obtenerVapidPublicKey(): Promise<string> {
+  const response = await request<{ publicKey: string }>(NOTIFICACIONES_API_BASE_URL, '/notificaciones/vapid-public-key');
+  return response.publicKey;
 }

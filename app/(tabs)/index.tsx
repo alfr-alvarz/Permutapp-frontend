@@ -5,6 +5,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import RequireAuth from '@/components/RequireAuth';
 import { BrandBanner, BrandMark, EmptyState, InfoBanner, ProductCard, SectionHeader } from '@/components/ui';
+import { NotificationBell } from '@/components/NotificationBell';
 import { useAuth } from '../../context/AuthContext';
 import { obtenerProductos, Producto } from '../../services/api';
 
@@ -61,9 +62,12 @@ export default function HomeScreen() {
           </View>
 
           {isAuthenticated ? (
-            <TouchableOpacity className="w-11 h-11 rounded-2xl bg-white border border-neutral-100 items-center justify-center" onPress={() => router.push('/(tabs)/profile' as Href)} activeOpacity={0.75}>
-              <Text className="text-brand-700 font-bold text-base">{user?.name?.charAt(0) ?? 'U'}</Text>
-            </TouchableOpacity>
+            <View className="flex-row gap-2">
+              <NotificationBell />
+              <TouchableOpacity className="w-11 h-11 rounded-2xl bg-white border border-neutral-100 items-center justify-center" onPress={() => router.push('/(tabs)/profile' as Href)} activeOpacity={0.75}>
+                <Text className="text-brand-700 font-bold text-base">{user?.name?.charAt(0) ?? 'U'}</Text>
+              </TouchableOpacity>
+            </View>
           ) : (
             <TouchableOpacity className="bg-brand-700 rounded-2xl px-4 h-11 items-center justify-center" onPress={() => router.push('/login')} activeOpacity={0.85}>
               <Text className="text-white font-bold text-sm">Ingresar</Text>

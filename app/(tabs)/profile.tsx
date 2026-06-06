@@ -4,6 +4,7 @@ import { Href, useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import { BrandMark, InfoBanner, PrimaryButton, SectionHeader } from '@/components/ui';
+import { NotificationBell } from '@/components/NotificationBell';
 import {
   ApiError,
   Producto,
@@ -236,7 +237,12 @@ export default function ProfileScreen() {
   return (
     <>
       <ScrollView className="flex-1 bg-neutral-50" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 28, paddingBottom: 104 }} showsVerticalScrollIndicator={false}>
-        <SectionHeader title="Perfil" eyebrow="Cuenta" />
+        <View className="flex-row items-start justify-between">
+          <View className="flex-1 mr-3">
+            <SectionHeader title="Perfil" eyebrow="Cuenta" />
+          </View>
+          <NotificationBell />
+        </View>
 
         <View className="bg-brand-900 rounded-3xl p-5 mb-5 overflow-hidden">
           <View className="absolute right-0 top-0 w-28 h-full bg-teal-800 opacity-60" />
