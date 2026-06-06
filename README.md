@@ -1,55 +1,88 @@
 # PermutApp Frontend
 
-Frontend movil y web de PermutApp construido con Expo, React Native, Expo Router y TypeScript.
+Aplicacion movil y web para publicar productos, proponer permutas y coordinar
+intercambios entre usuarios verificados.
 
-La app consume directamente tres microservicios Spring Boot:
+El frontend esta construido con Expo, React Native, Expo Router y TypeScript.
+Consume una arquitectura de microservicios Spring Boot para autenticacion,
+publicaciones, productos, mensajeria y localizacion.
 
-- `ServicioUsuarios`: registro, login, JWT y verificacion de identidad.
-- `ServicioPublicaciones`: creacion y consulta de publicaciones.
-- `ServicioProducto`: creacion y consulta de productos.
+## Tecnologias
+
+- Expo SDK 54
+- React 19 y React Native 0.81
+- Expo Router 6
+- TypeScript en modo estricto
+- NativeWind y Tailwind CSS
+- Expo Secure Store
+- Expo Image Picker
+
+## Funcionalidades
+
+- Registro e inicio de sesion con JWT.
+- Persistencia de sesion en web y dispositivos nativos.
+- Verificacion de identidad mediante foto de carnet y selfie.
+- Catalogo con busqueda y filtros por estado.
+- Publicacion de productos con ubicacion aproximada y Metro cercano.
+- Carga de hasta 5 fotos por producto; la primera se usa como portada.
+- Detalle de producto con galeria, vendedor y ubicacion.
+- Inicio de conversaciones desde una publicacion.
+- Chat entre el propietario y la persona interesada.
+- Perfil con estado de verificacion y administracion de publicaciones.
+- Edicion y eliminacion de productos publicados.
 
 ## Requisitos
 
-- Node.js 18 o superior
-- npm
-- Expo Go o Android Studio/Xcode si se quiere probar en emulador
-- Backend corriendo localmente o desplegado
+- Node.js 20 LTS recomendado.
+- npm.
+- Expo Go, un emulador o simulador para ejecutar la version nativa.
+- Los microservicios de PermutApp levantados localmente o desplegados.
 
-## Instalar dependencias
+## Instalacion
 
 ```bash
+git clone https://github.com/alfr-alvarz/Permutapp-frontend.git
+cd Permutapp-frontend
 npm install
+cp .env.example .env
 ```
 
 ## Variables de entorno
 
-Crear o revisar el archivo `.env` en la raiz del frontend.
-
-Para entorno local:
+El archivo `.env.example` contiene la configuracion local:
 
 ```env
 EXPO_PUBLIC_API_BASE_URL=http://localhost:5001
 EXPO_PUBLIC_PRODUCTOS_API_BASE_URL=http://localhost:5050
-EXPO_PUBLIC_PUBLICACIONES_API_BASE_URL=http://localhost:6000
+EXPO_PUBLIC_PUBLICACIONES_API_BASE_URL=http://localhost:6001
+EXPO_PUBLIC_MENSAJERIA_API_BASE_URL=http://localhost:7001
+EXPO_PUBLIC_LOCALIZACION_API_BASE_URL=http://localhost:5002
 ```
 
-Estas URLs apuntan a:
+| Variable | Servicio | Puerto local |
+| --- | --- | ---: |
+| `EXPO_PUBLIC_API_BASE_URL` | ServicioUsuarios | `5001` |
+| `EXPO_PUBLIC_PRODUCTOS_API_BASE_URL` | ServicioProducto | `5050` |
+| `EXPO_PUBLIC_PUBLICACIONES_API_BASE_URL` | ServicioPublicaciones | `6001` |
+| `EXPO_PUBLIC_MENSAJERIA_API_BASE_URL` | ServicioMensajeria | `7001` |
+| `EXPO_PUBLIC_LOCALIZACION_API_BASE_URL` | ServicioLocalizacion | `5002` |
 
-- `5001`: ServicioUsuarios
-- `5050`: ServicioProducto
-- `6000`: ServicioPublicaciones
+En Android Emulator, la aplicacion convierte automaticamente `localhost` y
+`127.0.0.1` a `10.0.2.2`.
 
-En Android Emulator, el codigo convierte automaticamente `localhost` y `127.0.0.1` a `10.0.2.2`, por lo que se pueden mantener las URLs anteriores en `.env`.
+Para probar desde Expo Go en un telefono fisico, reemplaza `localhost` por la IP
+local del computador y asegurate de que ambos dispositivos esten en la misma
+red. En ambientes desplegados, usa las URL HTTPS reales de cada servicio.
 
-Cuando se despliegue, estas variables deben cambiar a las URLs reales del backend en Render.
+## Ejecucion
 
-## Correr el proyecto
+Inicia el servidor de desarrollo:
 
 ```bash
 npm run start
 ```
 
-Tambien se puede correr directo por plataforma:
+Tambien puedes abrir una plataforma directamente:
 
 ```bash
 npm run android
@@ -57,108 +90,108 @@ npm run ios
 npm run web
 ```
 
-Con Expo abierto:
+Atajos disponibles en la terminal de Expo:
 
-- `w`: abre version web
-- `a`: abre Android Emulator
-- `i`: abre iOS Simulator en macOS
-- QR: abre en Expo Go desde celular
+- `w`: abre la aplicacion web.
+- `a`: abre Android Emulator.
+- `i`: abre iOS Simulator en macOS.
+- QR: abre el proyecto con Expo Go.
 
-## Validar TypeScript
+Si Metro conserva una configuracion anterior, reinicia limpiando la cache:
 
-El proyecto no tiene script propio para typecheck, pero se puede ejecutar:
+```bash
+npx expo start --clear
+```
+
+## Orden de inicio local
+
+1. Levanta `ServicioUsuarios` en `http://localhost:5001`.
+2. Levanta `ServicioProducto` en `http://localhost:5050`.
+3. Levanta `ServicioPublicaciones` en `http://localhost:6001`.
+4. Levanta `ServicioMensajeria` en `http://localhost:7001`.
+5. Levanta `ServicioLocalizacion` en `http://localhost:5002`.
+6. Inicia el frontend con `npm run start`.
+
+La pantalla de inicio y el catalogo pueden abrirse sin sesion. Para publicar,
+verificar identidad, administrar productos o usar el chat se necesita iniciar
+sesion y disponer de los servicios correspondientes.
+
+## Flujo principal
+
+1. El usuario crea una cuenta o inicia sesion.
+2. Puede verificar su identidad con una foto del carnet y una selfie.
+3. Explora el catalogo o publica un producto.
+4. Al publicar, selecciona estado, valor referencial, ubicacion, Metro cercano
+   y hasta cinco imagenes.
+5. Otra persona abre el detalle y propone una permuta.
+6. Ambas partes coordinan el intercambio mediante el chat.
+7. El propietario administra sus publicaciones desde el perfil.
+
+## Rutas
+
+| Ruta | Descripcion |
+| --- | --- |
+| `/(tabs)` | Navegacion principal |
+| `/(tabs)/index` | Inicio y productos destacados |
+| `/(tabs)/two` | Catalogo y busqueda |
+| `/(tabs)/chats` | Conversaciones del usuario |
+| `/(tabs)/profile` | Perfil y publicaciones propias |
+| `/login` | Inicio de sesion |
+| `/register` | Registro |
+| `/verify-identity` | Verificacion de identidad |
+| `/publish` | Creacion de publicacion y producto |
+| `/product/[id]` | Detalle de producto |
+| `/chat/[id]` | Conversacion de una permuta |
+
+## Integracion con la API
+
+El cliente HTTP se encuentra en `services/api.ts`. Centraliza:
+
+- Resolucion de URL para web, Android y otros dispositivos nativos.
+- Cabecera `Authorization: Bearer <token>` en endpoints protegidos.
+- Solicitudes JSON y `multipart/form-data`.
+- Mensajes de error de conexion asociados a cada microservicio.
+- Operaciones de usuarios, publicaciones, productos, chats y localizacion.
+
+La sesion se administra desde `context/AuthContext.tsx` y se persiste mediante
+`services/sessionStorage.ts`.
+
+## Estructura
+
+```text
+app/                    Pantallas y rutas de Expo Router
+  (tabs)/               Inicio, catalogo, chats y perfil
+  chat/[id].tsx         Conversacion de una permuta
+  product/[id].tsx      Detalle de producto
+  publish.tsx           Flujo de publicacion
+  verify-identity.tsx   Verificacion de identidad
+components/             Componentes reutilizables
+constants/              Colores y constantes visuales
+context/                Estado global de autenticacion
+layouts/                Layouts principales
+services/               Cliente API y almacenamiento de sesion
+assets/                 Iconos, imagenes y fuentes
+```
+
+## Validacion
+
+Comprueba los tipos antes de enviar cambios:
 
 ```bash
 npx tsc --noEmit
 ```
 
-## Flujo principal de la app
+Para revisar que Expo pueda resolver la configuracion:
 
-1. Registro de usuario.
-2. Login con email y contrasena.
-3. Perfil con estado de verificacion de identidad.
-4. Verificacion de identidad con foto de carnet y selfie.
-5. Creacion de publicacion.
-6. Creacion de producto asociado a la publicacion.
-7. Listado y detalle de productos.
-
-## Verificacion de identidad
-
-La pantalla `verify-identity` permite subir una foto del carnet y tomar una selfie.
-
-El frontend envia ambas imagenes a `ServicioUsuarios` mediante `multipart/form-data`.
-
-El backend responde con un estado:
-
-- `APROBADA`
-- `RECHAZADA`
-- `REVISION_MANUAL`
-- `PENDIENTE`
-
-La app muestra el resultado en pantalla y actualiza el perfil con el estado real consultado al backend.
-
-## Rutas principales
-
-```txt
-/login                 Inicio de sesion
-/register              Registro de usuario
-/verify-identity       Verificacion de identidad
-/publish               Crear publicacion y producto
-/product/[id]          Detalle de producto
-/(tabs)                Navegacion principal
-/(tabs)/index          Inicio
-/(tabs)/two            Catalogo
-/(tabs)/profile        Perfil
+```bash
+npx expo config --type public
 ```
 
-## Servicios usados
+## Consideraciones
 
-Archivo principal de consumo API:
-
-```txt
-services/api.ts
-```
-
-Funciones importantes:
-
-- `login`
-- `register`
-- `verificarIdentidad`
-- `obtenerEstadoIdentidad`
-- `crearPublicacion`
-- `crearProducto`
-- `obtenerProductos`
-- `obtenerProductoPorId`
-- `listarRevisionManualIdentidad`
-- `resolverRevisionManualIdentidad`
-
-## Autenticacion
-
-El backend entrega un JWT al iniciar sesion o registrarse.
-
-El frontend guarda la sesion y envia el token en endpoints privados con:
-
-```http
-Authorization: Bearer TOKEN
-```
-
-## Estructura basica
-
-```txt
-app/                  Pantallas y rutas Expo Router
-components/           Componentes reutilizables
-context/              AuthContext y estado global de sesion
-services/             Cliente API y almacenamiento de sesion
-assets/               Imagenes y recursos estaticos
-tailwind.config.js    Configuracion de estilos
-```
-
-## Orden recomendado para probar local
-
-1. Levantar `ServicioUsuarios` en `http://localhost:5001`.
-2. Levantar `ServicioPublicaciones` en `http://localhost:6000`.
-3. Levantar `ServicioProducto` en `http://localhost:5050`.
-4. Iniciar Expo con `npm run start`.
-5. Registrar o iniciar sesion.
-6. Probar verificacion de identidad.
-7. Crear publicacion y producto.
+- Las imagenes de productos se convierten a Data URL antes de enviarse al
+  servicio de productos.
+- El limite del flujo de publicacion es de cinco fotos.
+- La ubicacion mostrada es aproximada; el punto final se coordina por chat.
+- No subas secretos al repositorio. Solo las variables con prefijo
+  `EXPO_PUBLIC_` deben estar disponibles en el cliente.
