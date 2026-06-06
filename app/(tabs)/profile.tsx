@@ -7,13 +7,16 @@ import { BrandMark, InfoBanner, PrimaryButton, SectionHeader } from '@/component
 import { NotificationBell } from '@/components/NotificationBell';
 import {
   ApiError,
+  EstacionMetro,
   Producto,
   Publicacion,
   actualizarProducto,
   actualizarPublicacion,
+  encontrarEstacionMetroPorCoordenadas,
   eliminarProducto,
   eliminarPublicacion,
   eliminarUsuario,
+  obtenerEstacionesMetro,
   obtenerProductos,
   obtenerPublicaciones,
 } from '../../services/api';
@@ -76,6 +79,7 @@ export default function ProfileScreen() {
   const [isLoadingPermutas, setIsLoadingPermutas] = useState(false);
   const [permutasError, setPermutasError] = useState<string | null>(null);
   const [editingPermutaId, setEditingPermutaId] = useState<number | null>(null);
+  const [estacionesMetro, setEstacionesMetro] = useState<EstacionMetro[]>([]);
   const [editForm, setEditForm] = useState<EditForm | null>(null);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [deletingProductoId, setDeletingProductoId] = useState<number | null>(null);
@@ -93,7 +97,11 @@ export default function ProfileScreen() {
     try {
       setIsLoadingPermutas(true);
       setPermutasError(null);
-      const [productos, publicaciones] = await Promise.all([obtenerProductos(), obtenerPublicaciones()]);
+      const [productos, publicaciones, estaciones] = await Promise.all([
+        obtenerProductos(),
+        obtenerPublicaciones(),
+        obtenerEstacionesMetro().catch(() => []),
+      ]);
       const misPublicaciones = publicaciones.filter((publicacion) => publicacion.publ_autor_id === Number(user.id));
       const publicacionesPorId = new Map(misPublicaciones.map((publicacion) => [publicacion.publ_id, publicacion]));
       const misPermutas = productos
@@ -101,6 +109,7 @@ export default function ProfileScreen() {
         .map((producto) => ({ producto, publicacion: publicacionesPorId.get(producto.publ_id)! }))
         .sort((a, b) => new Date(b.publicacion.publ_fech_creacion).getTime() - new Date(a.publicacion.publ_fech_creacion).getTime());
       setPermutas(misPermutas);
+      setEstacionesMetro(estaciones);
     } catch (error) {
       setPermutasError(error instanceof ApiError ? error.message : 'No fue posible cargar tus permutas.');
     } finally {
@@ -319,6 +328,11 @@ export default function ProfileScreen() {
           {permutas.map((permuta) => {
             const isEditing = editingPermutaId === permuta.producto.prod_id && editForm;
             const isDeleting = deletingProductoId === permuta.producto.prod_id;
+            const estacionMetro = encontrarEstacionMetroPorCoordenadas(
+              estacionesMetro,
+              permuta.producto.prod_latitud_aprox,
+              permuta.producto.prod_longitud_aprox,
+            );
             return (
               <View key={permuta.producto.prod_id} className="bg-white border border-neutral-100 rounded-3xl p-4 mb-3">
                 {isEditing ? (
@@ -336,8 +350,11 @@ export default function ProfileScreen() {
                         );
                       })}
                     </ScrollView>
-                    <TextInput className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 h-12 text-neutral-900" placeholder="Valor referencial" value={editForm.precio} onChangeText={(precio) => setEditForm((prev) => prev ? { ...prev, precio } : prev)} keyboardType="number-pad" />
-                    <TextInput className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 h-12 text-neutral-900" placeholder="Ubicación aproximada" value={editForm.ubicacionComuna} onChangeText={(ubicacionComuna) => setEditForm((prev) => prev ? { ...prev, ubicacionComuna } : prev)} />
+                    <TextInput className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 h-12 text-neutral-900" placeholder="Valor referencial" value={editForm.precio} onChangeText={(precio) => setEditForm((prev) => prev ? { ...prev, precio: precio.replace(/\D/g, '') } : prev)} keyboardType="number-pad" inputMode="numeric" />
+                    <TextInput className="bg-neutral-100 border border-neutral-200 rounded-2xl px-4 h-12 text-neutral-500" placeholder="Comuna" value={editForm.ubicacionComuna} editable={false} />
+                    <TextInput className="bg-brand-50 border border-brand-100 rounded-2xl px-4 h-12 text-brand-800 font-bold" placeholder="Metro no registrado" value={estacionMetro ? `Metro ${estacionMetro.nombre} · ${estacionMetro.linea}` : ''} editable={false} />
+                    {!estacionMetro ? <Text className="text-amber-700 text-xs leading-5">Este producto no tiene coordenadas de Metro registradas.</Text> : null}
+                    <Text className="text-neutral-500 text-xs leading-5">La comuna proviene de ServicioLocalizacion y no se edita como texto libre.</Text>
                     <TextInput className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 h-12 text-neutral-900" placeholder="Referencia" value={editForm.ubicacionReferencia} onChangeText={(ubicacionReferencia) => setEditForm((prev) => prev ? { ...prev, ubicacionReferencia } : prev)} />
                     <View className="flex-row gap-2">
                       <TouchableOpacity className="flex-1 h-12 rounded-2xl bg-brand-700 items-center justify-center" onPress={() => saveEdit(permuta)} disabled={isSavingEdit} activeOpacity={0.75}>
@@ -364,6 +381,11 @@ export default function ProfileScreen() {
                       {permuta.producto.prod_ubicacion_comuna ? (
                         <View className="bg-neutral-100 rounded-full px-3 py-1 mb-2">
                           <Text className="text-neutral-600 text-xs font-bold">{permuta.producto.prod_ubicacion_comuna}</Text>
+                        </View>
+                      ) : null}
+                      {estacionMetro ? (
+                        <View className="bg-brand-50 border border-brand-100 rounded-full px-3 py-1 mb-2 ml-2">
+                          <Text className="text-brand-700 text-xs font-bold">Metro {estacionMetro.nombre} · {estacionMetro.linea}</Text>
                         </View>
                       ) : null}
                     </View>

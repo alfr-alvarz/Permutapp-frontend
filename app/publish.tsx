@@ -5,7 +5,19 @@ import { useEffect, useMemo, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import { InfoBanner, PrimaryButton, SectionHeader } from '@/components/ui';
-import { crearProducto, crearPublicacion, ApiError, EstacionMetro, obtenerEstacionesMetro } from '../services/api';
+import {
+  ApiError,
+  Ciudad,
+  Comuna,
+  EstacionMetro,
+  Region,
+  crearProducto,
+  crearPublicacion,
+  obtenerCiudadesPorRegion,
+  obtenerComunasPorCiudad,
+  obtenerEstacionesMetro,
+  obtenerPaisesConRegiones,
+} from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import MainLayout from '../layouts/MainLayout';
 
@@ -44,6 +56,10 @@ interface PublishErrors {
   general?: string;
 }
 
+function normalizarTexto(value: string): string {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
 async function uriToDataUrl(uri: string, mimeType: string): Promise<string> {
   if (uri.startsWith('data:')) {
     return uri;
@@ -79,7 +95,14 @@ export default function PublishScreen() {
   const [nombre, setNombre] = useState('');
   const [estado, setEstado] = useState(ESTADOS[1]);
   const [precio, setPrecio] = useState('');
-  const [ubicacionComuna, setUbicacionComuna] = useState('');
+  const [regiones, setRegiones] = useState<Region[]>([]);
+  const [regionSeleccionada, setRegionSeleccionada] = useState<Region | null>(null);
+  const [ciudades, setCiudades] = useState<Ciudad[]>([]);
+  const [ciudadSeleccionada, setCiudadSeleccionada] = useState<Ciudad | null>(null);
+  const [comunas, setComunas] = useState<Comuna[]>([]);
+  const [comunaSeleccionada, setComunaSeleccionada] = useState<Comuna | null>(null);
+  const [busquedaComuna, setBusquedaComuna] = useState('');
+  const [isLoadingGeografia, setIsLoadingGeografia] = useState(false);
   const [ubicacionReferencia, setUbicacionReferencia] = useState('');
   const [estacionesMetro, setEstacionesMetro] = useState<EstacionMetro[]>([]);
   const [estacionSeleccionada, setEstacionSeleccionada] = useState<EstacionMetro | null>(null);
@@ -137,6 +160,57 @@ export default function PublishScreen() {
     clearError('fotos');
   };
 
+  const seleccionarCiudad = async (ciudad: Ciudad) => {
+    try {
+      setCiudadSeleccionada(ciudad);
+      setComunaSeleccionada(null);
+      setBusquedaComuna('');
+      setIsLoadingGeografia(true);
+      const data = await obtenerComunasPorCiudad(ciudad.id);
+      setComunas(data.sort((a, b) => a.nombre.localeCompare(b.nombre)));
+      clearError('ubicacionComuna');
+    } catch {
+      setErrors((prev) => ({ ...prev, ubicacionComuna: 'No fue posible cargar las comunas.' }));
+    } finally {
+      setIsLoadingGeografia(false);
+    }
+  };
+
+  const seleccionarRegion = async (region: Region) => {
+    try {
+      setRegionSeleccionada(region);
+      setCiudadSeleccionada(null);
+      setComunaSeleccionada(null);
+      setCiudades([]);
+      setComunas([]);
+      setBusquedaComuna('');
+      setIsLoadingGeografia(true);
+      const data = await obtenerCiudadesPorRegion(region.id);
+      const ordenadas = data.sort((a, b) => a.nombre.localeCompare(b.nombre));
+      setCiudades(ordenadas);
+      const inicial = ordenadas.find((ciudad) => normalizarTexto(ciudad.nombre).includes('santiago')) ?? ordenadas[0];
+      if (inicial) {
+        setCiudadSeleccionada(inicial);
+        const comunasData = await obtenerComunasPorCiudad(inicial.id);
+        setComunas(comunasData.sort((a, b) => a.nombre.localeCompare(b.nombre)));
+      }
+      clearError('ubicacionComuna');
+    } catch {
+      setErrors((prev) => ({ ...prev, ubicacionComuna: 'No fue posible cargar ciudades y comunas.' }));
+    } finally {
+      setIsLoadingGeografia(false);
+    }
+  };
+
+  const seleccionarComuna = (comuna: Comuna) => {
+    setComunaSeleccionada(comuna);
+    clearError('ubicacionComuna');
+    const estacionMismaComuna = estacionesMetro.find(
+      (estacion) => estacion.comuna && normalizarTexto(estacion.comuna) === normalizarTexto(comuna.nombre),
+    );
+    if (estacionMismaComuna) setLineaSeleccionada(estacionMismaComuna.linea);
+  };
+
   const validate = () => {
     const nextErrors: PublishErrors = {};
     const precioNumerico = Number(precio.replace(/\D/g, ''));
@@ -145,7 +219,7 @@ export default function PublishScreen() {
     if (!descripcion.trim()) nextErrors.descripcion = 'La descripción es obligatoria.';
     if (!nombre.trim()) nextErrors.nombre = 'El nombre del producto es obligatorio.';
     if (!Number.isInteger(precioNumerico) || precioNumerico < 0) nextErrors.precio = 'Ingresa un valor referencial válido.';
-    if (!ubicacionComuna.trim()) nextErrors.ubicacionComuna = 'Indica una comuna o sector aproximado.';
+    if (!comunaSeleccionada) nextErrors.ubicacionComuna = 'Selecciona una comuna cargada desde ServicioLocalizacion.';
 
     if (!estacionSeleccionada) nextErrors.metro = 'Selecciona un Metro cercano para calcular puntos seguros.';
 
@@ -177,7 +251,7 @@ export default function PublishScreen() {
         prod_precio: Number(precio.replace(/\D/g, '')),
         publ_id: publicacion.publ_id,
         prod_imagenes: fotos.map((foto) => foto.dataUrl),
-        prod_ubicacion_comuna: ubicacionComuna.trim(),
+        prod_ubicacion_comuna: comunaSeleccionada?.nombre,
         prod_ubicacion_referencia: ubicacionReferencia.trim() || referenciaMetro,
         prod_latitud_aprox: estacionSeleccionada?.latitud ?? undefined,
         prod_longitud_aprox: estacionSeleccionada?.longitud ?? undefined,
@@ -201,12 +275,50 @@ export default function PublishScreen() {
   useEffect(() => {
     let mounted = true;
 
+    async function cargarGeografia() {
+      try {
+        setIsLoadingGeografia(true);
+        const paises = await obtenerPaisesConRegiones();
+        const chile = paises.find((pais) => normalizarTexto(pais.nombre).includes('chile')) ?? paises[0];
+        const regionesData = [...(chile?.regiones ?? [])].sort((a, b) => a.nombre.localeCompare(b.nombre));
+        const regionInicial = regionesData.find((region) => normalizarTexto(region.nombre).includes('metropolitana')) ?? regionesData[0];
+        if (!regionInicial) throw new Error('No hay regiones disponibles');
+
+        const ciudadesData = (await obtenerCiudadesPorRegion(regionInicial.id)).sort((a, b) => a.nombre.localeCompare(b.nombre));
+        const ciudadInicial = ciudadesData.find((ciudad) => normalizarTexto(ciudad.nombre).includes('santiago')) ?? ciudadesData[0];
+        const comunasData = ciudadInicial
+          ? (await obtenerComunasPorCiudad(ciudadInicial.id)).sort((a, b) => a.nombre.localeCompare(b.nombre))
+          : [];
+
+        if (mounted) {
+          setRegiones(regionesData);
+          setRegionSeleccionada(regionInicial);
+          setCiudades(ciudadesData);
+          setCiudadSeleccionada(ciudadInicial ?? null);
+          setComunas(comunasData);
+        }
+      } catch {
+        if (mounted) {
+          setErrors((prev) => ({ ...prev, ubicacionComuna: 'No fue posible cargar comunas desde ServicioLocalizacion.' }));
+        }
+      } finally {
+        if (mounted) setIsLoadingGeografia(false);
+      }
+    }
+
+    cargarGeografia();
+    return () => { mounted = false; };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
     async function cargarEstacionesMetro() {
       try {
         setIsLoadingMetro(true);
         const data = await obtenerEstacionesMetro();
         if (mounted) {
-          setEstacionesMetro(data.filter((estacion) => estacion.latitud !== null && estacion.longitud !== null));
+          setEstacionesMetro(data.filter((estacion) => estacion.latitud != null && estacion.longitud != null));
         }
       } catch {
         if (mounted) {
@@ -227,6 +339,12 @@ export default function PublishScreen() {
       .sort((a, b) => (a.orden ?? 999) - (b.orden ?? 999) || a.nombre.localeCompare(b.nombre)),
     [estacionesMetro, lineaSeleccionada],
   );
+
+  const comunasFiltradas = useMemo(() => {
+    const query = normalizarTexto(busquedaComuna.trim());
+    if (!query) return comunas;
+    return comunas.filter((comuna) => normalizarTexto(comuna.nombre).includes(query));
+  }, [busquedaComuna, comunas]);
 
   const lineaActiva = METRO_LINEAS.find((linea) => linea.id === lineaSeleccionada);
   const colorLineaActiva = lineaActiva?.color ?? LINEA_FALLBACK;
@@ -324,8 +442,48 @@ export default function PublishScreen() {
 
 
                 <View className="mb-4">
-                  <Text className="text-neutral-800 font-bold mb-2 text-sm">Ubicación aproximada</Text>
-                  <TextInput className={`bg-neutral-50 border rounded-2xl px-4 h-14 text-neutral-900 text-base ${errors.ubicacionComuna ? 'border-red-400' : 'border-neutral-200'}`} placeholder="Ej: Providencia, RM" placeholderTextColor="#a3a3a3" value={ubicacionComuna} onChangeText={(text) => { setUbicacionComuna(text); clearError('ubicacionComuna'); }} editable={!isSubmitting} />
+                  <View className="flex-row items-center justify-between mb-2">
+                    <Text className="text-neutral-800 font-bold text-sm">Comuna del producto</Text>
+                    {isLoadingGeografia ? <ActivityIndicator size="small" color="#047857" /> : null}
+                  </View>
+                  <Text className="text-neutral-500 text-xs leading-5 mb-3">Selecciona una comuna registrada. Solo guardamos una ubicación aproximada.</Text>
+
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 12 }}>
+                    {regiones.map((region) => {
+                      const selected = regionSeleccionada?.id === region.id;
+                      return (
+                        <TouchableOpacity key={region.id} className={`mr-2 px-3 h-10 rounded-2xl border items-center justify-center ${selected ? 'bg-brand-700 border-brand-700' : 'bg-neutral-50 border-neutral-200'}`} onPress={() => seleccionarRegion(region)} disabled={isSubmitting || isLoadingGeografia} activeOpacity={0.75}>
+                          <Text className={`text-xs font-bold ${selected ? 'text-white' : 'text-neutral-700'}`}>{region.nombre}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+
+                  {ciudades.length > 1 ? (
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-3" contentContainerStyle={{ paddingRight: 12 }}>
+                      {ciudades.map((ciudad) => {
+                        const selected = ciudadSeleccionada?.id === ciudad.id;
+                        return (
+                          <TouchableOpacity key={ciudad.id} className={`mr-2 px-3 h-10 rounded-2xl border items-center justify-center ${selected ? 'bg-teal-100 border-teal-300' : 'bg-neutral-50 border-neutral-200'}`} onPress={() => seleccionarCiudad(ciudad)} disabled={isSubmitting || isLoadingGeografia} activeOpacity={0.75}>
+                            <Text className="text-neutral-700 text-xs font-bold">{ciudad.nombre}</Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+                  ) : null}
+
+                  <TextInput className={`bg-neutral-50 border rounded-2xl px-4 h-12 text-neutral-900 mt-3 ${errors.ubicacionComuna ? 'border-red-400' : 'border-neutral-200'}`} placeholder="Buscar comuna" placeholderTextColor="#a3a3a3" value={busquedaComuna} onChangeText={setBusquedaComuna} editable={!isSubmitting && !isLoadingGeografia} />
+                  <View className="flex-row flex-wrap mt-3">
+                    {comunasFiltradas.map((comuna) => {
+                      const selected = comunaSeleccionada?.id === comuna.id;
+                      return (
+                        <TouchableOpacity key={comuna.id} className={`mr-2 mb-2 px-3 min-h-10 rounded-2xl border items-center justify-center ${selected ? 'bg-brand-700 border-brand-700' : 'bg-white border-neutral-200'}`} onPress={() => seleccionarComuna(comuna)} disabled={isSubmitting} activeOpacity={0.75}>
+                          <Text className={`text-xs font-bold ${selected ? 'text-white' : 'text-neutral-700'}`}>{comuna.nombre}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                  {!isLoadingGeografia && comunasFiltradas.length === 0 ? <Text className="text-amber-700 text-xs leading-5 mt-1">No hay comunas cargadas en Supabase para esta ciudad o la búsqueda no tiene resultados.</Text> : null}
                   <FieldError message={errors.ubicacionComuna} />
                   <TextInput className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 h-14 text-neutral-900 text-base mt-3" placeholder="Referencia opcional: sector, barrio o cruce cercano" placeholderTextColor="#a3a3a3" value={ubicacionReferencia} onChangeText={setUbicacionReferencia} editable={!isSubmitting} />
 
@@ -401,7 +559,19 @@ export default function PublishScreen() {
 
                 <View className="mb-6">
                   <Text className="text-neutral-800 font-bold mb-2 text-sm">Valor referencial</Text>
-                  <TextInput className={`bg-neutral-50 border rounded-2xl px-4 h-14 text-neutral-900 text-base ${errors.precio ? 'border-red-400' : 'border-neutral-200'}`} placeholder="Ej: 150000" placeholderTextColor="#a3a3a3" value={precio} onChangeText={(text) => { setPrecio(text); clearError('precio'); }} keyboardType="number-pad" editable={!isSubmitting} />
+                  <TextInput
+                    className={`bg-neutral-50 border rounded-2xl px-4 h-14 text-neutral-900 text-base ${errors.precio ? 'border-red-400' : 'border-neutral-200'}`}
+                    placeholder="Ej: 150000"
+                    placeholderTextColor="#a3a3a3"
+                    value={precio}
+                    onChangeText={(text) => {
+                      setPrecio(text.replace(/\D/g, ''));
+                      clearError('precio');
+                    }}
+                    keyboardType="number-pad"
+                    inputMode="numeric"
+                    editable={!isSubmitting}
+                  />
                   <FieldError message={errors.precio} />
                 </View>
 

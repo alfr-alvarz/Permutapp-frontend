@@ -467,6 +467,7 @@ export function resolverRevisionManualIdentidad(
 export interface Conversacion {
   conv_id: number;
   publ_id: number;
+  prod_id?: number | null;
   publ_titulo: string;
   publ_autor_id: number;
   interesado_id: number;
@@ -486,6 +487,7 @@ export interface Mensaje {
 
 export interface CrearConversacionPayload {
   publ_id: number;
+  prod_id: number;
   interesado_id: number;
   mensaje_inicial: string;
 }
@@ -523,6 +525,13 @@ export function enviarMensaje(conversacionId: number, payload: EnviarMensajePayl
   });
 }
 
+export function eliminarConversacion(conversacionId: number, usuarioId: number, token: string): Promise<void> {
+  return request<void>(MENSAJERIA_API_BASE_URL, `/chat/conversaciones/${conversacionId}?usuarioId=${usuarioId}`, {
+    method: 'DELETE',
+    token,
+  });
+}
+
 
 export interface EstacionMetro {
   id: number;
@@ -534,6 +543,30 @@ export interface EstacionMetro {
   longitud?: number | null;
   direccion?: string | null;
   comuna?: string | null;
+}
+
+export interface Region {
+  id: number;
+  nombre: string;
+  paisId: number;
+}
+
+export interface PaisConRegiones {
+  id: number;
+  nombre: string;
+  regiones: Region[];
+}
+
+export interface Ciudad {
+  id: number;
+  nombre: string;
+  regionId: number;
+}
+
+export interface Comuna {
+  id: number;
+  nombre: string;
+  ciudadId: number;
 }
 
 export interface SugerenciaPuntoMedioPayload {
@@ -555,6 +588,35 @@ export interface SugerenciaPuntoMedio {
 
 export function obtenerEstacionesMetro(): Promise<EstacionMetro[]> {
   return request<EstacionMetro[]>(LOCALIZACION_API_BASE_URL, '/localizacion/metro/estaciones');
+}
+
+export function encontrarEstacionMetroPorCoordenadas(
+  estaciones: EstacionMetro[],
+  latitud?: number | null,
+  longitud?: number | null,
+): EstacionMetro | null {
+  if (latitud == null || longitud == null) return null;
+
+  const candidatas = estaciones.filter((estacion) => estacion.latitud != null && estacion.longitud != null);
+  if (candidatas.length === 0) return null;
+
+  return candidatas.reduce((masCercana, estacion) => {
+    const distanciaActual = Math.hypot(estacion.latitud! - latitud, estacion.longitud! - longitud);
+    const distanciaCercana = Math.hypot(masCercana.latitud! - latitud, masCercana.longitud! - longitud);
+    return distanciaActual < distanciaCercana ? estacion : masCercana;
+  });
+}
+
+export function obtenerPaisesConRegiones(): Promise<PaisConRegiones[]> {
+  return request<PaisConRegiones[]>(LOCALIZACION_API_BASE_URL, '/localizacion/paises-con-regiones');
+}
+
+export function obtenerCiudadesPorRegion(regionId: number): Promise<Ciudad[]> {
+  return request<Ciudad[]>(LOCALIZACION_API_BASE_URL, `/localizacion/ciudades/region/${regionId}`);
+}
+
+export function obtenerComunasPorCiudad(ciudadId: number): Promise<Comuna[]> {
+  return request<Comuna[]>(LOCALIZACION_API_BASE_URL, `/localizacion/comunas/ciudad/${ciudadId}`);
 }
 
 export function sugerirMetroPuntoMedio(payload: SugerenciaPuntoMedioPayload): Promise<SugerenciaPuntoMedio> {

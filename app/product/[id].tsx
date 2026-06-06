@@ -4,7 +4,19 @@ import { useEffect, useMemo, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import { EmptyState, InfoBanner, PrimaryButton } from '@/components/ui';
-import { ApiError, iniciarConversacion, obtenerProductoPorId, obtenerPublicacionPorId, obtenerUsuarioPorId, Producto, Publicacion, Usuario } from '../../services/api';
+import {
+  ApiError,
+  EstacionMetro,
+  Producto,
+  Publicacion,
+  Usuario,
+  encontrarEstacionMetroPorCoordenadas,
+  iniciarConversacion,
+  obtenerEstacionesMetro,
+  obtenerProductoPorId,
+  obtenerPublicacionPorId,
+  obtenerUsuarioPorId,
+} from '../../services/api';
 import RequireAuth from '../../components/RequireAuth';
 import { useAuth } from '../../context/AuthContext';
 import MainLayout from '../../layouts/MainLayout';
@@ -17,6 +29,7 @@ export default function ProductDetailScreen() {
   const [producto, setProducto] = useState<Producto | null>(null);
   const [publicacion, setPublicacion] = useState<Publicacion | null>(null);
   const [vendedor, setVendedor] = useState<Usuario | null>(null);
+  const [estacionMetro, setEstacionMetro] = useState<EstacionMetro | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreatingChat, setIsCreatingChat] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,9 +48,17 @@ export default function ProductDetailScreen() {
 
       try {
         setIsLoading(true);
-        const data = await obtenerProductoPorId(idProducto);
+        const [data, estaciones] = await Promise.all([
+          obtenerProductoPorId(idProducto),
+          obtenerEstacionesMetro().catch(() => []),
+        ]);
         if (mounted) {
           setProducto(data);
+          setEstacionMetro(encontrarEstacionMetroPorCoordenadas(
+            estaciones,
+            data.prod_latitud_aprox,
+            data.prod_longitud_aprox,
+          ));
           setError(null);
           setPublicacionError(null);
         }
@@ -70,6 +91,7 @@ export default function ProductDetailScreen() {
           setProducto(null);
           setPublicacion(null);
           setVendedor(null);
+          setEstacionMetro(null);
           setPublicacionError(null);
           setError('No fue posible cargar el detalle del producto.');
         }
@@ -102,6 +124,7 @@ export default function ProductDetailScreen() {
       setChatError(null);
       const conversacion = await iniciarConversacion({
         publ_id: publicacion.publ_id,
+        prod_id: producto.prod_id,
         interesado_id: Number(user.id),
         mensaje_inicial: `Hola, me interesa ${producto.prod_nombre}. ¿Te gustaría coordinar una permuta?`,
       }, token);
@@ -119,9 +142,6 @@ export default function ProductDetailScreen() {
 
   const esMiPublicacion = Boolean(user && publicacion && Number(user.id) === publicacion.publ_autor_id);
   const vendedorNoVerificado = Boolean(vendedor && !vendedor.usu_identidad_verificada && !esMiPublicacion);
-  const ubicacionProducto = [producto?.prod_ubicacion_comuna, producto?.prod_ubicacion_referencia]
-    .filter(Boolean)
-    .join(' · ');
 
   return (
     <MainLayout>
@@ -205,13 +225,21 @@ export default function ProductDetailScreen() {
                 </Text>
               </View>
 
-              {ubicacionProducto ? (
+              {producto.prod_ubicacion_comuna || producto.prod_ubicacion_referencia || estacionMetro ? (
                 <View className="bg-white border border-neutral-100 rounded-3xl p-5 mb-5">
                   <Text className="text-neutral-400 text-xs uppercase tracking-widest font-bold mb-3">Ubicación aproximada</Text>
                   <View className="flex-row items-start">
                     <FontAwesome name="map-marker" size={16} color="#047857" />
                     <View className="flex-1 ml-3">
-                      <Text className="text-neutral-950 text-base font-bold">{ubicacionProducto}</Text>
+                      {producto.prod_ubicacion_comuna ? <Text className="text-neutral-950 text-base font-bold">{producto.prod_ubicacion_comuna}</Text> : null}
+                      {estacionMetro ? (
+                        <View className="bg-brand-50 border border-brand-100 rounded-2xl px-3 py-2 mt-2 self-start">
+                          <Text className="text-brand-800 text-sm font-bold">Metro {estacionMetro.nombre} · {estacionMetro.linea}</Text>
+                        </View>
+                      ) : null}
+                      {producto.prod_ubicacion_referencia ? (
+                        <Text className="text-neutral-600 text-sm leading-5 mt-2">{producto.prod_ubicacion_referencia}</Text>
+                      ) : null}
                       <Text className="text-neutral-500 text-xs leading-5 mt-1">La ubicación es aproximada. El punto seguro final se coordina por chat.</Text>
                     </View>
                   </View>
