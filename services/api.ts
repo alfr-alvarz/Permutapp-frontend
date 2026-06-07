@@ -38,6 +38,8 @@ export interface LocalImageFile {
   uri: string;
   name: string;
   type: string;
+  file?: File;
+  size?: number;
 }
 
 export interface AuthResponse {
@@ -163,6 +165,29 @@ function getApiErrorMessage(payload: ApiErrorPayload, fallback: string): string 
 function getImageName(uri: string, fallback: string): string {
   const rawName = uri.split('/').pop() || fallback;
   return rawName.includes('.') ? rawName : `${rawName}.jpg`;
+}
+
+const MAX_IDENTITY_IMAGE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_IDENTITY_IMAGE_TYPES = new Set(['image/jpeg', 'image/png']);
+
+function validateIdentityImage(image: LocalImageFile, label: string): void {
+  const type = image.file?.type || image.type;
+  const size = image.file?.size ?? image.size;
+
+  if (!ALLOWED_IDENTITY_IMAGE_TYPES.has(type)) {
+    throw new ApiError(`La imagen de ${label} debe estar en formato JPG o PNG.`, 400);
+  }
+
+  if (size !== undefined && size > MAX_IDENTITY_IMAGE_BYTES) {
+    throw new ApiError(`La imagen de ${label} supera el máximo de 5 MB.`, 400);
+  }
+
+  if (Platform.OS === 'web' && !image.file) {
+    throw new ApiError(
+      `No fue posible leer la imagen de ${label}. Vuelve a seleccionarla e intenta nuevamente.`,
+      0,
+    );
+  }
 }
 
 async function multipartRequest<TResponse>(
@@ -401,26 +426,29 @@ export function eliminarProducto(idProducto: number, token?: string): Promise<st
   return request<string>(PRODUCTOS_API_BASE_URL, `/producto/${idProducto}`, { method: 'DELETE', token });
 }
 
-async function uriToBlob(uri: string): Promise<Blob> {
-  const response = await fetch(uri);
-  return response.blob();
-}
-
 export async function verificarIdentidad(payload: {
   usuarioId: number;
   carnet: LocalImageFile;
   selfie: LocalImageFile;
   token: string;
 }): Promise<VerificacionIdentidad> {
+  validateIdentityImage(payload.carnet, 'carnet');
+  validateIdentityImage(payload.selfie, 'selfie');
+
   const formData = new FormData();
   formData.append('usuarioId', String(payload.usuarioId));
 
   if (Platform.OS === 'web') {
-    // On web, FormData needs real Blob/File objects
-    const carnetBlob = await uriToBlob(payload.carnet.uri);
-    const selfieBlob = await uriToBlob(payload.selfie.uri);
-    formData.append('carnet', carnetBlob, payload.carnet.name || getImageName(payload.carnet.uri, 'carnet.jpg'));
-    formData.append('selfie', selfieBlob, payload.selfie.name || getImageName(payload.selfie.uri, 'selfie.jpg'));
+    formData.append(
+      'carnet',
+      payload.carnet.file!,
+      payload.carnet.name || getImageName(payload.carnet.uri, 'carnet.jpg'),
+    );
+    formData.append(
+      'selfie',
+      payload.selfie.file!,
+      payload.selfie.name || getImageName(payload.selfie.uri, 'selfie.jpg'),
+    );
   } else {
     // On native, React Native accepts {uri, name, type} objects
     formData.append('carnet', {

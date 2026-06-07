@@ -15,11 +15,13 @@ type SelectedImage = LocalImageFile & {
 };
 
 function toLocalImageFile(asset: ImagePicker.ImagePickerAsset, fallbackName: string): SelectedImage {
-  const type = asset.mimeType || (asset.uri.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg');
+  const type = asset.file?.type || asset.mimeType || (asset.uri.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg');
   return {
     uri: asset.uri,
     name: asset.fileName || fallbackName,
     type,
+    file: asset.file,
+    size: asset.fileSize,
     label: asset.fileName || fallbackName,
   };
 }
