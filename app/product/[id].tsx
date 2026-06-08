@@ -48,6 +48,10 @@ export default function ProductDetailScreen() {
 
       try {
         setIsLoading(true);
+        setPublicacion(null);
+        setVendedor(null);
+        setPublicacionError(null);
+        setChatError(null);
         const [data, estaciones] = await Promise.all([
           obtenerProductoPorId(idProducto),
           obtenerEstacionesMetro().catch(() => []),
@@ -123,7 +127,7 @@ export default function ProductDetailScreen() {
       setIsCreatingChat(true);
       setChatError(null);
       const conversacion = await iniciarConversacion({
-        publ_id: publicacion.publ_id,
+        publ_id: producto.publ_id,
         prod_id: producto.prod_id,
         interesado_id: Number(user.id),
         mensaje_inicial: `Hola, me interesa ${producto.prod_nombre}. ¿Te gustaría coordinar una permuta?`,
