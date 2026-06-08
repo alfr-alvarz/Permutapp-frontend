@@ -2,7 +2,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFocusEffect } from '@react-navigation/native';
 import { Href, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 import { EmptyState, InfoBanner, PrimaryButton, SectionHeader } from '@/components/ui';
 import { useAuth } from '../../context/AuthContext';
@@ -463,13 +463,14 @@ export default function ChatDetailScreen() {
 
       <Modal visible={showChatMenu} transparent animationType="fade" onRequestClose={() => setShowChatMenu(false)}>
         <View className="flex-1 items-center">
-          <TouchableOpacity
-            className="absolute inset-0 bg-black/20"
-            activeOpacity={1}
+          <Pressable
+            style={StyleSheet.absoluteFillObject}
+            className="bg-black/20"
             onPress={() => setShowChatMenu(false)}
+            accessibilityRole="button"
             accessibilityLabel="Cerrar opciones"
           />
-          <View className="w-full max-w-[480px] flex-1">
+          <View pointerEvents="box-none" className="w-full max-w-[480px] flex-1">
             <View className="absolute top-20 right-5 w-72 bg-white rounded-3xl border border-neutral-100 p-2">
               {esInteresado && !esChatHistorico ? (
                 <TouchableOpacity className="flex-row items-center px-4 py-4 rounded-2xl" onPress={abrirPuntoSeguro} activeOpacity={0.7}>
