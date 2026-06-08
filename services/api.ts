@@ -65,6 +65,17 @@ export interface RegisterPayload {
   usu_pass: string;
 }
 
+export interface PasswordRecoveryResponse {
+  recoveryToken: string;
+  expiresIn: number;
+  message: string;
+}
+
+export interface ResetPasswordPayload {
+  recoveryToken: string;
+  newPassword: string;
+}
+
 export class ApiError extends Error {
   readonly status: number;
 
@@ -302,6 +313,55 @@ export function login(payload: LoginPayload): Promise<AuthResponse> {
 
 export function register(payload: RegisterPayload): Promise<AuthResponse> {
   return request<AuthResponse, RegisterPayload>(API_BASE_URL, '/auth/register', {
+    method: 'POST',
+    body: payload,
+  });
+}
+
+export async function verificarIdentidadParaRecuperacion(payload: {
+  email: string;
+  carnet: LocalImageFile;
+  selfie: LocalImageFile;
+}): Promise<PasswordRecoveryResponse> {
+  validateIdentityImage(payload.carnet, 'carnet');
+  validateIdentityImage(payload.selfie, 'selfie');
+
+  const formData = new FormData();
+  formData.append('email', payload.email.trim().toLowerCase());
+
+  if (Platform.OS === 'web') {
+    formData.append(
+      'carnet',
+      payload.carnet.file!,
+      payload.carnet.name || getImageName(payload.carnet.uri, 'carnet.jpg'),
+    );
+    formData.append(
+      'selfie',
+      payload.selfie.file!,
+      payload.selfie.name || getImageName(payload.selfie.uri, 'selfie.jpg'),
+    );
+  } else {
+    formData.append('carnet', {
+      uri: payload.carnet.uri,
+      name: payload.carnet.name || getImageName(payload.carnet.uri, 'carnet.jpg'),
+      type: payload.carnet.type || 'image/jpeg',
+    } as unknown as Blob);
+    formData.append('selfie', {
+      uri: payload.selfie.uri,
+      name: payload.selfie.name || getImageName(payload.selfie.uri, 'selfie.jpg'),
+      type: payload.selfie.type || 'image/jpeg',
+    } as unknown as Blob);
+  }
+
+  return multipartRequest<PasswordRecoveryResponse>(
+    API_BASE_URL,
+    '/auth/password-recovery/verify-identity',
+    formData,
+  );
+}
+
+export function restablecerPassword(payload: ResetPasswordPayload): Promise<string> {
+  return request<string, ResetPasswordPayload>(API_BASE_URL, '/auth/password-recovery/reset', {
     method: 'POST',
     body: payload,
   });

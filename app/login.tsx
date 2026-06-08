@@ -204,7 +204,11 @@ export default function Login() {
           </View>
 
           {/* ── Olvidé contraseña ── */}
-          <TouchableOpacity className="self-end mb-6" activeOpacity={0.7}>
+          <TouchableOpacity
+            className="self-end mb-6"
+            activeOpacity={0.7}
+            onPress={() => router.push('/forgot-password')}
+          >
             <Text className="text-brand-600 text-sm font-medium">
               ¿Olvidaste tu contraseña?
             </Text>
