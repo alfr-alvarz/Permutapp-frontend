@@ -308,30 +308,32 @@ export default function ChatDetailScreen() {
   return (
     <MainLayout>
       <KeyboardAvoidingView className="flex-1 bg-neutral-50" behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <View className="px-5 pt-4 pb-3 bg-neutral-50 border-b border-neutral-100">
+          <View className="flex-row items-center justify-between mb-3">
+            <TouchableOpacity className="w-11 h-11 rounded-2xl bg-white border border-neutral-100 items-center justify-center" onPress={() => router.back()} activeOpacity={0.75}>
+              <FontAwesome name="chevron-left" size={14} color="#404040" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              className="w-11 h-11 rounded-2xl bg-white border border-neutral-100 items-center justify-center"
+              onPress={() => setShowChatMenu(true)}
+              activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityLabel="Opciones del chat"
+            >
+              <FontAwesome name="ellipsis-v" size={18} color="#404040" />
+            </TouchableOpacity>
+          </View>
+
+          <SectionHeader title={conversacion?.publ_titulo ?? 'Conversación'} eyebrow="Permuta" />
+        </View>
+
         <ScrollView
           ref={scrollViewRef}
           className="flex-1"
           contentContainerStyle={{ paddingBottom: 24 }}
           showsVerticalScrollIndicator={false}
         >
-          <View className="px-5 pt-6 pb-4">
-            <View className="flex-row items-center justify-between mb-5">
-              <TouchableOpacity className="w-11 h-11 rounded-2xl bg-white border border-neutral-100 items-center justify-center" onPress={() => router.back()} activeOpacity={0.75}>
-                <FontAwesome name="chevron-left" size={14} color="#404040" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="w-11 h-11 rounded-2xl bg-white border border-neutral-100 items-center justify-center"
-                onPress={() => setShowChatMenu(true)}
-                activeOpacity={0.75}
-                accessibilityRole="button"
-                accessibilityLabel="Opciones del chat"
-              >
-                <FontAwesome name="ellipsis-v" size={18} color="#404040" />
-              </TouchableOpacity>
-            </View>
-
-            <SectionHeader title={conversacion?.publ_titulo ?? 'Conversación'} eyebrow="Permuta" />
-
+          <View className="px-5 pt-4 pb-4">
             {error ? <InfoBanner icon="exclamation-circle" title="No se pudo completar la acción" body={error} tone="red" /> : null}
 
             {esChatHistorico ? <InfoBanner icon="archive" title="Chat histórico" body="El producto original ya no está disponible. Puedes revisar los mensajes, pero no continuar esta negociación." tone="amber" /> : null}
