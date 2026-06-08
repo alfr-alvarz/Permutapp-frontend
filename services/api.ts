@@ -172,6 +172,20 @@ function getApiErrorMessage(payload: ApiErrorPayload, fallback: string): string 
   return payload.error ?? fallback;
 }
 
+async function readApiErrorMessage(response: Response, fallback: string): Promise<string> {
+  const responseText = await response.text();
+  if (!responseText) {
+    return fallback;
+  }
+
+  try {
+    const payload = JSON.parse(responseText) as ApiErrorPayload;
+    return getApiErrorMessage(payload, fallback);
+  } catch {
+    return responseText;
+  }
+}
+
 
 function getImageName(uri: string, fallback: string): string {
   const rawName = uri.split('/').pop() || fallback;
@@ -231,13 +245,7 @@ async function multipartRequest<TResponse>(
   }
 
   if (!response.ok) {
-    let message = 'No fue posible completar la solicitud.';
-    try {
-      const payload = (await response.json()) as ApiErrorPayload;
-      message = getApiErrorMessage(payload, message);
-    } catch {
-      // Keep the generic message when the backend does not return JSON.
-    }
+    const message = await readApiErrorMessage(response, 'No fue posible completar la solicitud.');
     throw new ApiError(message, response.status);
   }
 
@@ -281,13 +289,7 @@ async function request<TResponse, TBody = undefined>(
   }
 
   if (!response.ok) {
-    let message = 'No fue posible completar la solicitud.';
-    try {
-      const payload = (await response.json()) as ApiErrorPayload;
-      message = getApiErrorMessage(payload, message);
-    } catch {
-      // Keep the generic message when the backend does not return JSON.
-    }
+    const message = await readApiErrorMessage(response, 'No fue posible completar la solicitud.');
     throw new ApiError(message, response.status);
   }
 
