@@ -1,15 +1,32 @@
 import { ActivityIndicator, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { Href, useRouter } from 'expo-router';
+import { Href, useLocalSearchParams, useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import { EmptyState, InfoBanner, ProductCard, SectionHeader } from '@/components/ui';
 import { obtenerProductos, Producto } from '../../services/api';
 
 const ESTADOS = ['Todos', 'Nuevo', 'Como nuevo', 'Buen estado', 'Aceptable'];
+const CATEGORIAS = [
+  'Electrónica',
+  'Deportes',
+  'Hogar',
+  'Moda',
+  'Libros',
+  'Juguetes',
+  'Herramientas',
+  'Muebles',
+  'Infantil',
+  'Mascotas',
+];
+
+function normalizarTexto(value: string): string {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
 
 export default function CatalogScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ categoria?: string }>();
   const [busqueda, setBusqueda] = useState('');
   const [estadoActivo, setEstadoActivo] = useState('Todos');
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -38,10 +55,22 @@ export default function CatalogScreen() {
     return () => { mounted = false; };
   }, []);
 
+  useEffect(() => {
+    if (typeof params.categoria === 'string') {
+      setBusqueda(params.categoria);
+    }
+  }, [params.categoria]);
+
   const itemsFiltrados = useMemo(
     () => productos.filter((item) => {
-      const coincideBusqueda = item.prod_nombre.toLowerCase().includes(busqueda.toLowerCase())
-        || item.prod_est.toLowerCase().includes(busqueda.toLowerCase());
+      const busquedaNormalizada = normalizarTexto(busqueda);
+      const textoProducto = normalizarTexto([
+        item.prod_nombre,
+        item.prod_est,
+        item.prod_ubicacion_comuna ?? '',
+        item.prod_ubicacion_referencia ?? '',
+      ].join(' '));
+      const coincideBusqueda = !busquedaNormalizada || textoProducto.includes(busquedaNormalizada);
       const coincideEstado = estadoActivo === 'Todos' || item.prod_est === estadoActivo;
       return coincideBusqueda && coincideEstado;
     }),
@@ -69,6 +98,23 @@ export default function CatalogScreen() {
           ) : null}
         </View>
       </View>
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-4" contentContainerStyle={{ paddingHorizontal: 20 }}>
+        {CATEGORIAS.map((categoria) => {
+          const query = normalizarTexto(categoria);
+          const selected = normalizarTexto(busqueda) === query;
+          return (
+            <TouchableOpacity
+              key={categoria}
+              className={`mr-2 px-4 h-10 rounded-full items-center justify-center border ${selected ? 'bg-brand-700 border-brand-700' : 'bg-white border-neutral-100'}`}
+              onPress={() => setBusqueda(selected ? '' : query)}
+              activeOpacity={0.75}
+            >
+              <Text className={`text-xs font-bold ${selected ? 'text-white' : 'text-neutral-600'}`}>{categoria}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-4" contentContainerStyle={{ paddingHorizontal: 20 }}>
         {ESTADOS.map((estado) => (

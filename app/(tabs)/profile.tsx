@@ -405,6 +405,27 @@ export default function ProfileScreen() {
           })}
         </View>
 
+        <View className="bg-white border border-neutral-100 rounded-3xl p-5 mb-5">
+          <Text className="text-neutral-950 text-lg font-bold mb-1">Configuración y privacidad</Text>
+          <Text className="text-neutral-500 text-sm leading-5 mb-4">
+            Revisa cómo usamos tus datos, carnet y selfie para mantener la comunidad segura.
+          </Text>
+          <TouchableOpacity className="h-12 rounded-2xl bg-neutral-100 flex-row items-center justify-between px-4 mb-2" onPress={() => router.push('/terms' as Href)} activeOpacity={0.75}>
+            <View className="flex-row items-center">
+              <FontAwesome name="file-text-o" size={15} color="#525252" />
+              <Text className="text-neutral-700 font-bold ml-3">Términos de Servicio</Text>
+            </View>
+            <FontAwesome name="chevron-right" size={12} color="#a3a3a3" />
+          </TouchableOpacity>
+          <TouchableOpacity className="h-12 rounded-2xl bg-neutral-100 flex-row items-center justify-between px-4" onPress={() => router.push('/privacy' as Href)} activeOpacity={0.75}>
+            <View className="flex-row items-center">
+              <FontAwesome name="shield" size={15} color="#525252" />
+              <Text className="text-neutral-700 font-bold ml-3">Política de Privacidad</Text>
+            </View>
+            <FontAwesome name="chevron-right" size={12} color="#a3a3a3" />
+          </TouchableOpacity>
+        </View>
+
         <PrimaryButton icon="sign-out" variant="ghost" onPress={logout} className="mb-3">
           Cerrar sesión
         </PrimaryButton>

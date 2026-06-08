@@ -16,7 +16,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useState } from 'react';
-import { useRouter } from 'expo-router';
+import { Href, useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AuthLayout from '../layouts/AuthLayout';
 import { BrandBanner } from '../components/ui';
@@ -254,6 +254,21 @@ export default function Login() {
                 Crear cuenta
               </Text>
             </TouchableOpacity>
+          </View>
+
+          <View className="border-t border-neutral-100 pt-4 mt-6">
+            <Text className="text-neutral-400 text-xs text-center leading-4 mb-2">
+              Al iniciar sesión aceptas las reglas de uso y privacidad de Permutapp.
+            </Text>
+            <View className="flex-row justify-center flex-wrap">
+              <TouchableOpacity onPress={() => router.push('/terms' as Href)} activeOpacity={0.7}>
+                <Text className="text-brand-600 text-xs font-bold">Términos de Servicio</Text>
+              </TouchableOpacity>
+              <Text className="text-neutral-400 text-xs"> · </Text>
+              <TouchableOpacity onPress={() => router.push('/privacy' as Href)} activeOpacity={0.7}>
+                <Text className="text-brand-600 text-xs font-bold">Política de Privacidad</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

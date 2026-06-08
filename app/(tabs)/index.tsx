@@ -10,10 +10,16 @@ import { useAuth } from '../../context/AuthContext';
 import { obtenerProductos, Producto } from '../../services/api';
 
 const CATEGORIAS = [
-  { id: '1', label: 'Electrónica', icon: 'laptop' as const, color: 'bg-sky-50 border-sky-100', iconColor: '#0284c7' },
-  { id: '2', label: 'Deportes', icon: 'futbol-o' as const, color: 'bg-orange-50 border-orange-100', iconColor: '#ea580c' },
-  { id: '3', label: 'Hogar', icon: 'home' as const, color: 'bg-violet-50 border-violet-100', iconColor: '#7c3aed' },
-  { id: '4', label: 'Moda', icon: 'shopping-bag' as const, color: 'bg-rose-50 border-rose-100', iconColor: '#e11d48' },
+  { id: 'electronica', label: 'Electrónica', query: 'electronica', icon: 'laptop' as const, color: 'bg-sky-50 border-sky-100', iconColor: '#0284c7' },
+  { id: 'deportes', label: 'Deportes', query: 'deporte', icon: 'futbol-o' as const, color: 'bg-orange-50 border-orange-100', iconColor: '#ea580c' },
+  { id: 'hogar', label: 'Hogar', query: 'hogar', icon: 'home' as const, color: 'bg-violet-50 border-violet-100', iconColor: '#7c3aed' },
+  { id: 'moda', label: 'Moda', query: 'moda', icon: 'shopping-bag' as const, color: 'bg-rose-50 border-rose-100', iconColor: '#e11d48' },
+  { id: 'libros', label: 'Libros', query: 'libro', icon: 'book' as const, color: 'bg-amber-50 border-amber-100', iconColor: '#d97706' },
+  { id: 'juguetes', label: 'Juguetes', query: 'juguete', icon: 'puzzle-piece' as const, color: 'bg-lime-50 border-lime-100', iconColor: '#65a30d' },
+  { id: 'herramientas', label: 'Herramientas', query: 'herramienta', icon: 'wrench' as const, color: 'bg-slate-50 border-slate-100', iconColor: '#475569' },
+  { id: 'muebles', label: 'Muebles', query: 'mueble', icon: 'bed' as const, color: 'bg-stone-50 border-stone-100', iconColor: '#57534e' },
+  { id: 'infantil', label: 'Infantil', query: 'infantil', icon: 'child' as const, color: 'bg-pink-50 border-pink-100', iconColor: '#db2777' },
+  { id: 'mascotas', label: 'Mascotas', query: 'mascota', icon: 'paw' as const, color: 'bg-emerald-50 border-emerald-100', iconColor: '#059669' },
 ];
 
 export default function HomeScreen() {
@@ -108,7 +114,7 @@ export default function HomeScreen() {
         <SectionHeader title="Explora por categoría" eyebrow="Descubre" />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 20 }}>
           {CATEGORIAS.map((cat) => (
-            <TouchableOpacity key={cat.id} className="items-center mr-4" activeOpacity={0.75}>
+            <TouchableOpacity key={cat.id} className="items-center mr-4" onPress={() => router.push(`/(tabs)/two?categoria=${encodeURIComponent(cat.query)}` as Href)} activeOpacity={0.75}>
               <View className={`w-16 h-16 rounded-3xl ${cat.color} border items-center justify-center mb-2`}>
                 <FontAwesome name={cat.icon} size={22} color={cat.iconColor} />
               </View>

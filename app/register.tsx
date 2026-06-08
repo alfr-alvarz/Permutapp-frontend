@@ -584,10 +584,18 @@ export default function Register() {
 
           {/* Términos */}
           <Text className="text-neutral-400 text-xs text-center leading-4 mb-6">
-            Al crear una cuenta aceptas nuestros{' '}
-            <Text className="text-brand-600">Términos de Servicio</Text> y{' '}
-            <Text className="text-brand-600">Política de Privacidad</Text>.
+            Al crear una cuenta aceptas nuestros
           </Text>
+          <View className="flex-row justify-center -mt-5 mb-6 flex-wrap">
+            <TouchableOpacity onPress={() => router.push('/terms' as Href)} activeOpacity={0.7}>
+              <Text className="text-brand-600 text-xs font-bold">Términos de Servicio</Text>
+            </TouchableOpacity>
+            <Text className="text-neutral-400 text-xs"> y </Text>
+            <TouchableOpacity onPress={() => router.push('/privacy' as Href)} activeOpacity={0.7}>
+              <Text className="text-brand-600 text-xs font-bold">Política de Privacidad</Text>
+            </TouchableOpacity>
+            <Text className="text-neutral-400 text-xs">.</Text>
+          </View>
 
           {/* Enlace: Ya tengo cuenta */}
           <View className="flex-row justify-center">
