@@ -84,6 +84,7 @@ export default function ChatDetailScreen() {
   const [misPermutas, setMisPermutas] = useState<MiPermuta[]>([]);
   const [isLoadingOffers, setIsLoadingOffers] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
 
@@ -200,6 +201,8 @@ export default function ChatDetailScreen() {
       if (!token) return;
       await crearValoracion(conversacionId, usuarioId, rating, comment.trim(), token);
       setComment('');
+      setRating(0);
+      setShowRatingModal(false);
     });
   };
 
@@ -277,96 +280,26 @@ export default function ChatDetailScreen() {
           <View className="px-5 pt-4">
             {error ? <InfoBanner icon="exclamation-circle" title="No se pudo completar" body={error} tone="red" /> : null}
 
-            {conversacion ? (
+            {conversacion?.conv_estado === 'NEGOCIANDO' ? (
               <View className="bg-white border border-neutral-100 rounded-3xl p-5 mb-4">
-                {conversacion.conv_estado === 'NEGOCIANDO' ? (
-                  <>
-                    <View className="flex-row justify-between">
-                      <Text className="text-neutral-950 font-bold">Progreso para finalizar</Text>
-                      <Text className="text-brand-700 font-bold">{conversacion.cantidad_mensajes}/10</Text>
-                    </View>
-                    <View className="h-2 bg-neutral-100 rounded-full mt-3 overflow-hidden">
-                      <View className="h-full bg-brand-600 rounded-full" style={{ width: `${progress}%` }} />
-                    </View>
-                    <Text className="text-neutral-500 text-xs leading-5 mt-2">
-                      {conversacion.mensajes_para_finalizar > 0
-                        ? `Faltan ${conversacion.mensajes_para_finalizar} mensajes entre ambos. La oferta también cuenta.`
-                        : conversacion.oferta
-                          ? 'Ya pueden proponer el cierre de esta permuta.'
-                          : 'Ya llegaron a 10 mensajes. Falta compartir una oferta.'}
-                    </Text>
-                    {conversacion.puede_solicitar_finalizacion ? (
-                      <PrimaryButton icon="check" loading={isWorking} onPress={handleSolicitar} className="mt-4">
-                        Proponer finalizar permuta
-                      </PrimaryButton>
-                    ) : null}
-                  </>
-                ) : null}
-
-                {conversacion.conv_estado === 'FINALIZACION_PENDIENTE' ? (
-                  <>
-                    <Text className="text-neutral-950 text-lg font-bold">Confirmación pendiente</Text>
-                    <Text className="text-neutral-500 text-sm leading-5 mt-2">
-                      {conversacion.puede_confirmar_finalizacion
-                        ? 'La otra persona confirmó la entrega. Confirma para retirar ambas publicaciones.'
-                        : 'Esperando que la otra persona confirme la permuta.'}
-                    </Text>
-                    {conversacion.puede_confirmar_finalizacion ? (
-                      <PrimaryButton icon="check-circle" loading={isWorking} onPress={handleConfirmar} className="mt-4">
-                        Confirmar permuta
-                      </PrimaryButton>
-                    ) : null}
-                  </>
-                ) : null}
-
-                {conversacion.conv_estado === 'FINALIZADA' ? (
-                  <>
-                    <Text className="text-brand-800 text-lg font-bold">Permuta finalizada</Text>
-                    <Text className="text-neutral-500 text-sm leading-5 mt-2">
-                      Las dos publicaciones fueron retiradas del catálogo y el historial se conserva.
-                    </Text>
-                    {conversacion.puede_valorar ? (
-                      <View className="mt-4">
-                        <Text className="text-neutral-900 font-bold">Valora a la otra persona</Text>
-                        <View className="flex-row mt-3">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <TouchableOpacity key={star} onPress={() => setRating(star)} className="mr-3">
-                              <FontAwesome name={star <= rating ? 'star' : 'star-o'} size={28} color="#f59e0b" />
-                            </TouchableOpacity>
-                          ))}
-                        </View>
-                        <TextInput
-                          className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 py-3 min-h-24 mt-3"
-                          value={comment}
-                          onChangeText={setComment}
-                          placeholder="Cuenta brevemente cómo fue la permuta"
-                          maxLength={300}
-                          multiline
-                          textAlignVertical="top"
-                        />
-                        <Text className="text-neutral-400 text-xs text-right mt-1">{comment.length}/300</Text>
-                        <PrimaryButton
-                          icon="star"
-                          loading={isWorking}
-                          disabled={rating === 0 || !comment.trim()}
-                          onPress={handleValorar}
-                          className="mt-3"
-                        >
-                          Enviar valoración
-                        </PrimaryButton>
-                      </View>
-                    ) : null}
-                    {conversacion.usuario_ya_valoro ? (
-                      <PrimaryButton
-                        icon="trash"
-                        loading={isWorking}
-                        onPress={() => setShowDeleteConfirmation(true)}
-                        className="mt-4 bg-red-600"
-                      >
-                        Eliminar chat
-                      </PrimaryButton>
-                    ) : null}
-                  </>
+                <View className="flex-row justify-between">
+                  <Text className="text-neutral-950 font-bold">Progreso para finalizar</Text>
+                  <Text className="text-brand-700 font-bold">{conversacion.cantidad_mensajes}/10</Text>
+                </View>
+                <View className="h-2 bg-neutral-100 rounded-full mt-3 overflow-hidden">
+                  <View className="h-full bg-brand-600 rounded-full" style={{ width: `${progress}%` }} />
+                </View>
+                <Text className="text-neutral-500 text-xs leading-5 mt-2">
+                  {conversacion.mensajes_para_finalizar > 0
+                    ? `Faltan ${conversacion.mensajes_para_finalizar} mensajes entre ambos. La oferta también cuenta.`
+                    : conversacion.oferta
+                      ? 'Ya pueden proponer el cierre de esta permuta.'
+                      : 'Ya llegaron a 10 mensajes. Falta compartir una oferta.'}
+                </Text>
+                {conversacion.puede_solicitar_finalizacion ? (
+                  <PrimaryButton icon="check" loading={isWorking} onPress={handleSolicitar} className="mt-4">
+                    Proponer finalizar permuta
+                  </PrimaryButton>
                 ) : null}
               </View>
             ) : null}
@@ -454,8 +387,48 @@ export default function ChatDetailScreen() {
           </View>
         </ScrollView>
 
-        <View className="px-5 pb-5 pt-3 border-t border-neutral-100">
-          {esNegociando ? (
+        {conversacion?.conv_estado === 'FINALIZACION_PENDIENTE' ? (
+          <View className="px-5 py-4 bg-amber-50 border-t border-amber-100">
+            <Text className="text-neutral-950 font-bold">Confirmación de la permuta</Text>
+            <Text className="text-neutral-600 text-xs leading-5 mt-1">
+              {conversacion.puede_confirmar_finalizacion
+                ? 'La otra persona propuso finalizar. Confirma que realizaron el intercambio.'
+                : 'Tu propuesta fue enviada. Esperando la confirmación de la otra persona.'}
+            </Text>
+            {conversacion.puede_confirmar_finalizacion ? (
+              <PrimaryButton icon="check-circle" loading={isWorking} onPress={handleConfirmar} className="mt-3">
+                Confirmar permuta realizada
+              </PrimaryButton>
+            ) : null}
+          </View>
+        ) : null}
+
+        {conversacion?.conv_estado === 'FINALIZADA' ? (
+          <View className="px-5 py-4 bg-brand-50 border-t border-brand-100">
+            <Text className="text-brand-900 font-bold">Permuta finalizada</Text>
+            <Text className="text-neutral-600 text-xs leading-5 mt-1">
+              Ambas publicaciones fueron retiradas. Ahora pueden valorar cómo resultó el intercambio.
+            </Text>
+            {conversacion.puede_valorar ? (
+              <PrimaryButton icon="star" onPress={() => setShowRatingModal(true)} className="mt-3">
+                Valorar a la otra persona
+              </PrimaryButton>
+            ) : null}
+            {conversacion.usuario_ya_valoro ? (
+              <PrimaryButton
+                icon="trash"
+                loading={isWorking}
+                onPress={() => setShowDeleteConfirmation(true)}
+                className="mt-3 bg-red-600"
+              >
+                Eliminar chat
+              </PrimaryButton>
+            ) : null}
+          </View>
+        ) : null}
+
+        {esNegociando ? (
+          <View className="px-5 pb-5 pt-3 border-t border-neutral-100">
             <View className="flex-row items-end">
               {conversacion?.puede_ofertar ? (
                 <TouchableOpacity
@@ -484,11 +457,56 @@ export default function ChatDetailScreen() {
                 className="w-14 ml-2 px-0"
               />
             </View>
-          ) : (
-            <Text className="text-neutral-500 text-sm text-center">La conversación está cerrada para nuevos mensajes.</Text>
-          )}
-        </View>
+          </View>
+        ) : null}
       </KeyboardAvoidingView>
+
+      <Modal visible={showRatingModal} transparent animationType="slide" onRequestClose={() => setShowRatingModal(false)}>
+        <View className="flex-1 bg-black/30 justify-end">
+          <View className="bg-white rounded-t-3xl px-5 pt-5 pb-8">
+            <View className="flex-row justify-between items-center">
+              <View className="flex-1 pr-4">
+                <Text className="text-neutral-950 text-xl font-bold">Valora a la otra persona</Text>
+                <Text className="text-neutral-500 text-xs leading-5 mt-1">Tu opinión quedará asociada a esta permuta finalizada.</Text>
+              </View>
+              <TouchableOpacity onPress={() => setShowRatingModal(false)} accessibilityLabel="Cerrar valoración">
+                <FontAwesome name="times" size={18} color="#525252" />
+              </TouchableOpacity>
+            </View>
+            <View className="flex-row justify-center mt-6">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <TouchableOpacity
+                  key={star}
+                  onPress={() => setRating(star)}
+                  className="px-2"
+                  accessibilityLabel={`${star} ${star === 1 ? 'estrella' : 'estrellas'}`}
+                >
+                  <FontAwesome name={star <= rating ? 'star' : 'star-o'} size={34} color="#f59e0b" />
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TextInput
+              className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 py-3 min-h-28 mt-5"
+              value={comment}
+              onChangeText={setComment}
+              placeholder="Cuenta brevemente cómo fue la permuta"
+              maxLength={300}
+              multiline
+              textAlignVertical="top"
+            />
+            <Text className="text-neutral-400 text-xs text-right mt-1">{comment.length}/300</Text>
+            <PrimaryButton
+              icon="star"
+              loading={isWorking}
+              disabled={rating === 0 || !comment.trim()}
+              onPress={handleValorar}
+              className="mt-4"
+            >
+              Enviar valoración
+            </PrimaryButton>
+          </View>
+        </View>
+      </Modal>
 
       <Modal visible={showOfferSelector} transparent animationType="slide" onRequestClose={() => setShowOfferSelector(false)}>
         <View className="flex-1 bg-black/30 justify-end">
