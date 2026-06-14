@@ -57,6 +57,23 @@ function formatPrice(value: number) {
   return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(value);
 }
 
+function normalizeSearch(value: string) {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
+function metroLineColor(line: string) {
+  const colors: Record<string, string> = {
+    L1: '#dc2626',
+    L2: '#f59e0b',
+    L3: '#7c3aed',
+    L4: '#2563eb',
+    'L4A': '#38bdf8',
+    L5: '#16a34a',
+    L6: '#9ca3af',
+  };
+  return colors[line.toUpperCase()] ?? '#047857';
+}
+
 function mergeMessages(current: MensajePermuta[], incoming: MensajePermuta[]) {
   const byId = new Map<number, MensajePermuta>();
   [...current, ...incoming].forEach((message) => byId.set(message.mens_id, message));
@@ -92,8 +109,36 @@ export default function ChatDetailScreen() {
   const [productoOriginal, setProductoOriginal] = useState<Producto | null>(null);
   const [estaciones, setEstaciones] = useState<EstacionMetro[]>([]);
   const [estacionElegida, setEstacionElegida] = useState<EstacionMetro | null>(null);
+  const [metroSearch, setMetroSearch] = useState('');
   const [sugerencia, setSugerencia] = useState<SugerenciaPuntoMedio | null>(null);
   const [locationBusy, setLocationBusy] = useState(false);
+
+  const estacionesAgrupadas = useMemo(() => {
+    const query = normalizeSearch(metroSearch);
+    const filtered = query
+      ? estaciones.filter((station) => normalizeSearch(
+        `${station.nombre} ${station.linea} ${station.comuna ?? ''}`,
+      ).includes(query))
+      : estaciones;
+    const byLine = new Map<string, EstacionMetro[]>();
+
+    filtered.forEach((station) => {
+      const line = station.linea || 'Otra línea';
+      const current = byLine.get(line) ?? [];
+      current.push(station);
+      byLine.set(line, current);
+    });
+
+    return [...byLine.entries()]
+      .sort(([left], [right]) => left.localeCompare(right, 'es', { numeric: true }))
+      .map(([line, stations]) => [
+        line,
+        stations.sort((left, right) => (
+          (left.orden ?? Number.MAX_SAFE_INTEGER) - (right.orden ?? Number.MAX_SAFE_INTEGER)
+          || left.nombre.localeCompare(right.nombre, 'es')
+        )),
+      ] as const);
+  }, [estaciones, metroSearch]);
 
   const cargarChat = useCallback(async (showLoader = true) => {
     if (!token || !Number.isInteger(usuarioId) || !Number.isInteger(conversacionId)) return;
@@ -216,6 +261,7 @@ export default function ChatDetailScreen() {
   const abrirPuntoSeguro = async () => {
     setShowMenu(false);
     setShowLocationPanel(true);
+    setMetroSearch('');
     if (!conversacion?.prod_id) return;
     try {
       setLocationBusy(true);
@@ -313,19 +359,71 @@ export default function ChatDetailScreen() {
                   </TouchableOpacity>
                 </View>
                 {locationBusy ? <ActivityIndicator color="#047857" className="my-5" /> : null}
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-3">
-                  {estaciones.map((station) => (
-                    <TouchableOpacity
-                      key={station.id}
-                      className={`mr-2 px-3 h-10 rounded-2xl border items-center justify-center ${estacionElegida?.id === station.id ? 'bg-brand-700 border-brand-700' : 'border-neutral-200'}`}
-                      onPress={() => { setEstacionElegida(station); setSugerencia(null); }}
+                {!locationBusy ? (
+                  <>
+                    <TextInput
+                      className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 h-12 mt-3"
+                      value={metroSearch}
+                      onChangeText={setMetroSearch}
+                      placeholder="Buscar estación, comuna o línea"
+                      accessibilityLabel="Buscar estación de Metro"
+                    />
+                    <ScrollView
+                      className="mt-3 border border-neutral-100 rounded-2xl"
+                      contentContainerStyle={{ padding: 12 }}
+                      style={{ maxHeight: 300 }}
+                      nestedScrollEnabled
+                      showsVerticalScrollIndicator
                     >
-                      <Text className={`text-xs font-bold ${estacionElegida?.id === station.id ? 'text-white' : 'text-neutral-700'}`}>
-                        {station.nombre}
+                      {estacionesAgrupadas.map(([line, stations]) => (
+                        <View key={line} className="mb-4 last:mb-0">
+                          <View className="flex-row items-center mb-2">
+                            <View className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: metroLineColor(line) }} />
+                            <Text className="text-neutral-950 text-sm font-bold">Línea {line.replace(/^L/i, '')}</Text>
+                            <Text className="text-neutral-400 text-xs ml-2">{stations.length} estaciones</Text>
+                          </View>
+                          {stations.map((station) => {
+                            const selected = estacionElegida?.id === station.id;
+                            return (
+                              <TouchableOpacity
+                                key={station.id}
+                                className={`flex-row items-center rounded-2xl border px-3 py-3 mb-2 ${selected ? 'bg-brand-50 border-brand-500' : 'bg-white border-neutral-100'}`}
+                                onPress={() => { setEstacionElegida(station); setSugerencia(null); }}
+                                accessibilityRole="button"
+                                accessibilityState={{ selected }}
+                              >
+                                <View className="flex-1">
+                                  <Text className={`text-sm font-bold ${selected ? 'text-brand-800' : 'text-neutral-800'}`}>
+                                    {station.nombre}
+                                  </Text>
+                                  {station.comuna ? (
+                                    <Text className="text-neutral-500 text-xs mt-1">{station.comuna}</Text>
+                                  ) : null}
+                                </View>
+                                {station.esCombinacion ? (
+                                  <Text className="text-neutral-400 text-[10px] font-bold mr-2">COMBINACIÓN</Text>
+                                ) : null}
+                                <FontAwesome
+                                  name={selected ? 'check-circle' : 'circle-o'}
+                                  size={18}
+                                  color={selected ? '#047857' : '#a3a3a3'}
+                                />
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      ))}
+                      {estacionesAgrupadas.length === 0 ? (
+                        <Text className="text-neutral-500 text-sm text-center py-5">No encontramos estaciones con esa búsqueda.</Text>
+                      ) : null}
+                    </ScrollView>
+                    {estacionElegida ? (
+                      <Text className="text-brand-700 text-xs font-bold mt-3">
+                        Seleccionada: Metro {estacionElegida.nombre} · {estacionElegida.linea}
                       </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
+                    ) : null}
+                  </>
+                ) : null}
                 <PrimaryButton disabled={!estacionElegida} loading={locationBusy} onPress={calcularPuntoSeguro} className="mt-4">
                   Calcular estación intermedia
                 </PrimaryButton>
