@@ -79,6 +79,11 @@ export interface ResumenValoracion {
   valoraciones: Valoracion[];
 }
 
+interface SeleccionarOfertaRequest {
+  usuario_id: number;
+  producto_id: number;
+}
+
 async function request<T>(
   path: string,
   token?: string,
@@ -129,9 +134,14 @@ export function enviarMensajePermuta(id: number, usuarioId: number, contenido: s
 }
 
 export function seleccionarOferta(id: number, usuarioId: number, productoId: number, token: string) {
+  const body: SeleccionarOfertaRequest = {
+    usuario_id: usuarioId,
+    producto_id: productoId,
+  };
+
   return request<ConversacionPermuta>(`/chat/conversaciones/${id}/oferta`, token, {
     method: 'POST',
-    body: { usuario_id: usuarioId, prod_id: productoId },
+    body,
   });
 }
 
