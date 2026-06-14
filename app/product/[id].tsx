@@ -213,17 +213,16 @@ export default function ProductDetailScreen() {
                   <Text className="text-neutral-950 text-2xl font-bold">${producto.prod_precio.toLocaleString('es-CL')}</Text>
                 </View>
                 <View className="flex-1 bg-white border border-neutral-100 rounded-3xl p-5">
-                  <Text className="text-neutral-400 text-xs uppercase tracking-widest font-bold mb-2">Seguridad</Text>
+                  <Text className="text-neutral-400 text-xs uppercase tracking-widest font-bold mb-2">Perfil</Text>
                   <View className="flex-row items-center">
                     <FontAwesome name={vendedorNoVerificado ? 'exclamation-triangle' : 'shield'} size={15} color={vendedorNoVerificado ? '#d97706' : '#047857'} />
                     <Text className={`text-sm font-bold ml-2 ${vendedorNoVerificado ? 'text-amber-700' : 'text-brand-700'}`}>
-                      {vendedorNoVerificado ? 'No verificado' : 'Revisar perfil'}
+                      {vendedorNoVerificado ? 'No verificado' : 'Perfil verificado'}
                     </Text>
                   </View>
+                  {publicacion ? <ReputationSummary usuarioId={publicacion.publ_autor_id} compact /> : null}
                 </View>
               </View>
-
-              {publicacion ? <ReputationSummary usuarioId={publicacion.publ_autor_id} /> : null}
 
               <View className="bg-white border border-neutral-100 rounded-3xl p-5 mb-4">
                 <Text className="text-neutral-400 text-xs uppercase tracking-widest font-bold mb-3">Descripción</Text>

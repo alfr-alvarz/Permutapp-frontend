@@ -4,7 +4,12 @@ import { Text, View } from 'react-native';
 
 import { ResumenValoracion, obtenerResumenValoracion } from '../services/tradeApi';
 
-export function ReputationSummary({ usuarioId }: { usuarioId: number }) {
+interface ReputationSummaryProps {
+  usuarioId: number;
+  compact?: boolean;
+}
+
+export function ReputationSummary({ usuarioId, compact = false }: ReputationSummaryProps) {
   const [summary, setSummary] = useState<ResumenValoracion | null>(null);
 
   useEffect(() => {
@@ -16,6 +21,23 @@ export function ReputationSummary({ usuarioId }: { usuarioId: number }) {
   }, [usuarioId]);
 
   if (!summary) return null;
+
+  if (compact) {
+    return (
+      <View className="border-t border-neutral-100 mt-3 pt-3">
+        <Text className="text-neutral-400 text-[10px] uppercase tracking-widest font-bold">Valoración</Text>
+        <View className="flex-row items-center mt-1.5 flex-wrap">
+          <FontAwesome name="star" size={16} color="#f59e0b" />
+          <Text className="text-neutral-950 text-base font-bold ml-1.5">
+            {summary.cantidad > 0 ? summary.promedio.toFixed(1) : 'Sin notas'}
+          </Text>
+          <Text className="text-neutral-500 text-[11px] ml-1.5">
+            {summary.cantidad === 1 ? '1 permuta' : `${summary.cantidad} permutas`}
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View className="bg-white border border-neutral-100 rounded-3xl p-5 mb-4">
