@@ -14,19 +14,16 @@ function base64UrlToUint8Array(value: string): Uint8Array<ArrayBuffer> {
   return Uint8Array.from(decoded, (character) => character.charCodeAt(0));
 }
 
-export async function obtenerSuscripcionPush(vapidPublicKey: string): Promise<RegistrarSuscripcionNotificacionPayload> {
+export async function obtenerSuscripcionPush(
+  vapidPublicKey: string,
+): Promise<RegistrarSuscripcionNotificacionPayload> {
   if (Platform.OS === 'web') {
     if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
       throw new Error('Este navegador no admite notificaciones push.');
     }
-    if (!vapidPublicKey) {
-      throw new Error('Web Push todavía no tiene configuradas sus claves VAPID.');
-    }
-
+    if (!vapidPublicKey) throw new Error('Web Push todavía no tiene configuradas sus claves VAPID.');
     const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-      throw new Error('El permiso de notificaciones fue rechazado.');
-    }
+    if (permission !== 'granted') throw new Error('El permiso de notificaciones fue rechazado.');
 
     const registration = await navigator.serviceWorker.register('/push-sw.js');
     const existing = await registration.pushManager.getSubscription();
@@ -38,7 +35,6 @@ export async function obtenerSuscripcionPush(vapidPublicKey: string): Promise<Re
     if (!json.endpoint || !json.keys?.p256dh || !json.keys.auth) {
       throw new Error('El navegador no entregó una suscripción push válida.');
     }
-
     return {
       canal: 'WEB',
       destino: json.endpoint,
@@ -49,49 +45,32 @@ export async function obtenerSuscripcionPush(vapidPublicKey: string): Promise<Re
   }
 
   if (isExpoGo()) {
-    throw new Error('Las notificaciones push no están disponibles en Expo Go. Usa un development build para probarlas en Android.');
+    throw new Error('Las notificaciones push requieren un development build; Expo Go no las admite.');
   }
-
   const Device = await import('expo-device');
   const Notifications = await import('expo-notifications');
+  if (!Device.isDevice) throw new Error('Las notificaciones push nativas requieren un dispositivo físico.');
 
-  if (!Device.isDevice && Platform.OS === 'ios') {
-    throw new Error('Las notificaciones push no funcionan en el simulador de iOS. Usa un dispositivo físico.');
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'PermutApp',
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#047857',
+    });
   }
+  const currentPermissions = await Notifications.getPermissionsAsync();
+  const permissions = currentPermissions.status === 'granted'
+    ? currentPermissions
+    : await Notifications.requestPermissionsAsync();
+  if (permissions.status !== 'granted') throw new Error('El permiso de notificaciones fue rechazado.');
 
-  try {
-    if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('default', {
-        name: 'PermutApp',
-        importance: Notifications.AndroidImportance.MAX,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#047857',
-      });
-    }
-
-    const currentPermissions = await Notifications.getPermissionsAsync();
-    const permissions = currentPermissions.status === 'granted'
-      ? currentPermissions
-      : await Notifications.requestPermissionsAsync();
-    if (permissions.status !== 'granted') {
-      throw new Error('El permiso de notificaciones fue rechazado.');
-    }
-
-    const deviceToken = await Notifications.getDevicePushTokenAsync();
-    return {
-      canal: 'EXPO',
-      destino: deviceToken.data as string,
-      plataforma: Platform.OS,
-    };
-  } catch (error: any) {
-    console.warn('Simulando registro de notificaciones push debido a falta de config de Firebase:', error.message);
-    // Retornamos un token dummy de simulación para que la app se registre con éxito y oculte el banner
-    return {
-      canal: 'EXPO',
-      destino: 'ExponentPushToken[SimulatedAndroidToken]',
-      plataforma: Platform.OS,
-    };
-  }
+  const projectId = process.env.EXPO_PUBLIC_EAS_PROJECT_ID
+    ?? Constants.easConfig?.projectId
+    ?? Constants.expoConfig?.extra?.eas?.projectId;
+  if (!projectId) throw new Error('Falta EXPO_PUBLIC_EAS_PROJECT_ID para obtener el token Expo Push.');
+  const expoToken = await Notifications.getExpoPushTokenAsync({ projectId });
+  return { canal: 'EXPO', destino: expoToken.data, plataforma: Platform.OS };
 }
 
 export async function configurarEscuchaPush(
@@ -106,11 +85,7 @@ export async function configurarEscuchaPush(
     navigator.serviceWorker.addEventListener('message', listener);
     return () => navigator.serviceWorker.removeEventListener('message', listener);
   }
-
-  if (isExpoGo()) {
-    return () => undefined;
-  }
-
+  if (isExpoGo()) return () => undefined;
   const Notifications = await import('expo-notifications');
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -120,15 +95,13 @@ export async function configurarEscuchaPush(
       shouldSetBadge: true,
     }),
   });
-
-  const receivedSubscription = Notifications.addNotificationReceivedListener(onReceived);
-  const responseSubscription = Notifications.addNotificationResponseReceivedListener((response) => {
+  const received = Notifications.addNotificationReceivedListener(onReceived);
+  const opened = Notifications.addNotificationResponseReceivedListener((response) => {
     const route = response.notification.request.content.data?.ruta;
     if (typeof route === 'string') onOpenRoute(route);
   });
-
   return () => {
-    receivedSubscription.remove();
-    responseSubscription.remove();
+    received.remove();
+    opened.remove();
   };
 }

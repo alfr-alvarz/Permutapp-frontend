@@ -20,6 +20,7 @@ import {
 import RequireAuth from '../../components/RequireAuth';
 import { useAuth } from '../../context/AuthContext';
 import MainLayout from '../../layouts/MainLayout';
+import { ReputationSummary } from '../../components/ReputationSummary';
 
 export default function ProductDetailScreen() {
   const router = useRouter();
@@ -221,6 +222,8 @@ export default function ProductDetailScreen() {
                   </View>
                 </View>
               </View>
+
+              {publicacion ? <ReputationSummary usuarioId={publicacion.publ_autor_id} /> : null}
 
               <View className="bg-white border border-neutral-100 rounded-3xl p-5 mb-4">
                 <Text className="text-neutral-400 text-xs uppercase tracking-widest font-bold mb-3">Descripción</Text>

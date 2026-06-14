@@ -41,6 +41,21 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 const AUTH_TOKEN_KEY = 'permutapp.auth.token';
 const AUTH_USER_KEY = 'permutapp.auth.user';
 
+function isExpiredJwt(token: string): boolean {
+  try {
+    const payload = token.split('.')[1];
+    if (!payload || typeof globalThis.atob !== 'function') return false;
+
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
+    const claims = JSON.parse(globalThis.atob(padded)) as { exp?: number };
+
+    return typeof claims.exp === 'number' && claims.exp <= Math.floor(Date.now() / 1000);
+  } catch {
+    return true;
+  }
+}
+
 interface AuthProviderProps {
   children: ReactNode;
 }
@@ -90,7 +105,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         if (!mounted) return;
 
-        if (token && storedUser) {
+        if (token && storedUser && !isExpiredJwt(token)) {
           const user = JSON.parse(storedUser) as User;
           setState({
             user,
@@ -100,6 +115,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
             isRestoring: false,
           });
           return;
+        }
+
+        if (token || storedUser) {
+          await clearSession();
         }
       } catch {
         await clearSession();

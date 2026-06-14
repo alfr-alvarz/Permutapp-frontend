@@ -12,6 +12,10 @@ import type { Notificacion, TipoNotificacion } from '../services/api';
 const ICONS: Record<TipoNotificacion, React.ComponentProps<typeof FontAwesome>['name']> = {
   MENSAJE_NUEVO: 'comment',
   PROPUESTA_PERMUTA: 'exchange',
+  OFERTA_COMPARTIDA: 'gift',
+  FINALIZACION_SOLICITADA: 'hourglass-half',
+  PERMUTA_FINALIZADA: 'check-circle',
+  VALORACION_RECIBIDA: 'star',
   IDENTIDAD_APROBADA: 'check-circle',
   IDENTIDAD_RECHAZADA: 'exclamation-circle',
   IDENTIDAD_REVISION: 'clock-o',

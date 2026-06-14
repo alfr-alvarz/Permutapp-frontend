@@ -719,6 +719,10 @@ export function sugerirMetroPuntoMedio(payload: SugerenciaPuntoMedioPayload): Pr
 export type TipoNotificacion =
   | 'MENSAJE_NUEVO'
   | 'PROPUESTA_PERMUTA'
+  | 'OFERTA_COMPARTIDA'
+  | 'FINALIZACION_SOLICITADA'
+  | 'PERMUTA_FINALIZADA'
+  | 'VALORACION_RECIBIDA'
   | 'IDENTIDAD_APROBADA'
   | 'IDENTIDAD_RECHAZADA'
   | 'IDENTIDAD_REVISION';

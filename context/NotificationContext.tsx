@@ -1,7 +1,6 @@
 import { Href, useRouter } from 'expo-router';
 import React, { ReactNode, createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { AppState, Platform } from 'react-native';
-import { getSessionItem, setSessionItem } from '../services/sessionStorage';
 
 import {
   ApiError,
@@ -14,6 +13,7 @@ import {
   registrarSuscripcionNotificacion,
 } from '../services/api';
 import { configurarEscuchaPush, obtenerSuscripcionPush } from '../services/pushNotifications';
+import { deleteSessionItem, getSessionItem, setSessionItem } from '../services/sessionStorage';
 import { useAuth } from './AuthContext';
 
 type PushStatus = 'idle' | 'enabling' | 'enabled' | 'denied' | 'error';
@@ -35,7 +35,7 @@ const NotificationContext = createContext<NotificationContextValue | undefined>(
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const { isAuthenticated, token } = useAuth();
+  const { isAuthenticated, token, logout } = useAuth();
   const [notifications, setNotifications] = useState<Notificacion[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -48,70 +48,87 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       setUnreadCount(0);
       return;
     }
-    try {
-      setIsLoading(true);
-      const [items, count] = await Promise.all([
-        listarNotificaciones(token),
-        contarNotificacionesNoLeidas(token),
-      ]);
-      setNotifications(items);
-      setUnreadCount(count);
-      setError(null);
-    } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : 'No fue posible cargar tus notificaciones.');
-    } finally {
+    setIsLoading(true);
+    const [itemsResult, countResult] = await Promise.allSettled([
+      listarNotificaciones(token),
+      contarNotificacionesNoLeidas(token),
+    ]);
+    const authError = [itemsResult, countResult]
+      .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
+      .map((result) => result.reason)
+      .find((reason) => reason instanceof ApiError && (reason.status === 401 || reason.status === 403));
+    if (authError) {
+      await deleteSessionItem('permutapp_push_enabled');
+      setPushStatus('idle');
+      setError('Tu sesión venció. Inicia sesión nuevamente para consultar y activar las notificaciones.');
       setIsLoading(false);
+      await logout();
+      return;
     }
-  }, [token]);
+
+    if (itemsResult.status === 'fulfilled') setNotifications(itemsResult.value);
+    if (countResult.status === 'fulfilled') {
+      setUnreadCount(countResult.value);
+    } else if (itemsResult.status === 'fulfilled') {
+      setUnreadCount(itemsResult.value.filter((item) => !item.notif_leida).length);
+    }
+    if (itemsResult.status === 'rejected') {
+      const reason = itemsResult.reason;
+      setError(reason instanceof ApiError ? reason.message : 'No fue posible cargar tus notificaciones.');
+    } else if (countResult.status === 'rejected') {
+      setError('La bandeja se cargó, pero el conteo no está disponible temporalmente.');
+    } else {
+      setError(null);
+    }
+    setIsLoading(false);
+  }, [logout, token]);
 
   useEffect(() => {
     if (!isAuthenticated || !token) {
       setNotifications([]);
       setUnreadCount(0);
       setPushStatus('idle');
+      setError(null);
       return;
     }
-
+    let cancelled = false;
     async function checkExistingPush() {
-      try {
-        const storedFlag = await getSessionItem('permutapp_push_enabled');
-        if (storedFlag === 'true') {
+      const storedFlag = await getSessionItem('permutapp_push_enabled').catch(() => null);
+      if (cancelled) return;
+      if (storedFlag === 'true') {
+        setPushStatus('enabled');
+      } else if (
+        Platform.OS === 'web'
+        && 'serviceWorker' in navigator
+        && 'PushManager' in window
+        && 'Notification' in window
+      ) {
+        const registration = await navigator.serviceWorker.getRegistration();
+        const subscription = await registration?.pushManager.getSubscription();
+        if (!cancelled && subscription && Notification.permission === 'granted') {
           setPushStatus('enabled');
-        } else if (Platform.OS === 'web') {
-          if ('serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window) {
-            const reg = await navigator.serviceWorker.getRegistration();
-            const sub = await reg?.pushManager.getSubscription();
-            if (sub && Notification.permission === 'granted') {
-              setPushStatus('enabled');
-              await setSessionItem('permutapp_push_enabled', 'true');
-            }
-          }
+          await setSessionItem('permutapp_push_enabled', 'true');
         }
-      } catch (e) {
-        // Fallback silencioso
       }
     }
     checkExistingPush();
-
     refresh();
     const interval = setInterval(refresh, 30000);
-    const appStateSubscription = AppState.addEventListener('change', (state) => {
+    const appState = AppState.addEventListener('change', (state) => {
       if (state === 'active') refresh();
     });
     return () => {
+      cancelled = true;
       clearInterval(interval);
-      appStateSubscription.remove();
+      appState.remove();
     };
   }, [isAuthenticated, refresh, token]);
 
   useEffect(() => {
     let cleanup: (() => void) | undefined;
-    configurarEscuchaPush(
-      refresh,
-      (route) => router.push(route as Href),
-    ).then((listenerCleanup) => {
-      cleanup = listenerCleanup;
-    }).catch(() => undefined);
+    configurarEscuchaPush(refresh, (route) => router.push(route as Href))
+      .then((listenerCleanup) => { cleanup = listenerCleanup; })
+      .catch(() => undefined);
     return () => cleanup?.();
   }, [refresh, router]);
 
@@ -125,11 +142,15 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       setError(null);
       const vapidPublicKey = await obtenerVapidPublicKey();
       const subscription = await obtenerSuscripcionPush(vapidPublicKey);
-      await registrarSuscripcionNotificacion(subscription, token);
+      const registered = await registrarSuscripcionNotificacion(subscription, token);
+      if (!registered.activa) throw new Error('El servidor no pudo activar la suscripción.');
       await setSessionItem('permutapp_push_enabled', 'true');
       setPushStatus('enabled');
     } catch (activationError) {
-      const message = activationError instanceof Error ? activationError.message : 'No fue posible activar las notificaciones.';
+      await deleteSessionItem('permutapp_push_enabled');
+      const message = activationError instanceof Error
+        ? activationError.message
+        : 'No fue posible activar las notificaciones.';
       setError(message);
       setPushStatus(message.toLowerCase().includes('rechazado') ? 'denied' : 'error');
     }
@@ -152,12 +173,12 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   }, [token]);
 
   const openNotification = useCallback(async (notification: Notificacion) => {
-    const route = notification.notif_datos?.ruta;
     try {
       await markAsRead(notification);
     } catch {
-      // La navegación sigue disponible aunque el servidor no pueda marcarla todavía.
+      // Navigation remains available when marking fails.
     }
+    const route = notification.notif_datos?.ruta;
     if (route) router.push(route as Href);
   }, [markAsRead, router]);
 

@@ -4,7 +4,8 @@ import { Href, useLocalSearchParams, useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import { EmptyState, InfoBanner, ProductCard, SectionHeader } from '@/components/ui';
-import { obtenerProductos, Producto } from '../../services/api';
+import { Producto } from '../../services/api';
+import { obtenerProductosActivos } from '../../services/catalog';
 
 const ESTADOS = ['Todos', 'Nuevo', 'Como nuevo', 'Buen estado', 'Aceptable'];
 const CATEGORIAS = [
@@ -39,7 +40,7 @@ export default function CatalogScreen() {
     async function cargarProductos() {
       try {
         setIsLoading(true);
-        const data = await obtenerProductos();
+        const data = await obtenerProductosActivos();
         if (mounted) {
           setProductos(data);
           setError(null);

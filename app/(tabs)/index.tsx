@@ -7,7 +7,8 @@ import RequireAuth from '@/components/RequireAuth';
 import { BrandBanner, BrandMark, EmptyState, InfoBanner, ProductCard, SectionHeader } from '@/components/ui';
 import { NotificationBell } from '@/components/NotificationBell';
 import { useAuth } from '../../context/AuthContext';
-import { obtenerProductos, Producto } from '../../services/api';
+import { Producto } from '../../services/api';
+import { obtenerProductosActivos } from '../../services/catalog';
 
 const CATEGORIAS = [
   { id: 'electronica', label: 'Electrónica', query: 'electronica', icon: 'laptop' as const, color: 'bg-sky-50 border-sky-100', iconColor: '#0284c7' },
@@ -35,7 +36,7 @@ export default function HomeScreen() {
     async function cargarProductos() {
       try {
         setIsLoadingProductos(true);
-        const data = await obtenerProductos();
+        const data = await obtenerProductosActivos();
         if (mounted) {
           setProductos(data.slice(0, 5));
           setProductosError(null);
