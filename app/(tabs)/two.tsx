@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Href, useLocalSearchParams, useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
-import { EmptyState, InfoBanner, ProductCard, SectionHeader } from '@/components/ui';
+import { EmptyState, FeedEnd, InfoBanner, ProductCard, SectionHeader } from '@/components/ui';
 import { Producto } from '../../services/api';
 import { obtenerProductosActivos } from '../../services/catalog';
 
@@ -135,6 +135,10 @@ export default function CatalogScreen() {
         {itemsFiltrados.map((item) => (
           <ProductCard key={item.prod_id} title={item.prod_nombre} subtitle={item.prod_ubicacion_comuna ?? `Publicación #${item.publ_id}`} status={item.prod_est} price={item.prod_precio} thumbnailUrl={item.prod_imagenes?.[0]} onPress={() => router.push(`/product/${item.prod_id}` as Href)} />
         ))}
+
+        {!isLoading && !error && itemsFiltrados.length > 0 ? (
+          <FeedEnd />
+        ) : null}
       </View>
     </ScrollView>
   );

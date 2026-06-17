@@ -1,6 +1,7 @@
 import { ActivityIndicator, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import type { DimensionValue } from 'react-native';
 import { Href, useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import { EmptyState, InfoBanner, PrimaryButton } from '@/components/ui';
@@ -21,6 +22,67 @@ import RequireAuth from '../../components/RequireAuth';
 import { useAuth } from '../../context/AuthContext';
 import MainLayout from '../../layouts/MainLayout';
 import { ReputationSummary } from '../../components/ReputationSummary';
+
+function LoadingLine({ width = '100%', height = 16 }: { width?: DimensionValue; height?: number }) {
+  return (
+    <View
+      className="rounded-full bg-neutral-100"
+      style={{ width, height }}
+    />
+  );
+}
+
+function LoadingCard({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <View className="bg-white border border-neutral-100 rounded-2xl p-5 mb-4">
+      <Text className="text-neutral-950 text-xl font-bold mb-4">{title}</Text>
+      {children}
+    </View>
+  );
+}
+
+function ProductDetailLoading() {
+  return (
+    <>
+      <View className="h-72 rounded-2xl bg-neutral-100 border border-neutral-100 overflow-hidden mb-4" />
+
+      <View className="bg-white border border-neutral-100 rounded-2xl p-5 mb-4">
+        <LoadingLine width="68%" height={34} />
+        <View className="mt-4">
+          <LoadingLine width="82%" />
+        </View>
+        <View className="flex-row gap-2 mt-5">
+          <LoadingLine width={112} height={34} />
+          <LoadingLine width={84} height={34} />
+        </View>
+      </View>
+
+      <View className="bg-white border border-neutral-100 rounded-2xl p-4 mb-4">
+        <Text className="text-neutral-500 text-sm font-bold mb-3">Valor referencial</Text>
+        <LoadingLine width="58%" height={28} />
+      </View>
+
+      <LoadingCard title="Descripción">
+        <LoadingLine width="92%" />
+        <View className="mt-3"><LoadingLine width="74%" /></View>
+      </LoadingCard>
+
+      <LoadingCard title="Ubicación">
+        <LoadingLine width="54%" height={24} />
+        <View className="mt-3"><LoadingLine width="44%" height={34} /></View>
+        <View className="mt-3"><LoadingLine width="70%" /></View>
+      </LoadingCard>
+
+      <LoadingCard title="Reputación">
+        <LoadingLine width="76%" height={24} />
+      </LoadingCard>
+    </>
+  );
+}
+
+function nombreVendedor(vendedor: Usuario): string {
+  return `${vendedor.usu_pri_nombre} ${vendedor.usu_pri_apellido}`.trim();
+}
 
 export default function ProductDetailScreen() {
   const router = useRouter();
@@ -49,8 +111,11 @@ export default function ProductDetailScreen() {
 
       try {
         setIsLoading(true);
+        setProducto(null);
         setPublicacion(null);
         setVendedor(null);
+        setEstacionMetro(null);
+        setError(null);
         setPublicacionError(null);
         setChatError(null);
         const [data, estaciones] = await Promise.all([
@@ -139,21 +204,35 @@ export default function ProductDetailScreen() {
 
   const esMiPublicacion = Boolean(user && publicacion && Number(user.id) === publicacion.publ_autor_id);
   const vendedorNoVerificado = Boolean(vendedor && !vendedor.usu_identidad_verificada && !esMiPublicacion);
+  const vendedorVerificado = Boolean(vendedor?.usu_identidad_verificada);
+  const isResolviendoPublicacion = Boolean(producto && isLoading && !publicacionError);
+  const sellerName = vendedor
+    ? nombreVendedor(vendedor)
+    : isResolviendoPublicacion || isLoading
+      ? 'Cargando vendedor'
+      : 'Vendedor no disponible';
 
   return (
     <MainLayout>
-      <ScrollView className="flex-1 bg-neutral-50" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 36 }}>
-        <View className="px-5 pt-5 pb-4">
-          <TouchableOpacity className="w-11 h-11 rounded-2xl bg-white border border-neutral-100 items-center justify-center mb-4" onPress={() => router.back()} activeOpacity={0.75}>
+      <ScrollView className="flex-1 bg-neutral-50" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 36 }} stickyHeaderIndices={[0]}>
+        <View className="px-5 pt-5 pb-4 bg-neutral-50 flex-row items-center">
+          <TouchableOpacity className="w-11 h-11 rounded-2xl bg-white border border-neutral-100 items-center justify-center mr-3" onPress={() => router.back()} activeOpacity={0.75}>
             <FontAwesome name="chevron-left" size={14} color="#404040" />
           </TouchableOpacity>
+          <View className="flex-1 bg-white border border-neutral-100 rounded-2xl px-4 h-11 justify-center">
+            {producto ? (
+              <View className="flex-row items-center">
+                <Text className="text-neutral-950 text-base font-bold flex-1" numberOfLines={1}>{sellerName}</Text>
+                {vendedorVerificado ? <FontAwesome name="check-circle" size={16} color="#047857" /> : null}
+              </View>
+            ) : (
+              <LoadingLine width="62%" height={20} />
+            )}
+          </View>
+        </View>
 
-          {isLoading ? (
-            <View className="items-center py-20 bg-white border border-neutral-100 rounded-2xl">
-              <ActivityIndicator color="#047857" />
-              <Text className="text-neutral-500 text-base mt-4">Cargando producto</Text>
-            </View>
-          ) : null}
+        <View className="px-5 pb-4">
+          {isLoading && !producto ? <ProductDetailLoading /> : null}
 
           {error ? <InfoBanner icon="exclamation-circle" title="Detalle no disponible" body={error} tone="red" /> : null}
 
@@ -180,9 +259,9 @@ export default function ProductDetailScreen() {
               ) : null}
 
               <View className="bg-white border border-neutral-100 rounded-2xl p-5 mb-4">
-                <Text className="text-brand-700 text-sm font-bold mb-1">Producto</Text>
                 <Text className="text-3xl font-bold text-neutral-950 leading-10">{producto.prod_nombre}</Text>
                 {publicacion ? <Text className="text-neutral-500 text-base leading-6 mt-2" numberOfLines={2}>{publicacion.publ_titulo}</Text> : null}
+                {!publicacion && isResolviendoPublicacion ? <View className="mt-3"><LoadingLine width="76%" /></View> : null}
                 <View className="flex-row items-center flex-wrap mt-4 gap-2">
                   <View className="bg-brand-50 border border-brand-100 rounded-full px-3 py-1.5">
                     <Text className="text-brand-700 text-sm font-bold">{producto.prod_est}</Text>
@@ -195,28 +274,24 @@ export default function ProductDetailScreen() {
                 </View>
               </View>
 
-              <View className="flex-row gap-3 mb-4">
-                <View className="flex-1 bg-white border border-neutral-100 rounded-2xl p-4">
-                  <Text className="text-neutral-500 text-sm font-bold mb-1">Valor</Text>
-                  <Text className="text-neutral-950 text-2xl font-bold">${producto.prod_precio.toLocaleString('es-CL')}</Text>
-                </View>
-                <View className="flex-1 bg-white border border-neutral-100 rounded-2xl p-4">
-                  <Text className="text-neutral-500 text-sm font-bold mb-1">Perfil</Text>
-                  <View className="flex-row items-center">
-                    <FontAwesome name={vendedorNoVerificado ? 'exclamation-triangle' : 'shield'} size={15} color={vendedorNoVerificado ? '#d97706' : '#047857'} />
-                    <Text className={`text-base font-bold ml-2 ${vendedorNoVerificado ? 'text-amber-700' : 'text-brand-700'}`} numberOfLines={1}>
-                      {vendedorNoVerificado ? 'Pendiente' : 'Verificado'}
-                    </Text>
-                  </View>
-                </View>
+              <View className="bg-white border border-neutral-100 rounded-2xl p-4 mb-4">
+                <Text className="text-neutral-500 text-sm font-bold mb-1">Valor referencial</Text>
+                <Text className="text-neutral-950 text-2xl font-bold">${producto.prod_precio.toLocaleString('es-CL')}</Text>
               </View>
 
-              {publicacion ? (
+              {publicacion || isResolviendoPublicacion ? (
                 <View className="bg-white border border-neutral-100 rounded-2xl p-5 mb-4">
                   <Text className="text-neutral-950 text-xl font-bold mb-2">Descripción</Text>
-                  <Text className="text-neutral-700 text-base leading-6" numberOfLines={5}>
-                    {publicacion.publ_descripcion || 'Este producto no tiene descripción disponible.'}
-                  </Text>
+                  {publicacion ? (
+                    <Text className="text-neutral-700 text-base leading-6" numberOfLines={5}>
+                      {publicacion.publ_descripcion || 'Este producto no tiene descripción disponible.'}
+                    </Text>
+                  ) : (
+                    <>
+                      <LoadingLine width="92%" />
+                      <View className="mt-3"><LoadingLine width="74%" /></View>
+                    </>
+                  )}
                 </View>
               ) : null}
 
@@ -240,10 +315,10 @@ export default function ProductDetailScreen() {
                 </View>
               ) : null}
 
-              {publicacion ? (
+              {publicacion || isResolviendoPublicacion ? (
                 <View className="bg-white border border-neutral-100 rounded-2xl p-5 mb-4">
                   <Text className="text-neutral-950 text-xl font-bold mb-2">Reputación</Text>
-                  <ReputationSummary usuarioId={publicacion.publ_autor_id} compact />
+                  {publicacion ? <ReputationSummary usuarioId={publicacion.publ_autor_id} compact /> : <LoadingLine width="76%" height={24} />}
                 </View>
               ) : null}
 
@@ -258,8 +333,8 @@ export default function ProductDetailScreen() {
                   Esta es tu publicación
                 </PrimaryButton>
               ) : !publicacion ? (
-                <PrimaryButton icon="exclamation-circle" disabled onPress={() => {}} className="mt-5">
-                  Publicación no disponible
+                <PrimaryButton icon={isResolviendoPublicacion ? 'clock-o' : 'exclamation-circle'} disabled onPress={() => {}} className="mt-5">
+                  {isResolviendoPublicacion ? 'Preparando publicación' : 'Publicación no disponible'}
                 </PrimaryButton>
               ) : (
                 <RequireAuth className="w-full bg-brand-700 rounded-2xl h-14 flex-row items-center justify-center mt-5" onAuthenticated={handleProponerPermuta}>

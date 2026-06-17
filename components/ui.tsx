@@ -161,6 +161,19 @@ interface EmptyStateProps {
   body: string;
 }
 
+interface ScreenContentProps {
+  children: ReactNode;
+  className?: string;
+}
+
+export function ScreenContent({ children, className = '' }: ScreenContentProps) {
+  return (
+    <View className={`w-full max-w-[760px] self-center ${className}`}>
+      {children}
+    </View>
+  );
+}
+
 export function EmptyState({ icon, title, body }: EmptyStateProps) {
   return (
     <View className="items-center py-12 px-5 bg-white rounded-2xl border border-neutral-100">
@@ -169,6 +182,26 @@ export function EmptyState({ icon, title, body }: EmptyStateProps) {
       </View>
       <Text className="text-neutral-900 font-bold text-xl text-center">{title}</Text>
       <Text className="text-neutral-500 text-base text-center leading-6 mt-2">{body}</Text>
+    </View>
+  );
+}
+
+interface FeedEndProps {
+  title?: string;
+  body?: string;
+}
+
+export function FeedEnd({
+  title = 'Ya estás al día',
+  body = 'No hay más permutas nuevas por ver.',
+}: FeedEndProps) {
+  return (
+    <View className="items-center py-5 px-4 mt-2 mb-2">
+      <View className="w-10 h-10 rounded-full bg-brand-50 border border-brand-100 items-center justify-center mb-3">
+        <FontAwesome name="check" size={14} color="#047857" />
+      </View>
+      <Text className="text-neutral-900 text-base font-bold text-center">{title}</Text>
+      <Text className="text-neutral-500 text-sm leading-5 text-center mt-1">{body}</Text>
     </View>
   );
 }
@@ -189,7 +222,7 @@ export function ProductCard({ title, subtitle, status, price, thumbnailUrl, onPr
       onPress={onPress}
       activeOpacity={0.82}
     >
-      <View className="w-20 h-20 rounded-2xl bg-teal-50 items-center justify-center mr-4 border border-teal-100 overflow-hidden">
+      <View className="w-16 h-16 rounded-2xl bg-teal-50 items-center justify-center mr-3 border border-teal-100 overflow-hidden">
         {thumbnailUrl ? (
           <Image source={{ uri: thumbnailUrl }} className="w-full h-full" resizeMode="cover" />
         ) : (
@@ -197,18 +230,18 @@ export function ProductCard({ title, subtitle, status, price, thumbnailUrl, onPr
         )}
       </View>
 
-      <View className="flex-1 mr-3">
-        <Text className="text-neutral-950 font-bold text-lg leading-6" numberOfLines={2}>{title}</Text>
+      <View className="flex-1 mr-2">
+        <Text className="text-neutral-950 font-bold text-base leading-5" numberOfLines={2}>{title}</Text>
         <Text className="text-neutral-500 text-sm mt-1" numberOfLines={1}>{subtitle}</Text>
         {price !== undefined ? (
-          <Text className="text-neutral-950 text-lg font-bold mt-2">
+          <Text className="text-neutral-950 text-base font-bold mt-1">
             ${price.toLocaleString('es-CL')}
           </Text>
         ) : null}
       </View>
 
       <View className="items-end">
-        <View className="bg-brand-50 border border-brand-100 rounded-full px-2.5 py-1 mb-3">
+        <View className="bg-brand-50 border border-brand-100 rounded-full px-2.5 py-1 mb-2">
           <Text className="text-brand-700 text-xs font-bold">{status}</Text>
         </View>
         <FontAwesome name="chevron-right" size={13} color="#a3a3a3" />

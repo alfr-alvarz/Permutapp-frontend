@@ -23,6 +23,7 @@ import MainLayout from '../layouts/MainLayout';
 
 const ESTADOS = ['Nuevo', 'Como nuevo', 'Buen estado', 'Aceptable'];
 const MAX_PRODUCT_PHOTOS = 5;
+const MAX_REFERENCE_PRICE = 5000000;
 
 const METRO_LINEAS = [
   { id: 'L1', label: 'Línea 1', color: '#C8102E' },
@@ -58,6 +59,12 @@ interface PublishErrors {
 
 function normalizarTexto(value: string): string {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+function normalizarPrecio(value: string): string {
+  const digits = value.replace(/\D/g, '');
+  if (!digits) return '';
+  return String(Math.min(Number(digits), MAX_REFERENCE_PRICE));
 }
 
 async function uriToDataUrl(uri: string, mimeType: string): Promise<string> {
@@ -219,6 +226,7 @@ export default function PublishScreen() {
     if (!descripcion.trim()) nextErrors.descripcion = 'La descripción es obligatoria.';
     if (!nombre.trim()) nextErrors.nombre = 'El nombre del producto es obligatorio.';
     if (!Number.isInteger(precioNumerico) || precioNumerico < 0) nextErrors.precio = 'Ingresa un valor referencial válido.';
+    if (precioNumerico > MAX_REFERENCE_PRICE) nextErrors.precio = 'El valor referencial máximo es $5.000.000.';
     if (!comunaSeleccionada) nextErrors.ubicacionComuna = 'Selecciona una comuna cargada desde ServicioLocalizacion.';
 
     if (!estacionSeleccionada) nextErrors.metro = 'Selecciona un Metro cercano para calcular puntos seguros.';
@@ -248,7 +256,7 @@ export default function PublishScreen() {
       const producto = await crearProducto({
         prod_nombre: nombre.trim(),
         prod_est: estado,
-        prod_precio: Number(precio.replace(/\D/g, '')),
+        prod_precio: Number(normalizarPrecio(precio)),
         publ_id: publicacion.publ_id,
         prod_imagenes: fotos.map((foto) => foto.dataUrl),
         prod_ubicacion_comuna: comunaSeleccionada?.nombre,
@@ -568,13 +576,14 @@ export default function PublishScreen() {
                     placeholderTextColor="#a3a3a3"
                     value={precio}
                     onChangeText={(text) => {
-                      setPrecio(text.replace(/\D/g, ''));
+                      setPrecio(normalizarPrecio(text));
                       clearError('precio');
                     }}
                     keyboardType="number-pad"
                     inputMode="numeric"
                     editable={!isSubmitting}
                   />
+                  <Text className="text-neutral-500 text-sm leading-5 mt-2">Máximo $5.000.000.</Text>
                   <FieldError message={errors.precio} />
                 </View>
 

@@ -4,7 +4,7 @@ import { Href, useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import RequireAuth from '@/components/RequireAuth';
-import { BrandMark, EmptyState, InfoBanner, ProductCard, SectionHeader } from '@/components/ui';
+import { BrandMark, EmptyState, FeedEnd, InfoBanner, ProductCard, ScreenContent, SectionHeader } from '@/components/ui';
 import { NotificationBell } from '@/components/NotificationBell';
 import { useAuth } from '../../context/AuthContext';
 import { Producto } from '../../services/api';
@@ -27,6 +27,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { isAuthenticated, user } = useAuth();
   const [productos, setProductos] = useState<Producto[]>([]);
+  const [totalProductos, setTotalProductos] = useState(0);
   const [isLoadingProductos, setIsLoadingProductos] = useState(true);
   const [productosError, setProductosError] = useState<string | null>(null);
 
@@ -39,6 +40,7 @@ export default function HomeScreen() {
         const data = await obtenerProductosActivos();
         if (mounted) {
           setProductos(data.slice(0, 4));
+          setTotalProductos(data.length);
           setProductosError(null);
         }
       } catch {
@@ -53,10 +55,11 @@ export default function HomeScreen() {
   }, []);
 
   const nombre = isAuthenticated ? user?.name?.split(' ')[0] : null;
+  const hayMasProductos = totalProductos > productos.length;
 
   return (
     <ScrollView className="flex-1 bg-neutral-50" contentContainerStyle={{ paddingBottom: 104 }} showsVerticalScrollIndicator={false}>
-      <View className="px-5 pt-6 pb-2">
+      <ScreenContent className="px-4 pt-5 pb-2">
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center flex-1 pr-3">
             <BrandMark size="sm" />
@@ -82,37 +85,37 @@ export default function HomeScreen() {
           )}
         </View>
 
-        <View className="bg-brand-900 rounded-2xl p-5 mt-5">
-          <Text className="text-white text-3xl font-bold leading-9">Intercambia sin ruido</Text>
-          <Text className="text-brand-100 text-base leading-6 mt-2">Publica, encuentra algo útil y conversa en un flujo más claro.</Text>
-          <View className="flex-row gap-3 mt-5">
-            <RequireAuth onAuthenticated={() => router.push('/publish' as Href)} className="flex-1 bg-white rounded-2xl h-14 items-center justify-center flex-row">
+        <View className="bg-brand-900 rounded-2xl p-4 mt-4">
+          <Text className="text-white text-2xl font-bold leading-8">Permuta simple</Text>
+          <Text className="text-brand-100 text-sm leading-5 mt-1" numberOfLines={2}>Publica o explora objetos cerca de ti.</Text>
+          <View className="flex-row gap-2 mt-4">
+            <RequireAuth onAuthenticated={() => router.push('/publish' as Href)} className="flex-1 bg-white rounded-2xl h-12 items-center justify-center flex-row">
               <FontAwesome name="plus" size={14} color="#047857" />
               <Text className="text-brand-800 font-bold text-base ml-2">Publicar</Text>
             </RequireAuth>
-            <TouchableOpacity className="flex-1 bg-brand-700 rounded-2xl h-14 items-center justify-center flex-row" onPress={() => router.push('/(tabs)/two' as Href)} activeOpacity={0.85}>
+            <TouchableOpacity className="flex-1 bg-brand-700 rounded-2xl h-12 items-center justify-center flex-row" onPress={() => router.push('/(tabs)/two' as Href)} activeOpacity={0.85}>
               <FontAwesome name="search" size={14} color="#ffffff" />
               <Text className="text-white font-bold text-base ml-2">Explorar</Text>
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </ScreenContent>
 
-      <View className="px-5 mt-6">
+      <ScreenContent className="px-4 mt-5">
         <SectionHeader title="Categorías" />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 20 }}>
           {CATEGORIAS.map((cat) => (
             <TouchableOpacity key={cat.id} className="items-center mr-4" onPress={() => router.push(`/(tabs)/two?categoria=${encodeURIComponent(cat.query)}` as Href)} activeOpacity={0.75}>
-              <View className={`w-16 h-16 rounded-2xl ${cat.color} border items-center justify-center mb-2`}>
+              <View className={`w-14 h-14 rounded-2xl ${cat.color} border items-center justify-center mb-2`}>
                 <FontAwesome name={cat.icon} size={22} color={cat.iconColor} />
               </View>
-              <Text className="text-neutral-700 text-sm font-bold">{cat.label}</Text>
+              <Text className="text-neutral-700 text-xs font-bold">{cat.label}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
-      </View>
+      </ScreenContent>
 
-      <View className="px-5 mt-7 pb-6">
+      <ScreenContent className="px-4 mt-6 pb-6">
         <SectionHeader title="Cerca de ti" actionLabel="Ver todo" onActionPress={() => router.push('/(tabs)/two' as Href)} />
 
         {isLoadingProductos ? (
@@ -139,10 +142,18 @@ export default function HomeScreen() {
             onPress={() => router.push(`/product/${producto.prod_id}` as Href)}
           />
         ))}
-      </View>
+
+        {!isLoadingProductos && !productosError && productos.length > 0 ? (
+          <FeedEnd
+            body={hayMasProductos
+              ? 'Revisa el catálogo completo para ver más permutas.'
+              : 'No hay más permutas nuevas por ver.'}
+          />
+        ) : null}
+      </ScreenContent>
 
       {!isAuthenticated ? (
-        <View className="px-5 pb-8">
+        <ScreenContent className="px-4 pb-8">
           <TouchableOpacity className="bg-white rounded-2xl p-5 border border-neutral-100 flex-row items-center justify-between" onPress={() => router.push('/register' as Href)} activeOpacity={0.82}>
             <View className="flex-1 pr-4">
               <Text className="text-neutral-950 font-bold text-xl">Crea tu cuenta</Text>
@@ -150,7 +161,7 @@ export default function HomeScreen() {
             </View>
             <FontAwesome name="chevron-right" size={14} color="#a3a3a3" />
           </TouchableOpacity>
-        </View>
+        </ScreenContent>
       ) : null}
     </ScrollView>
   );
