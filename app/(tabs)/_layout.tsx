@@ -21,11 +21,11 @@ export default function TabLayout() {
             backgroundColor: '#ffffff',
             elevation: 0,
             shadowOpacity: 0,
-            height: 76,
-            paddingBottom: 16,
+            height: 82,
+            paddingBottom: 18,
             paddingTop: 8,
           },
-          tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
+          tabBarLabelStyle: { fontSize: 12, fontWeight: '700' },
           headerShown: false,
         }}
       >

@@ -13,7 +13,7 @@ interface BrandMarkProps {
 
 export function BrandMark({ size = 'md' }: BrandMarkProps) {
   const dim = size === 'lg' ? 80 : size === 'sm' ? 44 : 64;
-  const radius = size === 'sm' ? 16 : 24;
+  const radius = size === 'sm' ? 14 : 20;
 
   return (
     <View
@@ -38,7 +38,7 @@ export function BrandMark({ size = 'md' }: BrandMarkProps) {
 
 export function BrandBanner() {
   return (
-    <View className="w-full rounded-3xl bg-white overflow-hidden border border-neutral-100">
+    <View className="w-full rounded-2xl bg-white overflow-hidden border border-neutral-100">
       <Image
         source={brandBanner}
         style={{ width: '100%', aspectRatio: 2.9 }}
@@ -94,7 +94,7 @@ export function PrimaryButton({
         <>
           {icon ? <FontAwesome name={icon} size={15} color={iconColor} /> : null}
           {!iconOnly ? (
-            <Text className={`${textClass} font-bold text-base ${icon ? 'ml-3' : ''}`}>{children}</Text>
+            <Text className={`${textClass} font-bold text-[17px] ${icon ? 'ml-3' : ''}`}>{children}</Text>
           ) : null}
         </>
       )}
@@ -111,15 +111,15 @@ interface SectionHeaderProps {
 
 export function SectionHeader({ title, eyebrow, actionLabel, onActionPress }: SectionHeaderProps) {
   return (
-    <View className="flex-row items-end justify-between mb-4">
+    <View className="flex-row items-center justify-between mb-4">
       <View className="flex-1 pr-4">
         {eyebrow ? (
-          <Text className="text-brand-700 text-xs uppercase tracking-widest font-bold mb-1">{eyebrow}</Text>
+          <Text className="text-brand-700 text-sm font-bold mb-1">{eyebrow}</Text>
         ) : null}
-        <Text className="text-neutral-950 text-xl font-bold">{title}</Text>
+        <Text className="text-neutral-950 text-2xl font-bold leading-8">{title}</Text>
       </View>
       {actionLabel && onActionPress ? (
-        <TouchableOpacity onPress={onActionPress} activeOpacity={0.75}>
+        <TouchableOpacity className="h-10 px-3 rounded-2xl bg-white border border-neutral-100 items-center justify-center" onPress={onActionPress} activeOpacity={0.75}>
           <Text className="text-brand-700 text-sm font-bold">{actionLabel}</Text>
         </TouchableOpacity>
       ) : null}
@@ -130,7 +130,7 @@ export function SectionHeader({ title, eyebrow, actionLabel, onActionPress }: Se
 interface InfoBannerProps {
   icon: IconName;
   title: string;
-  body: string;
+  body?: string;
   tone?: 'brand' | 'amber' | 'red' | 'neutral';
 }
 
@@ -143,13 +143,13 @@ export function InfoBanner({ icon, title, body, tone = 'brand' }: InfoBannerProp
   }[tone];
 
   return (
-    <View className={`border rounded-3xl p-4 flex-row ${toneClass.box}`}>
+    <View className={`border rounded-2xl p-4 flex-row ${toneClass.box}`}>
       <View className={`w-10 h-10 rounded-2xl items-center justify-center mr-3 ${toneClass.icon}`}>
         <FontAwesome name={icon} size={16} color={toneClass.color} />
       </View>
-      <View className="flex-1">
-        <Text className={`${toneClass.title} font-bold text-sm`}>{title}</Text>
-        <Text className={`${toneClass.body} text-xs leading-5 mt-1`}>{body}</Text>
+      <View className="flex-1 justify-center">
+        <Text className={`${toneClass.title} font-bold text-base leading-5`}>{title}</Text>
+        {body ? <Text className={`${toneClass.body} text-sm leading-5 mt-1`}>{body}</Text> : null}
       </View>
     </View>
   );
@@ -163,12 +163,12 @@ interface EmptyStateProps {
 
 export function EmptyState({ icon, title, body }: EmptyStateProps) {
   return (
-    <View className="items-center py-14 px-5 bg-neutral-50 rounded-3xl border border-neutral-100">
-      <View className="w-16 h-16 rounded-3xl bg-white items-center justify-center mb-4 border border-neutral-100">
+    <View className="items-center py-12 px-5 bg-white rounded-2xl border border-neutral-100">
+      <View className="w-16 h-16 rounded-2xl bg-neutral-50 items-center justify-center mb-4 border border-neutral-100">
         <FontAwesome name={icon} size={24} color="#a3a3a3" />
       </View>
-      <Text className="text-neutral-900 font-bold text-base text-center">{title}</Text>
-      <Text className="text-neutral-500 text-sm text-center leading-5 mt-2">{body}</Text>
+      <Text className="text-neutral-900 font-bold text-xl text-center">{title}</Text>
+      <Text className="text-neutral-500 text-base text-center leading-6 mt-2">{body}</Text>
     </View>
   );
 }
@@ -184,8 +184,12 @@ interface ProductCardProps {
 
 export function ProductCard({ title, subtitle, status, price, thumbnailUrl, onPress }: ProductCardProps) {
   return (
-    <View className="bg-white border border-neutral-100 rounded-3xl p-4 mb-3 flex-row items-center">
-      <View className="w-16 h-16 rounded-3xl bg-teal-50 items-center justify-center mr-4 border border-teal-100 overflow-hidden">
+    <TouchableOpacity
+      className="bg-white border border-neutral-100 rounded-2xl p-3 mb-3 flex-row items-center"
+      onPress={onPress}
+      activeOpacity={0.82}
+    >
+      <View className="w-20 h-20 rounded-2xl bg-teal-50 items-center justify-center mr-4 border border-teal-100 overflow-hidden">
         {thumbnailUrl ? (
           <Image source={{ uri: thumbnailUrl }} className="w-full h-full" resizeMode="cover" />
         ) : (
@@ -194,27 +198,21 @@ export function ProductCard({ title, subtitle, status, price, thumbnailUrl, onPr
       </View>
 
       <View className="flex-1 mr-3">
-        <Text className="text-neutral-950 font-bold text-base" numberOfLines={1}>{title}</Text>
-        <Text className="text-neutral-500 text-xs mt-1" numberOfLines={1}>{subtitle}</Text>
-        <View className="flex-row items-center mt-2 flex-wrap">
-          <View className="bg-brand-50 border border-brand-100 rounded-full px-2.5 py-1 mr-2">
-            <Text className="text-brand-700 text-xs font-bold">{status}</Text>
-          </View>
-          {price !== undefined ? (
-            <Text className="text-neutral-500 text-xs font-semibold">
-              ${price.toLocaleString('es-CL')}
-            </Text>
-          ) : null}
-        </View>
+        <Text className="text-neutral-950 font-bold text-lg leading-6" numberOfLines={2}>{title}</Text>
+        <Text className="text-neutral-500 text-sm mt-1" numberOfLines={1}>{subtitle}</Text>
+        {price !== undefined ? (
+          <Text className="text-neutral-950 text-lg font-bold mt-2">
+            ${price.toLocaleString('es-CL')}
+          </Text>
+        ) : null}
       </View>
 
-      <TouchableOpacity
-        className="w-11 h-11 rounded-2xl bg-brand-700 items-center justify-center"
-        onPress={onPress}
-        activeOpacity={0.85}
-      >
-        <FontAwesome name="chevron-right" size={13} color="#ffffff" />
-      </TouchableOpacity>
-    </View>
+      <View className="items-end">
+        <View className="bg-brand-50 border border-brand-100 rounded-full px-2.5 py-1 mb-3">
+          <Text className="text-brand-700 text-xs font-bold">{status}</Text>
+        </View>
+        <FontAwesome name="chevron-right" size={13} color="#a3a3a3" />
+      </View>
+    </TouchableOpacity>
   );
 }

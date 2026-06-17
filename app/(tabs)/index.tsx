@@ -4,7 +4,7 @@ import { Href, useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import RequireAuth from '@/components/RequireAuth';
-import { BrandBanner, BrandMark, EmptyState, InfoBanner, ProductCard, SectionHeader } from '@/components/ui';
+import { BrandMark, EmptyState, InfoBanner, ProductCard, SectionHeader } from '@/components/ui';
 import { NotificationBell } from '@/components/NotificationBell';
 import { useAuth } from '../../context/AuthContext';
 import { Producto } from '../../services/api';
@@ -25,7 +25,7 @@ const CATEGORIAS = [
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [productos, setProductos] = useState<Producto[]>([]);
   const [isLoadingProductos, setIsLoadingProductos] = useState(true);
   const [productosError, setProductosError] = useState<string | null>(null);
@@ -38,7 +38,7 @@ export default function HomeScreen() {
         setIsLoadingProductos(true);
         const data = await obtenerProductosActivos();
         if (mounted) {
-          setProductos(data.slice(0, 5));
+          setProductos(data.slice(0, 4));
           setProductosError(null);
         }
       } catch {
@@ -52,6 +52,8 @@ export default function HomeScreen() {
     return () => { mounted = false; };
   }, []);
 
+  const nombre = isAuthenticated ? user?.name?.split(' ')[0] : null;
+
   return (
     <ScrollView className="flex-1 bg-neutral-50" contentContainerStyle={{ paddingBottom: 104 }} showsVerticalScrollIndicator={false}>
       <View className="px-5 pt-6 pb-2">
@@ -59,11 +61,9 @@ export default function HomeScreen() {
           <View className="flex-row items-center flex-1 pr-3">
             <BrandMark size="sm" />
             <View className="ml-3 flex-1">
-              <Text className="text-xs text-neutral-500 font-semibold">
-                {isAuthenticated ? 'Bienvenido de vuelta' : 'Explora en modo invitado'}
-              </Text>
-              <Text className="text-2xl font-bold text-neutral-950 mt-0.5" numberOfLines={1}>
-                {isAuthenticated ? user?.name : 'Permutas circulares'}
+              <Text className="text-brand-700 text-sm font-bold">Permutapp</Text>
+              <Text className="text-neutral-950 text-2xl font-bold leading-8" numberOfLines={1}>
+                {nombre ? `Hola, ${nombre}` : 'Permuta simple'}
               </Text>
             </View>
           </View>
@@ -77,68 +77,55 @@ export default function HomeScreen() {
             </View>
           ) : (
             <TouchableOpacity className="bg-brand-700 rounded-2xl px-4 h-11 items-center justify-center" onPress={() => router.push('/login')} activeOpacity={0.85}>
-              <Text className="text-white font-bold text-sm">Ingresar</Text>
+              <Text className="text-white font-bold text-base">Ingresar</Text>
             </TouchableOpacity>
           )}
         </View>
-      </View>
 
-      <View className="px-5 mt-5">
-        <BrandBanner />
-      </View>
-
-      <View className="mx-5 mt-5 bg-brand-900 rounded-3xl p-6 overflow-hidden">
-        <View className="absolute top-0 right-0 w-32 h-full bg-teal-800 opacity-60" />
-        <View className="absolute -bottom-6 -left-4 w-36 h-16 bg-brand-700 opacity-70 rotate-12" />
-
-        <View className="z-10">
-          <View className="self-start bg-white/10 border border-white/10 rounded-full px-3 py-1.5 mb-4">
-            <Text className="text-brand-100 text-xs font-bold uppercase tracking-widest">Economía circular</Text>
+        <View className="bg-brand-900 rounded-2xl p-5 mt-5">
+          <Text className="text-white text-3xl font-bold leading-9">Intercambia sin ruido</Text>
+          <Text className="text-brand-100 text-base leading-6 mt-2">Publica, encuentra algo útil y conversa en un flujo más claro.</Text>
+          <View className="flex-row gap-3 mt-5">
+            <RequireAuth onAuthenticated={() => router.push('/publish' as Href)} className="flex-1 bg-white rounded-2xl h-14 items-center justify-center flex-row">
+              <FontAwesome name="plus" size={14} color="#047857" />
+              <Text className="text-brand-800 font-bold text-base ml-2">Publicar</Text>
+            </RequireAuth>
+            <TouchableOpacity className="flex-1 bg-brand-700 rounded-2xl h-14 items-center justify-center flex-row" onPress={() => router.push('/(tabs)/two' as Href)} activeOpacity={0.85}>
+              <FontAwesome name="search" size={14} color="#ffffff" />
+              <Text className="text-white font-bold text-base ml-2">Explorar</Text>
+            </TouchableOpacity>
           </View>
-          <Text className="text-white text-3xl font-bold leading-9 mb-3">Dale otra vida a lo que ya no usas</Text>
-          <Text className="text-brand-100 text-sm leading-6 mb-6">
-            Publica productos, descubre oportunidades cercanas y propone intercambios con una comunidad verificada.
-          </Text>
-
-          <RequireAuth onAuthenticated={() => router.push('/publish' as Href)} className="bg-white rounded-2xl px-5 h-12 self-start flex-row items-center">
-            <FontAwesome name="plus" size={12} color="#047857" />
-            <Text className="text-brand-800 font-bold text-sm ml-2">Publicar producto</Text>
-          </RequireAuth>
         </View>
       </View>
 
-      <View className="px-5 mt-5">
-        <InfoBanner icon="shield" title="Intercambios con más confianza" body="Permutapp prioriza identidad, reputación y encuentros seguros para que la permuta sea simple y responsable." />
-      </View>
-
-      <View className="px-5 mt-7">
-        <SectionHeader title="Explora por categoría" eyebrow="Descubre" />
+      <View className="px-5 mt-6">
+        <SectionHeader title="Categorías" />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 20 }}>
           {CATEGORIAS.map((cat) => (
             <TouchableOpacity key={cat.id} className="items-center mr-4" onPress={() => router.push(`/(tabs)/two?categoria=${encodeURIComponent(cat.query)}` as Href)} activeOpacity={0.75}>
-              <View className={`w-16 h-16 rounded-3xl ${cat.color} border items-center justify-center mb-2`}>
+              <View className={`w-16 h-16 rounded-2xl ${cat.color} border items-center justify-center mb-2`}>
                 <FontAwesome name={cat.icon} size={22} color={cat.iconColor} />
               </View>
-              <Text className="text-neutral-700 text-xs font-bold">{cat.label}</Text>
+              <Text className="text-neutral-700 text-sm font-bold">{cat.label}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
       </View>
 
       <View className="px-5 mt-7 pb-6">
-        <SectionHeader title="Disponibles cerca de ti" eyebrow="Catálogo" actionLabel="Ver todo" onActionPress={() => router.push('/(tabs)/two')} />
+        <SectionHeader title="Cerca de ti" actionLabel="Ver todo" onActionPress={() => router.push('/(tabs)/two' as Href)} />
 
         {isLoadingProductos ? (
-          <View className="py-10 items-center bg-white rounded-3xl border border-neutral-100">
+          <View className="py-10 items-center bg-white rounded-2xl border border-neutral-100">
             <ActivityIndicator color="#047857" />
-            <Text className="text-neutral-500 mt-4 text-sm">Buscando productos disponibles</Text>
+            <Text className="text-neutral-500 mt-4 text-base">Cargando productos</Text>
           </View>
         ) : null}
 
         {productosError ? <InfoBanner icon="exclamation-circle" title="Catálogo no disponible" body={productosError} tone="red" /> : null}
 
         {!isLoadingProductos && !productosError && productos.length === 0 ? (
-          <EmptyState icon="inbox" title="Aún no hay publicaciones" body="Cuando la comunidad publique productos, aparecerán aquí para iniciar nuevas permutas." />
+          <EmptyState icon="inbox" title="Aún no hay publicaciones" body="Cuando alguien publique, aparecerá aquí." />
         ) : null}
 
         {productos.map((producto) => (
@@ -156,13 +143,13 @@ export default function HomeScreen() {
 
       {!isAuthenticated ? (
         <View className="px-5 pb-8">
-          <View className="bg-white rounded-3xl p-5 border border-neutral-100">
-            <Text className="text-neutral-950 font-bold text-lg">¿Listo para permutar?</Text>
-            <Text className="text-neutral-500 text-sm mt-2 leading-5">Crea una cuenta para publicar, guardar tu sesión y proponer intercambios.</Text>
-            <TouchableOpacity className="bg-brand-700 rounded-2xl h-12 items-center justify-center mt-4" onPress={() => router.push('/register')} activeOpacity={0.85}>
-              <Text className="text-white font-bold text-sm">Crear cuenta gratis</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity className="bg-white rounded-2xl p-5 border border-neutral-100 flex-row items-center justify-between" onPress={() => router.push('/register' as Href)} activeOpacity={0.82}>
+            <View className="flex-1 pr-4">
+              <Text className="text-neutral-950 font-bold text-xl">Crea tu cuenta</Text>
+              <Text className="text-neutral-500 text-base mt-1">Publica y negocia tus permutas.</Text>
+            </View>
+            <FontAwesome name="chevron-right" size={14} color="#a3a3a3" />
+          </TouchableOpacity>
         </View>
       ) : null}
     </ScrollView>

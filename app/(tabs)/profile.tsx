@@ -47,10 +47,10 @@ function getIdentityBadge(status: string | null | undefined, verified: boolean):
 }
 
 function getIdentityMessage(status: string | null | undefined, verified: boolean): string {
-  if (verified || status === 'APROBADA') return 'Tu cuenta ya cuenta con verificación de rostro, RUN y nombre.';
-  if (status === 'REVISION_MANUAL') return 'Tu verificación quedó pendiente para que el equipo revise los datos del carnet.';
-  if (status === 'RECHAZADA') return 'La verificación fue rechazada. Puedes intentar nuevamente con imágenes claras.';
-  return 'Completa la verificación con carnet y selfie para aumentar la confianza al permutar.';
+  if (verified || status === 'APROBADA') return 'Tu cuenta ya está verificada.';
+  if (status === 'REVISION_MANUAL') return 'Tu verificación está en revisión.';
+  if (status === 'RECHAZADA') return 'Puedes intentar nuevamente con imágenes claras.';
+  return 'Verifica tu identidad para dar más confianza.';
 }
 
 function getIdentityTone(status: string | null | undefined, verified: boolean): 'brand' | 'amber' | 'red' {
@@ -229,11 +229,11 @@ export default function ProfileScreen() {
   if (!isAuthenticated || !user) {
     return (
       <ScrollView className="flex-1 bg-neutral-50" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 40, paddingBottom: 104 }} showsVerticalScrollIndicator={false}>
-        <View className="items-center py-16 bg-white border border-neutral-100 rounded-3xl px-5">
+        <View className="items-center py-16 bg-white border border-neutral-100 rounded-2xl px-5">
           <BrandMark size="lg" />
           <Text className="text-2xl font-bold text-neutral-950 mt-6 mb-2">Tu perfil Permutapp</Text>
-          <Text className="text-neutral-500 text-sm text-center leading-5 mb-6">
-            Inicia sesión para ver tus datos, estado de verificación, publicaciones y próximas permutas.
+          <Text className="text-neutral-500 text-base text-center leading-6 mb-6">
+            Entra para ver tus publicaciones y estado de verificación.
           </Text>
           <PrimaryButton icon="sign-in" onPress={() => router.push('/login')} className="w-full">
             Iniciar sesión
@@ -253,10 +253,10 @@ export default function ProfileScreen() {
           <NotificationBell />
         </View>
 
-        <View className="bg-brand-900 rounded-3xl p-5 mb-5 overflow-hidden">
+        <View className="bg-brand-900 rounded-2xl p-5 mb-5 overflow-hidden">
           <View className="absolute right-0 top-0 w-28 h-full bg-teal-800 opacity-60" />
           <View className="flex-row items-center z-10">
-            <View className="w-24 h-24 rounded-3xl bg-white/10 border border-white/10 items-center justify-center mr-4">
+            <View className="w-24 h-24 rounded-2xl bg-white/10 border border-white/10 items-center justify-center mr-4">
               <Text className="text-white font-bold text-3xl">{user.name.charAt(0).toUpperCase()}</Text>
             </View>
             <View className="flex-1">
@@ -268,7 +268,7 @@ export default function ProfileScreen() {
               </View>
               <Text className="text-brand-100 text-sm mt-1" numberOfLines={1}>{user.email}</Text>
               <View className="self-start bg-white/10 rounded-full px-3 py-1 mt-3">
-                <Text className="text-brand-100 text-xs font-bold">{getIdentityBadge(user.identityStatus, user.biometricVerified)}</Text>
+                <Text className="text-brand-100 text-sm font-bold">{getIdentityBadge(user.identityStatus, user.biometricVerified)}</Text>
               </View>
             </View>
           </View>
@@ -284,12 +284,6 @@ export default function ProfileScreen() {
           {identityError ? (
             <InfoBanner icon="exclamation-circle" title="Estado no actualizado" body={identityError} tone="amber" />
           ) : null}
-          <InfoBanner
-            icon="key"
-            title="Sesión segura"
-            body={token ? 'Tu sesión local mantiene un JWT activo para consumir los servicios.' : 'No se encontró un token activo.'}
-            tone="neutral"
-          />
         </View>
 
         {!user.biometricVerified ? (
@@ -312,16 +306,16 @@ export default function ProfileScreen() {
           {permutasError ? <InfoBanner icon="exclamation-circle" title="No se pudo completar" body={permutasError} tone="red" /> : null}
 
           {isLoadingPermutas && permutas.length === 0 ? (
-            <View className="bg-white border border-neutral-100 rounded-3xl p-6 items-center">
+            <View className="bg-white border border-neutral-100 rounded-2xl p-6 items-center">
               <ActivityIndicator color="#047857" />
               <Text className="text-neutral-500 text-sm mt-3">Cargando tus permutas</Text>
             </View>
           ) : null}
 
           {!isLoadingPermutas && permutas.length === 0 ? (
-            <View className="bg-white border border-neutral-100 rounded-3xl p-5">
+            <View className="bg-white border border-neutral-100 rounded-2xl p-5">
               <Text className="text-neutral-950 text-base font-bold mb-1">Aún no tienes productos publicados</Text>
-              <Text className="text-neutral-500 text-sm leading-5">Cuando publiques una permuta, aparecerá aquí para editarla o eliminarla.</Text>
+              <Text className="text-neutral-500 text-base leading-6">Cuando publiques, aparecerá aquí.</Text>
             </View>
           ) : null}
 
@@ -334,7 +328,7 @@ export default function ProfileScreen() {
               permuta.producto.prod_longitud_aprox,
             );
             return (
-              <View key={permuta.producto.prod_id} className="bg-white border border-neutral-100 rounded-3xl p-4 mb-3">
+              <View key={permuta.producto.prod_id} className="bg-white border border-neutral-100 rounded-2xl p-4 mb-3">
                 {isEditing ? (
                   <View className="gap-3">
                     <TextInput className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 h-12 text-neutral-900" placeholder="Título" value={editForm.titulo} onChangeText={(titulo) => setEditForm((prev) => prev ? { ...prev, titulo } : prev)} />
@@ -345,7 +339,7 @@ export default function ProfileScreen() {
                         const selected = editForm.estado === estado;
                         return (
                           <TouchableOpacity key={estado} className={`mr-2 px-3 h-10 rounded-2xl border items-center justify-center ${selected ? 'bg-brand-700 border-brand-700' : 'bg-neutral-50 border-neutral-200'}`} onPress={() => setEditForm((prev) => prev ? { ...prev, estado } : prev)} activeOpacity={0.75}>
-                            <Text className={`text-xs font-bold ${selected ? 'text-white' : 'text-neutral-700'}`}>{estado}</Text>
+                            <Text className={`text-sm font-bold ${selected ? 'text-white' : 'text-neutral-700'}`}>{estado}</Text>
                           </TouchableOpacity>
                         );
                       })}
@@ -354,7 +348,7 @@ export default function ProfileScreen() {
                     <TextInput className="bg-neutral-100 border border-neutral-200 rounded-2xl px-4 h-12 text-neutral-500" placeholder="Comuna" value={editForm.ubicacionComuna} editable={false} />
                     <TextInput className="bg-brand-50 border border-brand-100 rounded-2xl px-4 h-12 text-brand-800 font-bold" placeholder="Metro no registrado" value={estacionMetro ? `Metro ${estacionMetro.nombre} · ${estacionMetro.linea}` : ''} editable={false} />
                     {!estacionMetro ? <Text className="text-amber-700 text-xs leading-5">Este producto no tiene coordenadas de Metro registradas.</Text> : null}
-                    <Text className="text-neutral-500 text-xs leading-5">La comuna proviene de ServicioLocalizacion y no se edita como texto libre.</Text>
+                    <Text className="text-neutral-500 text-sm leading-5">La comuna proviene de ServicioLocalizacion y no se edita como texto libre.</Text>
                     <TextInput className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 h-12 text-neutral-900" placeholder="Referencia" value={editForm.ubicacionReferencia} onChangeText={(ubicacionReferencia) => setEditForm((prev) => prev ? { ...prev, ubicacionReferencia } : prev)} />
                     <View className="flex-row gap-2">
                       <TouchableOpacity className="flex-1 h-12 rounded-2xl bg-brand-700 items-center justify-center" onPress={() => saveEdit(permuta)} disabled={isSavingEdit} activeOpacity={0.75}>
@@ -369,23 +363,23 @@ export default function ProfileScreen() {
                   <>
                     <View className="flex-row items-start justify-between mb-3">
                       <View className="flex-1 pr-3">
-                        <Text className="text-neutral-950 text-base font-bold">{permuta.producto.prod_nombre}</Text>
-                        <Text className="text-neutral-500 text-xs mt-1" numberOfLines={2}>{permuta.publicacion.publ_titulo}</Text>
+                        <Text className="text-neutral-950 text-lg leading-6 font-bold">{permuta.producto.prod_nombre}</Text>
+                        <Text className="text-neutral-500 text-base mt-1" numberOfLines={2}>{permuta.publicacion.publ_titulo}</Text>
                       </View>
-                      <Text className="text-brand-700 text-sm font-bold">${permuta.producto.prod_precio.toLocaleString('es-CL')}</Text>
+                      <Text className="text-brand-700 text-base font-bold">${permuta.producto.prod_precio.toLocaleString('es-CL')}</Text>
                     </View>
                     <View className="flex-row items-center flex-wrap mb-3">
                       <View className="bg-brand-50 border border-brand-100 rounded-full px-3 py-1 mr-2 mb-2">
-                        <Text className="text-brand-700 text-xs font-bold">{permuta.producto.prod_est}</Text>
+                        <Text className="text-brand-700 text-sm font-bold">{permuta.producto.prod_est}</Text>
                       </View>
                       {permuta.producto.prod_ubicacion_comuna ? (
                         <View className="bg-neutral-100 rounded-full px-3 py-1 mb-2">
-                          <Text className="text-neutral-600 text-xs font-bold">{permuta.producto.prod_ubicacion_comuna}</Text>
+                          <Text className="text-neutral-600 text-sm font-bold">{permuta.producto.prod_ubicacion_comuna}</Text>
                         </View>
                       ) : null}
                       {estacionMetro ? (
                         <View className="bg-brand-50 border border-brand-100 rounded-full px-3 py-1 mb-2 ml-2">
-                          <Text className="text-brand-700 text-xs font-bold">Metro {estacionMetro.nombre} · {estacionMetro.linea}</Text>
+                          <Text className="text-brand-700 text-sm font-bold">Metro {estacionMetro.nombre} · {estacionMetro.linea}</Text>
                         </View>
                       ) : null}
                     </View>
@@ -405,10 +399,10 @@ export default function ProfileScreen() {
           })}
         </View>
 
-        <View className="bg-white border border-neutral-100 rounded-3xl p-5 mb-5">
+        <View className="bg-white border border-neutral-100 rounded-2xl p-5 mb-5">
           <Text className="text-neutral-950 text-lg font-bold mb-1">Configuración y privacidad</Text>
-          <Text className="text-neutral-500 text-sm leading-5 mb-4">
-            Revisa cómo usamos tus datos, carnet y selfie para mantener la comunidad segura.
+          <Text className="text-neutral-500 text-base leading-6 mb-4">
+            Revisa tus documentos legales y preferencias.
           </Text>
           <TouchableOpacity className="h-12 rounded-2xl bg-neutral-100 flex-row items-center justify-between px-4 mb-2" onPress={() => router.push('/terms' as Href)} activeOpacity={0.75}>
             <View className="flex-row items-center">
@@ -437,7 +431,7 @@ export default function ProfileScreen() {
 
       <Modal visible={showDeleteAccount} transparent animationType="fade" onRequestClose={() => setShowDeleteAccount(false)}>
         <View className="flex-1 bg-black/40 items-center justify-center px-5">
-          <View className="w-full max-w-md bg-white rounded-3xl p-5">
+          <View className="w-full max-w-md bg-white rounded-2xl p-5">
             <View className="w-12 h-12 rounded-2xl bg-red-50 border border-red-100 items-center justify-center mb-4">
               <FontAwesome name="exclamation-triangle" size={20} color="#dc2626" />
             </View>

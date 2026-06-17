@@ -22,7 +22,7 @@ const CATEGORIAS = [
 ];
 
 function normalizarTexto(value: string): string {
-  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  return value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }
 
 export default function CatalogScreen() {
@@ -81,20 +81,17 @@ export default function CatalogScreen() {
   return (
     <ScrollView className="flex-1 bg-neutral-50" contentContainerStyle={{ paddingBottom: 104 }} showsVerticalScrollIndicator={false}>
       <View className="px-5 pt-6 pb-2">
-        <Text className="text-brand-700 text-xs uppercase tracking-widest font-bold mb-2">Catálogo</Text>
-        <Text className="text-3xl font-bold text-neutral-950">Encuentra tu próxima permuta</Text>
-        <Text className="text-neutral-500 text-sm mt-2 leading-5">
-          Busca productos publicados por la comunidad y revisa su estado antes de proponer un intercambio.
-        </Text>
+        <Text className="text-brand-700 text-sm font-bold mb-1">Catálogo</Text>
+        <Text className="text-3xl font-bold text-neutral-950 leading-10">Encuentra algo útil</Text>
       </View>
 
       <View className="px-5 mt-5">
-        <View className="flex-row items-center bg-white border border-neutral-100 rounded-3xl px-4 h-14">
-          <FontAwesome name="search" size={15} color="#737373" />
-          <TextInput className="flex-1 text-neutral-900 text-sm ml-3" placeholder="Buscar por producto o estado" placeholderTextColor="#a3a3a3" value={busqueda} onChangeText={setBusqueda} />
+        <View className="flex-row items-center bg-white border border-neutral-100 rounded-2xl px-4 h-16">
+          <FontAwesome name="search" size={17} color="#737373" />
+          <TextInput className="flex-1 text-neutral-900 text-base ml-3" placeholder="Buscar producto o comuna" placeholderTextColor="#a3a3a3" value={busqueda} onChangeText={setBusqueda} />
           {busqueda.length > 0 ? (
-            <TouchableOpacity onPress={() => setBusqueda('')} activeOpacity={0.7}>
-              <FontAwesome name="times-circle" size={16} color="#a3a3a3" />
+            <TouchableOpacity className="w-9 h-9 rounded-full items-center justify-center" onPress={() => setBusqueda('')} activeOpacity={0.7}>
+              <FontAwesome name="times-circle" size={18} color="#a3a3a3" />
             </TouchableOpacity>
           ) : null}
         </View>
@@ -107,34 +104,34 @@ export default function CatalogScreen() {
           return (
             <TouchableOpacity
               key={categoria}
-              className={`mr-2 px-4 h-10 rounded-full items-center justify-center border ${selected ? 'bg-brand-700 border-brand-700' : 'bg-white border-neutral-100'}`}
+              className={`mr-2 px-4 h-11 rounded-2xl items-center justify-center border ${selected ? 'bg-brand-700 border-brand-700' : 'bg-white border-neutral-100'}`}
               onPress={() => setBusqueda(selected ? '' : query)}
               activeOpacity={0.75}
             >
-              <Text className={`text-xs font-bold ${selected ? 'text-white' : 'text-neutral-600'}`}>{categoria}</Text>
+              <Text className={`text-sm font-bold ${selected ? 'text-white' : 'text-neutral-600'}`}>{categoria}</Text>
             </TouchableOpacity>
           );
         })}
       </ScrollView>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-4" contentContainerStyle={{ paddingHorizontal: 20 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-3" contentContainerStyle={{ paddingHorizontal: 20 }}>
         {ESTADOS.map((estado) => (
-          <TouchableOpacity key={estado} className={`mr-2 px-4 h-10 rounded-full items-center justify-center border ${estadoActivo === estado ? 'bg-brand-700 border-brand-700' : 'bg-white border-neutral-100'}`} onPress={() => setEstadoActivo(estado)} activeOpacity={0.75}>
-            <Text className={`text-xs font-bold ${estadoActivo === estado ? 'text-white' : 'text-neutral-600'}`}>{estado}</Text>
+          <TouchableOpacity key={estado} className={`mr-2 px-4 h-11 rounded-2xl items-center justify-center border ${estadoActivo === estado ? 'bg-neutral-950 border-neutral-950' : 'bg-white border-neutral-100'}`} onPress={() => setEstadoActivo(estado)} activeOpacity={0.75}>
+            <Text className={`text-sm font-bold ${estadoActivo === estado ? 'text-white' : 'text-neutral-600'}`}>{estado}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
       <View className="px-5 mt-7 pb-6">
-        <SectionHeader title={`${itemsFiltrados.length} productos disponibles`} eyebrow="Resultados" />
+        <SectionHeader title={`${itemsFiltrados.length} disponibles`} />
         {isLoading ? (
-          <View className="items-center py-16 bg-white rounded-3xl border border-neutral-100">
+          <View className="items-center py-16 bg-white rounded-2xl border border-neutral-100">
             <ActivityIndicator color="#047857" />
-            <Text className="text-neutral-500 mt-4 text-sm">Cargando catálogo</Text>
+            <Text className="text-neutral-500 mt-4 text-base">Cargando catálogo</Text>
           </View>
         ) : null}
         {error ? <InfoBanner icon="exclamation-circle" title="Sin conexión al catálogo" body={error} tone="red" /> : null}
-        {!isLoading && !error && itemsFiltrados.length === 0 ? <EmptyState icon="search" title="No encontramos resultados" body="Prueba con otro nombre o limpia los filtros para ver más productos." /> : null}
+        {!isLoading && !error && itemsFiltrados.length === 0 ? <EmptyState icon="search" title="Sin resultados" body="Limpia filtros o busca otro producto." /> : null}
         {itemsFiltrados.map((item) => (
           <ProductCard key={item.prod_id} title={item.prod_nombre} subtitle={item.prod_ubicacion_comuna ?? `Publicación #${item.publ_id}`} status={item.prod_est} price={item.prod_precio} thumbnailUrl={item.prod_imagenes?.[0]} onPress={() => router.push(`/product/${item.prod_id}` as Href)} />
         ))}

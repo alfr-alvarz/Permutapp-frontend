@@ -366,36 +366,37 @@ export default function PublishScreen() {
                 <FontAwesome name="chevron-left" size={14} color="#404040" />
               </TouchableOpacity>
 
-              <SectionHeader title="Publicar producto" eyebrow="Nueva permuta" />
-              <InfoBanner icon="leaf" title="Publica con contexto" body="Mientras más claro sea el estado y lo que buscas a cambio, más fácil será recibir propuestas útiles." />
+              <SectionHeader title="Publica en 3 pasos" eyebrow="Nueva permuta" />
+              <InfoBanner icon="leaf" title="Fotos, estado y ubicación aproximada" body="Solo pedimos lo necesario para iniciar una permuta clara." />
 
               {errors.general ? <View className="mt-4"><InfoBanner icon="exclamation-circle" title="No se pudo publicar" body={errors.general} tone="red" /></View> : null}
 
-              <View className="mt-6 bg-white border border-neutral-100 rounded-3xl p-5">
+              <View className="mt-6 bg-white border border-neutral-100 rounded-2xl p-5">
+                <Text className="text-neutral-950 text-xl font-bold mb-4">1. Producto</Text>
                 <View className="mb-4">
-                  <Text className="text-neutral-800 font-bold mb-2 text-sm">Título de publicación</Text>
+                  <Text className="text-neutral-800 font-bold mb-2 text-base">Título de publicación</Text>
                   <TextInput className={`bg-neutral-50 border rounded-2xl px-4 h-14 text-neutral-900 text-base ${errors.titulo ? 'border-red-400' : 'border-neutral-200'}`} placeholder="Ej: Cambio notebook por bicicleta" placeholderTextColor="#a3a3a3" value={titulo} onChangeText={(text) => { setTitulo(text); clearError('titulo'); }} editable={!isSubmitting} />
                   <FieldError message={errors.titulo} />
                 </View>
 
                 <View className="mb-4">
-                  <Text className="text-neutral-800 font-bold mb-2 text-sm">Nombre del producto</Text>
+                  <Text className="text-neutral-800 font-bold mb-2 text-base">Nombre del producto</Text>
                   <TextInput className={`bg-neutral-50 border rounded-2xl px-4 h-14 text-neutral-900 text-base ${errors.nombre ? 'border-red-400' : 'border-neutral-200'}`} placeholder="Ej: Notebook Lenovo ThinkPad" placeholderTextColor="#a3a3a3" value={nombre} onChangeText={(text) => { setNombre(text); clearError('nombre'); }} editable={!isSubmitting} />
                   <FieldError message={errors.nombre} />
                 </View>
 
                 <View className="mb-4">
-                  <Text className="text-neutral-800 font-bold mb-2 text-sm">Descripción</Text>
+                  <Text className="text-neutral-800 font-bold mb-2 text-base">Descripción</Text>
                   <TextInput className={`bg-neutral-50 border rounded-2xl px-4 py-4 min-h-32 text-neutral-900 text-base ${errors.descripcion ? 'border-red-400' : 'border-neutral-200'}`} placeholder="Cuenta el estado, uso y qué buscas a cambio." placeholderTextColor="#a3a3a3" value={descripcion} onChangeText={(text) => { setDescripcion(text); clearError('descripcion'); }} multiline textAlignVertical="top" editable={!isSubmitting} />
                   <FieldError message={errors.descripcion} />
                 </View>
 
                 <View className="mb-4">
-                  <Text className="text-neutral-800 font-bold mb-2 text-sm">Estado</Text>
+                  <Text className="text-neutral-800 font-bold mb-2 text-base">Estado</Text>
                   <View className="flex-row flex-wrap">
                     {ESTADOS.map((item) => (
                       <TouchableOpacity key={item} className={`mr-2 mb-2 px-4 h-10 rounded-full items-center justify-center border ${estado === item ? 'bg-brand-700 border-brand-700' : 'bg-neutral-50 border-neutral-200'}`} onPress={() => setEstado(item)} activeOpacity={0.75} disabled={isSubmitting}>
-                        <Text className={`text-xs font-bold ${estado === item ? 'text-white' : 'text-neutral-600'}`}>{item}</Text>
+                        <Text className={`text-sm font-bold ${estado === item ? 'text-white' : 'text-neutral-600'}`}>{item}</Text>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -403,9 +404,10 @@ export default function PublishScreen() {
 
 
                 <View className="mb-4">
+                  <Text className="text-neutral-950 text-xl font-bold mb-4 mt-2">2. Fotos</Text>
                   <View className="flex-row items-center justify-between mb-2">
-                    <Text className="text-neutral-800 font-bold text-sm">Fotos del producto</Text>
-                    <Text className="text-neutral-500 text-xs font-bold">{fotos.length}/{MAX_PRODUCT_PHOTOS}</Text>
+                    <Text className="text-neutral-800 font-bold text-base">Fotos del producto</Text>
+                    <Text className="text-neutral-500 text-sm font-bold">{fotos.length}/{MAX_PRODUCT_PHOTOS}</Text>
                   </View>
 
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 12 }}>
@@ -430,30 +432,31 @@ export default function PublishScreen() {
                         ) : (
                           <>
                             <FontAwesome name="camera" size={18} color="#047857" />
-                            <Text className="text-brand-700 text-xs font-bold mt-2 text-center">Agregar</Text>
+                            <Text className="text-brand-700 text-sm font-bold mt-2 text-center">Agregar</Text>
                           </>
                         )}
                       </TouchableOpacity>
                     ) : null}
                   </ScrollView>
-                  <Text className="text-neutral-500 text-xs leading-5 mt-2">Puedes agregar hasta 5 fotos. La primera será la portada.</Text>
+                  <Text className="text-neutral-500 text-sm leading-5 mt-2">Hasta 5 fotos. La primera será la portada.</Text>
                   <FieldError message={errors.fotos} />
                 </View>
 
 
                 <View className="mb-4">
+                  <Text className="text-neutral-950 text-xl font-bold mb-4 mt-2">3. Ubicación segura</Text>
                   <View className="flex-row items-center justify-between mb-2">
-                    <Text className="text-neutral-800 font-bold text-sm">Comuna del producto</Text>
+                    <Text className="text-neutral-800 font-bold text-base">Comuna del producto</Text>
                     {isLoadingGeografia ? <ActivityIndicator size="small" color="#047857" /> : null}
                   </View>
-                  <Text className="text-neutral-500 text-xs leading-5 mb-3">Selecciona una comuna registrada. Solo guardamos una ubicación aproximada.</Text>
+                  <Text className="text-neutral-500 text-sm leading-5 mb-3">Guardamos una ubicación aproximada.</Text>
 
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 12 }}>
                     {regiones.map((region) => {
                       const selected = regionSeleccionada?.id === region.id;
                       return (
                         <TouchableOpacity key={region.id} className={`mr-2 px-3 h-10 rounded-2xl border items-center justify-center ${selected ? 'bg-brand-700 border-brand-700' : 'bg-neutral-50 border-neutral-200'}`} onPress={() => seleccionarRegion(region)} disabled={isSubmitting || isLoadingGeografia} activeOpacity={0.75}>
-                          <Text className={`text-xs font-bold ${selected ? 'text-white' : 'text-neutral-700'}`}>{region.nombre}</Text>
+                          <Text className={`text-sm font-bold ${selected ? 'text-white' : 'text-neutral-700'}`}>{region.nombre}</Text>
                         </TouchableOpacity>
                       );
                     })}
@@ -465,7 +468,7 @@ export default function PublishScreen() {
                         const selected = ciudadSeleccionada?.id === ciudad.id;
                         return (
                           <TouchableOpacity key={ciudad.id} className={`mr-2 px-3 h-10 rounded-2xl border items-center justify-center ${selected ? 'bg-teal-100 border-teal-300' : 'bg-neutral-50 border-neutral-200'}`} onPress={() => seleccionarCiudad(ciudad)} disabled={isSubmitting || isLoadingGeografia} activeOpacity={0.75}>
-                            <Text className="text-neutral-700 text-xs font-bold">{ciudad.nombre}</Text>
+                            <Text className="text-neutral-700 text-sm font-bold">{ciudad.nombre}</Text>
                           </TouchableOpacity>
                         );
                       })}
@@ -478,19 +481,19 @@ export default function PublishScreen() {
                       const selected = comunaSeleccionada?.id === comuna.id;
                       return (
                         <TouchableOpacity key={comuna.id} className={`mr-2 mb-2 px-3 min-h-10 rounded-2xl border items-center justify-center ${selected ? 'bg-brand-700 border-brand-700' : 'bg-white border-neutral-200'}`} onPress={() => seleccionarComuna(comuna)} disabled={isSubmitting} activeOpacity={0.75}>
-                          <Text className={`text-xs font-bold ${selected ? 'text-white' : 'text-neutral-700'}`}>{comuna.nombre}</Text>
+                          <Text className={`text-sm font-bold ${selected ? 'text-white' : 'text-neutral-700'}`}>{comuna.nombre}</Text>
                         </TouchableOpacity>
                       );
                     })}
                   </View>
-                  {!isLoadingGeografia && comunasFiltradas.length === 0 ? <Text className="text-amber-700 text-xs leading-5 mt-1">No hay comunas cargadas en Supabase para esta ciudad o la búsqueda no tiene resultados.</Text> : null}
+                  {!isLoadingGeografia && comunasFiltradas.length === 0 ? <Text className="text-amber-700 text-sm leading-5 mt-1">No hay comunas cargadas en Supabase para esta ciudad o la búsqueda no tiene resultados.</Text> : null}
                   <FieldError message={errors.ubicacionComuna} />
                   <TextInput className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 h-14 text-neutral-900 text-base mt-3" placeholder="Referencia opcional: sector, barrio o cruce cercano" placeholderTextColor="#a3a3a3" value={ubicacionReferencia} onChangeText={setUbicacionReferencia} editable={!isSubmitting} />
 
                   <View className="mt-4">
                     <View className="flex-row items-center justify-between mb-2">
-                      <Text className="text-neutral-800 font-bold text-sm">Metro cercano</Text>
-                      <Text className="text-neutral-500 text-xs font-bold">{isLoadingMetro ? 'Cargando' : `${estacionesPorLinea.length} estaciones`}</Text>
+                      <Text className="text-neutral-800 font-bold text-base">Metro cercano</Text>
+                      <Text className="text-neutral-500 text-sm font-bold">{isLoadingMetro ? 'Cargando' : `${estacionesPorLinea.length} estaciones`}</Text>
                     </View>
 
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 12, paddingBottom: 2 }}>
@@ -514,7 +517,7 @@ export default function PublishScreen() {
                             activeOpacity={0.75}
                             disabled={isSubmitting || count === 0}
                           >
-                            <Text className={`text-xs font-bold ${selected ? 'text-white' : 'text-neutral-800'}`}>{linea.id}</Text>
+                            <Text className={`text-sm font-bold ${selected ? 'text-white' : 'text-neutral-800'}`}>{linea.id}</Text>
                             <Text className={`text-[10px] mt-0.5 ${selected ? 'text-white' : 'text-neutral-400'}`}>{count}</Text>
                           </TouchableOpacity>
                         );
@@ -528,7 +531,7 @@ export default function PublishScreen() {
                       </View>
 
                       {estacionesPorLinea.length === 0 ? (
-                        <Text className="text-neutral-500 text-xs leading-5">Esta línea todavía no tiene estaciones cargadas en Supabase.</Text>
+                        <Text className="text-neutral-500 text-sm leading-5">Esta línea todavía no tiene estaciones cargadas en Supabase.</Text>
                       ) : (
                         <View className="flex-row flex-wrap">
                           {estacionesPorLinea.map((estacion) => {
@@ -545,7 +548,7 @@ export default function PublishScreen() {
                                 activeOpacity={0.75}
                                 disabled={isSubmitting}
                               >
-                                <Text className={`text-xs font-bold ${selected ? 'text-white' : 'text-neutral-800'}`}>{estacion.nombre}</Text>
+                                <Text className={`text-sm font-bold ${selected ? 'text-white' : 'text-neutral-800'}`}>{estacion.nombre}</Text>
                               </TouchableOpacity>
                             );
                           })}
@@ -554,11 +557,11 @@ export default function PublishScreen() {
                     </View>
                     <FieldError message={errors.metro} />
                   </View>
-                  <Text className="text-neutral-500 text-xs leading-5 mt-2">Elige la línea y estación más cercana. Usamos sus coordenadas para sugerir después un punto seguro intermedio.</Text>
+                  <Text className="text-neutral-500 text-sm leading-5 mt-2">El chat usará esta referencia para sugerir un punto intermedio.</Text>
                 </View>
 
                 <View className="mb-6">
-                  <Text className="text-neutral-800 font-bold mb-2 text-sm">Valor referencial</Text>
+                  <Text className="text-neutral-800 font-bold mb-2 text-base">Valor referencial</Text>
                   <TextInput
                     className={`bg-neutral-50 border rounded-2xl px-4 h-14 text-neutral-900 text-base ${errors.precio ? 'border-red-400' : 'border-neutral-200'}`}
                     placeholder="Ej: 150000"

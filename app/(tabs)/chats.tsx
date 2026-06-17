@@ -51,7 +51,7 @@ export default function ChatsScreen() {
   if (!isAuthenticated) {
     return (
       <ScrollView className="flex-1 bg-neutral-50" contentContainerStyle={{ padding: 20, paddingBottom: 104 }}>
-        <EmptyState icon="comments" title="Inicia sesión para negociar" body="Tus conversaciones de permuta aparecerán aquí cuando contactes a otra persona." />
+        <EmptyState icon="comments" title="Inicia sesión" body="Tus conversaciones aparecerán aquí." />
         <PrimaryButton icon="sign-in" onPress={() => router.push('/login')} className="mt-5">
           Ingresar
         </PrimaryButton>
@@ -62,19 +62,19 @@ export default function ChatsScreen() {
   return (
     <ScrollView className="flex-1 bg-neutral-50" contentContainerStyle={{ paddingBottom: 104 }} showsVerticalScrollIndicator={false}>
       <View className="px-5 pt-6 pb-6">
-        <SectionHeader title="Conversaciones" eyebrow="Negociación" actionLabel="Actualizar" onActionPress={cargarConversaciones} />
+        <SectionHeader title="Chats" actionLabel="Actualizar" onActionPress={cargarConversaciones} />
 
         {error ? <InfoBanner icon="exclamation-circle" title="Chat no disponible" body={error} tone="red" /> : null}
 
         {isLoading ? (
-          <View className="items-center py-12 bg-white border border-neutral-100 rounded-3xl">
+          <View className="items-center py-12 bg-white border border-neutral-100 rounded-2xl">
             <ActivityIndicator color="#047857" />
-            <Text className="text-neutral-500 text-sm mt-4">Buscando conversaciones</Text>
+            <Text className="text-neutral-500 text-base mt-4">Buscando conversaciones</Text>
           </View>
         ) : null}
 
         {!isLoading && !error && conversaciones.length === 0 ? (
-          <EmptyState icon="comments-o" title="Aún no tienes chats" body="Abre el detalle de un producto y presiona Proponer permuta para iniciar una negociación." />
+          <EmptyState icon="comments-o" title="Aún no tienes chats" body="Propón una permuta desde un producto." />
         ) : null}
 
         {conversaciones.map((item) => {
@@ -82,20 +82,20 @@ export default function ChatsScreen() {
           return (
             <TouchableOpacity
               key={item.conv_id}
-              className="bg-white border border-neutral-100 rounded-3xl p-4 mb-3 flex-row items-center"
+              className="bg-white border border-neutral-100 rounded-2xl p-4 mb-3 flex-row items-center"
               activeOpacity={0.82}
               onPress={() => router.push(`/chat/${item.conv_id}` as Href)}
             >
-              <View className="w-14 h-14 rounded-3xl bg-brand-50 border border-brand-100 items-center justify-center mr-4">
+              <View className="w-14 h-14 rounded-2xl bg-brand-50 border border-brand-100 items-center justify-center mr-4">
                 <FontAwesome name="exchange" size={20} color="#047857" />
               </View>
               <View className="flex-1 mr-3">
                 <View className="flex-row items-center mb-1">
-                  <Text className="text-brand-700 text-xs font-bold uppercase tracking-widest">{rol}</Text>
-                  <Text className="text-neutral-400 text-xs ml-2">{formatDate(item.conv_ultima_actividad)}</Text>
+                  <Text className="text-brand-700 text-sm font-bold">{rol}</Text>
+                  <Text className="text-neutral-400 text-sm ml-2">{formatDate(item.conv_ultima_actividad)}</Text>
                 </View>
-                <Text className="text-neutral-950 font-bold text-base" numberOfLines={1}>{item.publ_titulo}</Text>
-                <Text className="text-neutral-500 text-sm mt-1" numberOfLines={1}>{item.ultimo_mensaje ?? 'Sin mensajes todavía'}</Text>
+                <Text className="text-neutral-950 font-bold text-lg leading-6" numberOfLines={1}>{item.publ_titulo}</Text>
+                <Text className="text-neutral-500 text-base mt-1" numberOfLines={1}>{item.ultimo_mensaje ?? 'Sin mensajes todavía'}</Text>
               </View>
               <FontAwesome name="chevron-right" size={13} color="#a3a3a3" />
             </TouchableOpacity>
