@@ -74,6 +74,10 @@ function metroLineColor(line: string) {
   return colors[line.toUpperCase()] ?? '#047857';
 }
 
+function formatMetroLine(line: string) {
+  return line.toUpperCase().startsWith('L') ? `Línea ${line.replace(/^L/i, '')}` : line;
+}
+
 function mergeMessages(current: MensajePermuta[], incoming: MensajePermuta[]) {
   const byId = new Map<number, MensajePermuta>();
   [...current, ...incoming].forEach((message) => byId.set(message.mens_id, message));
@@ -109,36 +113,37 @@ export default function ChatDetailScreen() {
   const [productoOriginal, setProductoOriginal] = useState<Producto | null>(null);
   const [estaciones, setEstaciones] = useState<EstacionMetro[]>([]);
   const [estacionElegida, setEstacionElegida] = useState<EstacionMetro | null>(null);
+  const [lineaMetroSeleccionada, setLineaMetroSeleccionada] = useState<string | null>(null);
+  const [showLineasMetro, setShowLineasMetro] = useState(false);
   const [metroSearch, setMetroSearch] = useState('');
   const [sugerencia, setSugerencia] = useState<SugerenciaPuntoMedio | null>(null);
   const [locationBusy, setLocationBusy] = useState(false);
 
-  const estacionesAgrupadas = useMemo(() => {
-    const query = normalizeSearch(metroSearch);
-    const filtered = query
-      ? estaciones.filter((station) => normalizeSearch(
-        `${station.nombre} ${station.linea} ${station.comuna ?? ''}`,
-      ).includes(query))
-      : estaciones;
-    const byLine = new Map<string, EstacionMetro[]>();
-
-    filtered.forEach((station) => {
+  const lineasMetro = useMemo(() => {
+    const byLine = new Map<string, number>();
+    estaciones.forEach((station) => {
       const line = station.linea || 'Otra línea';
-      const current = byLine.get(line) ?? [];
-      current.push(station);
-      byLine.set(line, current);
+      byLine.set(line, (byLine.get(line) ?? 0) + 1);
     });
-
     return [...byLine.entries()]
       .sort(([left], [right]) => left.localeCompare(right, 'es', { numeric: true }))
-      .map(([line, stations]) => [
-        line,
-        stations.sort((left, right) => (
-          (left.orden ?? Number.MAX_SAFE_INTEGER) - (right.orden ?? Number.MAX_SAFE_INTEGER)
-          || left.nombre.localeCompare(right.nombre, 'es')
-        )),
-      ] as const);
-  }, [estaciones, metroSearch]);
+      .map(([line, count]) => ({ line, count }));
+  }, [estaciones]);
+
+  const estacionesLineaSeleccionada = useMemo(() => {
+    if (!lineaMetroSeleccionada) return [];
+    const query = normalizeSearch(metroSearch);
+    return estaciones
+      .filter((station) => (station.linea || 'Otra línea') === lineaMetroSeleccionada)
+      .filter((station) => {
+        if (!query) return true;
+        return normalizeSearch(`${station.nombre} ${station.comuna ?? ''}`).includes(query);
+      })
+      .sort((left, right) => (
+        (left.orden ?? Number.MAX_SAFE_INTEGER) - (right.orden ?? Number.MAX_SAFE_INTEGER)
+        || left.nombre.localeCompare(right.nombre, 'es')
+      ));
+  }, [estaciones, lineaMetroSeleccionada, metroSearch]);
 
   const cargarChat = useCallback(async (showLoader = true) => {
     if (!token || !Number.isInteger(usuarioId) || !Number.isInteger(conversacionId)) return;
@@ -262,6 +267,10 @@ export default function ChatDetailScreen() {
     setShowMenu(false);
     setShowLocationPanel(true);
     setMetroSearch('');
+    setLineaMetroSeleccionada(null);
+    setShowLineasMetro(false);
+    setEstacionElegida(null);
+    setSugerencia(null);
     if (!conversacion?.prod_id) return;
     try {
       setLocationBusy(true);
@@ -302,6 +311,7 @@ export default function ChatDetailScreen() {
     if (!sugerencia) return;
     const station = sugerencia.estacionSugerida;
     setContenido(`Punto de encuentro seguro sugerido: Metro ${station.nombre} (${station.linea}), ${station.comuna ?? 'Santiago'}.`);
+    setShowLineasMetro(false);
     setShowLocationPanel(false);
   };
 
@@ -361,28 +371,80 @@ export default function ChatDetailScreen() {
                 {locationBusy ? <ActivityIndicator color="#047857" className="my-5" /> : null}
                 {!locationBusy ? (
                   <>
-                    <TextInput
-                      className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 h-12 mt-3"
-                      value={metroSearch}
-                      onChangeText={setMetroSearch}
-                      placeholder="Buscar estación, comuna o línea"
-                      accessibilityLabel="Buscar estación de Metro"
-                    />
-                    <ScrollView
-                      className="mt-3 border border-neutral-100 rounded-2xl"
-                      contentContainerStyle={{ padding: 12 }}
-                      style={{ maxHeight: 300 }}
-                      nestedScrollEnabled
-                      showsVerticalScrollIndicator
-                    >
-                      {estacionesAgrupadas.map(([line, stations]) => (
-                        <View key={line} className="mb-4 last:mb-0">
-                          <View className="flex-row items-center mb-2">
-                            <View className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: metroLineColor(line) }} />
-                            <Text className="text-neutral-950 text-sm font-bold">Línea {line.replace(/^L/i, '')}</Text>
-                            <Text className="text-neutral-400 text-xs ml-2">{stations.length} estaciones</Text>
-                          </View>
-                          {stations.map((station) => {
+                    <View className="mt-3">
+                      <Text className="text-neutral-800 text-sm font-bold mb-2">Línea de Metro</Text>
+                      <TouchableOpacity
+                        className="h-12 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 flex-row items-center justify-between"
+                        onPress={() => setShowLineasMetro((current) => !current)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Seleccionar línea de Metro"
+                        accessibilityState={{ expanded: showLineasMetro }}
+                      >
+                        <View className="flex-row items-center flex-1 pr-3">
+                          <View
+                            className="w-3 h-3 rounded-full mr-2"
+                            style={{ backgroundColor: lineaMetroSeleccionada ? metroLineColor(lineaMetroSeleccionada) : '#d4d4d4' }}
+                          />
+                          <Text className="text-neutral-900 text-sm font-bold" numberOfLines={1}>
+                            {lineaMetroSeleccionada ? formatMetroLine(lineaMetroSeleccionada) : 'Seleccionar línea'}
+                          </Text>
+                        </View>
+                        <FontAwesome name={showLineasMetro ? 'chevron-up' : 'chevron-down'} size={13} color="#737373" />
+                      </TouchableOpacity>
+
+                      {showLineasMetro ? (
+                        <View className="mt-2 rounded-2xl border border-neutral-100 bg-white overflow-hidden">
+                          <ScrollView style={{ maxHeight: 220 }} nestedScrollEnabled showsVerticalScrollIndicator>
+                            {lineasMetro.map(({ line, count }) => {
+                              const selected = line === lineaMetroSeleccionada;
+                              return (
+                                <TouchableOpacity
+                                  key={line}
+                                  className={`px-4 py-3 flex-row items-center border-b border-neutral-100 ${selected ? 'bg-brand-50' : 'bg-white'}`}
+                                  onPress={() => {
+                                    setLineaMetroSeleccionada(line);
+                                    setShowLineasMetro(false);
+                                    setMetroSearch('');
+                                    setEstacionElegida(null);
+                                    setSugerencia(null);
+                                  }}
+                                  accessibilityRole="button"
+                                  accessibilityState={{ selected }}
+                                >
+                                  <View className="w-3 h-3 rounded-full mr-3" style={{ backgroundColor: metroLineColor(line) }} />
+                                  <Text className={`flex-1 text-sm font-bold ${selected ? 'text-brand-800' : 'text-neutral-800'}`}>
+                                    {formatMetroLine(line)}
+                                  </Text>
+                                  <Text className="text-neutral-400 text-xs font-bold mr-3">{count}</Text>
+                                  {selected ? <FontAwesome name="check" size={13} color="#047857" /> : null}
+                                </TouchableOpacity>
+                              );
+                            })}
+                            {lineasMetro.length === 0 ? (
+                              <Text className="text-neutral-500 text-sm text-center py-5">No hay líneas cargadas.</Text>
+                            ) : null}
+                          </ScrollView>
+                        </View>
+                      ) : null}
+                    </View>
+
+                    {lineaMetroSeleccionada ? (
+                      <>
+                        <TextInput
+                          className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 h-12 mt-3"
+                          value={metroSearch}
+                          onChangeText={setMetroSearch}
+                          placeholder={`Buscar estación en ${formatMetroLine(lineaMetroSeleccionada)}`}
+                          accessibilityLabel="Buscar estación de Metro"
+                        />
+                        <ScrollView
+                          className="mt-3 border border-neutral-100 rounded-2xl"
+                          contentContainerStyle={{ padding: 12 }}
+                          style={{ maxHeight: 260 }}
+                          nestedScrollEnabled
+                          showsVerticalScrollIndicator
+                        >
+                          {estacionesLineaSeleccionada.map((station) => {
                             const selected = estacionElegida?.id === station.id;
                             return (
                               <TouchableOpacity
@@ -411,12 +473,15 @@ export default function ChatDetailScreen() {
                               </TouchableOpacity>
                             );
                           })}
-                        </View>
-                      ))}
-                      {estacionesAgrupadas.length === 0 ? (
-                        <Text className="text-neutral-500 text-sm text-center py-5">No encontramos estaciones con esa búsqueda.</Text>
-                      ) : null}
-                    </ScrollView>
+                          {estacionesLineaSeleccionada.length === 0 ? (
+                            <Text className="text-neutral-500 text-sm text-center py-5">No encontramos estaciones en esta línea.</Text>
+                          ) : null}
+                        </ScrollView>
+                      </>
+                    ) : (
+                      <Text className="text-neutral-500 text-sm leading-5 mt-3">Elige una línea para ver solo sus estaciones.</Text>
+                    )}
+
                     {estacionElegida ? (
                       <Text className="text-brand-700 text-xs font-bold mt-3">
                         Seleccionada: Metro {estacionElegida.nombre} · {estacionElegida.linea}
@@ -429,7 +494,7 @@ export default function ChatDetailScreen() {
                 </PrimaryButton>
                 {sugerencia ? (
                   <PrimaryButton icon="send" onPress={compartirPuntoSeguro} className="mt-3">
-                    Usar Metro {sugerencia.estacionSugerida.nombre}
+                    Compartir Metro {sugerencia.estacionSugerida.nombre}
                   </PrimaryButton>
                 ) : null}
               </View>

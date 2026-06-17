@@ -7,6 +7,7 @@ import {
   Notificacion,
   contarNotificacionesNoLeidas,
   listarNotificaciones,
+  eliminarNotificacion as apiEliminarNotificacion,
   marcarNotificacionLeida as apiMarcarNotificacionLeida,
   marcarTodasNotificacionesLeidas as apiMarcarTodasLeidas,
   obtenerVapidPublicKey,
@@ -28,6 +29,7 @@ interface NotificationContextValue {
   enablePush: () => Promise<void>;
   markAsRead: (notification: Notificacion) => Promise<void>;
   markAllAsRead: () => Promise<void>;
+  deleteNotification: (notification: Notificacion) => Promise<void>;
   openNotification: (notification: Notificacion) => Promise<void>;
 }
 
@@ -172,6 +174,13 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     setUnreadCount(0);
   }, [token]);
 
+  const deleteNotification = useCallback(async (notification: Notificacion) => {
+    if (!token) return;
+    await apiEliminarNotificacion(notification.notif_id, token);
+    setNotifications((current) => current.filter((item) => item.notif_id !== notification.notif_id));
+    if (!notification.notif_leida) setUnreadCount((current) => Math.max(0, current - 1));
+  }, [token]);
+
   const openNotification = useCallback(async (notification: Notificacion) => {
     try {
       await markAsRead(notification);
@@ -193,6 +202,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       enablePush,
       markAsRead,
       markAllAsRead,
+      deleteNotification,
       openNotification,
     }}>
       {children}

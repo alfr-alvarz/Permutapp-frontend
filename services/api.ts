@@ -773,6 +773,13 @@ export function marcarTodasNotificacionesLeidas(token: string): Promise<void> {
   });
 }
 
+export function eliminarNotificacion(notificacionId: number, token: string): Promise<void> {
+  return request<void>(NOTIFICACIONES_API_BASE_URL, `/notificaciones/${notificacionId}`, {
+    method: 'DELETE',
+    token,
+  });
+}
+
 export function registrarSuscripcionNotificacion(
   payload: RegistrarSuscripcionNotificacionPayload,
   token: string,
