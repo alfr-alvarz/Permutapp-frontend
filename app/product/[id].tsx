@@ -21,7 +21,6 @@ import {
 import RequireAuth from '../../components/RequireAuth';
 import { useAuth } from '../../context/AuthContext';
 import MainLayout from '../../layouts/MainLayout';
-import { ReputationSummary } from '../../components/ReputationSummary';
 
 function LoadingLine({ width = '100%', height = 16 }: { width?: DimensionValue; height?: number }) {
   return (
@@ -73,9 +72,6 @@ function ProductDetailLoading() {
         <View className="mt-3"><LoadingLine width="70%" /></View>
       </LoadingCard>
 
-      <LoadingCard title="Reputación">
-        <LoadingLine width="76%" height={24} />
-      </LoadingCard>
     </>
   );
 }
@@ -211,6 +207,7 @@ export default function ProductDetailScreen() {
     : isResolviendoPublicacion || isLoading
       ? 'Cargando vendedor'
       : 'Vendedor no disponible';
+  const vendedorReputacion = vendedor ? vendedor.usu_prom_rep.toFixed(1) : null;
 
   return (
     <MainLayout>
@@ -219,14 +216,23 @@ export default function ProductDetailScreen() {
           <TouchableOpacity className="w-11 h-11 rounded-2xl bg-white border border-neutral-100 items-center justify-center mr-3" onPress={() => router.back()} activeOpacity={0.75}>
             <FontAwesome name="chevron-left" size={14} color="#404040" />
           </TouchableOpacity>
-          <View className="flex-1 bg-white border border-neutral-100 rounded-2xl px-4 h-11 justify-center">
+          <View className="flex-1 bg-white border border-neutral-100 rounded-2xl px-4 h-14 justify-center">
             {producto ? (
-              <View className="flex-row items-center">
-                <Text className="text-neutral-950 text-base font-bold flex-1" numberOfLines={1}>{sellerName}</Text>
-                {vendedorVerificado ? <FontAwesome name="check-circle" size={16} color="#047857" /> : null}
-              </View>
+              <>
+                <View className="flex-row items-center">
+                  <Text className="text-neutral-950 text-base font-bold flex-1" numberOfLines={1}>{sellerName}</Text>
+                  {vendedorVerificado ? <FontAwesome name="check-circle" size={16} color="#047857" /> : null}
+                </View>
+                <View className="flex-row items-center mt-0.5">
+                  <FontAwesome name="star" size={12} color="#f59e0b" />
+                  <Text className="text-neutral-500 text-xs font-bold ml-1">{vendedorReputacion ?? 'Cargando reputación'}</Text>
+                </View>
+              </>
             ) : (
-              <LoadingLine width="62%" height={20} />
+              <>
+                <LoadingLine width="62%" height={18} />
+                <View className="mt-2"><LoadingLine width="34%" height={12} /></View>
+              </>
             )}
           </View>
         </View>
@@ -275,7 +281,7 @@ export default function ProductDetailScreen() {
               </View>
 
               <View className="bg-white border border-neutral-100 rounded-2xl p-4 mb-4">
-                <Text className="text-neutral-500 text-sm font-bold mb-1">Valor referencial</Text>
+                <Text className="text-neutral-950 text-xl font-bold mb-2">Valor referencial</Text>
                 <Text className="text-neutral-950 text-2xl font-bold">${producto.prod_precio.toLocaleString('es-CL')}</Text>
               </View>
 
@@ -312,13 +318,6 @@ export default function ProductDetailScreen() {
                       ) : null}
                     </View>
                   </View>
-                </View>
-              ) : null}
-
-              {publicacion || isResolviendoPublicacion ? (
-                <View className="bg-white border border-neutral-100 rounded-2xl p-5 mb-4">
-                  <Text className="text-neutral-950 text-xl font-bold mb-2">Reputación</Text>
-                  {publicacion ? <ReputationSummary usuarioId={publicacion.publ_autor_id} compact /> : <LoadingLine width="76%" height={24} />}
                 </View>
               ) : null}
 

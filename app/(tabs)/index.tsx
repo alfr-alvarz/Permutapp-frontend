@@ -7,21 +7,9 @@ import RequireAuth from '@/components/RequireAuth';
 import { BrandMark, EmptyState, FeedEnd, InfoBanner, ProductCard, ScreenContent, SectionHeader } from '@/components/ui';
 import { NotificationBell } from '@/components/NotificationBell';
 import { useAuth } from '../../context/AuthContext';
-import { Producto } from '../../services/api';
+import { ProductCategory, toProductCategory } from '@/constants/categories';
+import { Producto, obtenerCategoriasProducto } from '../../services/api';
 import { obtenerProductosActivos } from '../../services/catalog';
-
-const CATEGORIAS = [
-  { id: 'electronica', label: 'Electrónica', query: 'electronica', icon: 'laptop' as const, color: 'bg-sky-50 border-sky-100', iconColor: '#0284c7' },
-  { id: 'deportes', label: 'Deportes', query: 'deporte', icon: 'futbol-o' as const, color: 'bg-orange-50 border-orange-100', iconColor: '#ea580c' },
-  { id: 'hogar', label: 'Hogar', query: 'hogar', icon: 'home' as const, color: 'bg-violet-50 border-violet-100', iconColor: '#7c3aed' },
-  { id: 'moda', label: 'Moda', query: 'moda', icon: 'shopping-bag' as const, color: 'bg-rose-50 border-rose-100', iconColor: '#e11d48' },
-  { id: 'libros', label: 'Libros', query: 'libro', icon: 'book' as const, color: 'bg-amber-50 border-amber-100', iconColor: '#d97706' },
-  { id: 'juguetes', label: 'Juguetes', query: 'juguete', icon: 'puzzle-piece' as const, color: 'bg-lime-50 border-lime-100', iconColor: '#65a30d' },
-  { id: 'herramientas', label: 'Herramientas', query: 'herramienta', icon: 'wrench' as const, color: 'bg-slate-50 border-slate-100', iconColor: '#475569' },
-  { id: 'muebles', label: 'Muebles', query: 'mueble', icon: 'bed' as const, color: 'bg-stone-50 border-stone-100', iconColor: '#57534e' },
-  { id: 'infantil', label: 'Infantil', query: 'infantil', icon: 'child' as const, color: 'bg-pink-50 border-pink-100', iconColor: '#db2777' },
-  { id: 'mascotas', label: 'Mascotas', query: 'mascota', icon: 'paw' as const, color: 'bg-emerald-50 border-emerald-100', iconColor: '#059669' },
-];
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -30,6 +18,7 @@ export default function HomeScreen() {
   const [totalProductos, setTotalProductos] = useState(0);
   const [isLoadingProductos, setIsLoadingProductos] = useState(true);
   const [productosError, setProductosError] = useState<string | null>(null);
+  const [categorias, setCategorias] = useState<ProductCategory[]>([]);
 
   useEffect(() => {
     let mounted = true;
@@ -54,11 +43,27 @@ export default function HomeScreen() {
     return () => { mounted = false; };
   }, []);
 
+  useEffect(() => {
+    let mounted = true;
+
+    async function cargarCategoriasInicio() {
+      try {
+        const data = await obtenerCategoriasProducto();
+        if (mounted) setCategorias(data.map(toProductCategory));
+      } catch {
+        if (mounted) setCategorias([]);
+      }
+    }
+
+    cargarCategoriasInicio();
+    return () => { mounted = false; };
+  }, []);
+
   const nombre = isAuthenticated ? user?.name?.split(' ')[0] : null;
   const hayMasProductos = totalProductos > productos.length;
 
   return (
-    <ScrollView className="flex-1 bg-neutral-50" contentContainerStyle={{ paddingBottom: 104 }} showsVerticalScrollIndicator={false}>
+    <ScrollView className="flex-1 bg-neutral-50" contentContainerStyle={{ paddingBottom: 18 }} showsVerticalScrollIndicator={false}>
       <ScreenContent className="px-4 pt-5 pb-2">
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center flex-1 pr-3">
@@ -85,10 +90,10 @@ export default function HomeScreen() {
           )}
         </View>
 
-        <View className="bg-brand-900 rounded-2xl p-4 mt-4">
+        <View className="bg-brand-900 rounded-2xl p-5 mt-4 min-h-[176px] justify-between">
           <Text className="text-white text-2xl font-bold leading-8">Permuta simple</Text>
           <Text className="text-brand-100 text-sm leading-5 mt-1" numberOfLines={2}>Publica o explora objetos cerca de ti.</Text>
-          <View className="flex-row gap-2 mt-4">
+          <View className="flex-row gap-2 mt-7">
             <RequireAuth onAuthenticated={() => router.push('/publish' as Href)} className="flex-1 bg-white rounded-2xl h-12 items-center justify-center flex-row">
               <FontAwesome name="plus" size={14} color="#047857" />
               <Text className="text-brand-800 font-bold text-base ml-2">Publicar</Text>
@@ -101,21 +106,23 @@ export default function HomeScreen() {
         </View>
       </ScreenContent>
 
-      <ScreenContent className="px-4 mt-5">
-        <SectionHeader title="Categorías" />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 20 }}>
-          {CATEGORIAS.map((cat) => (
-            <TouchableOpacity key={cat.id} className="items-center mr-4" onPress={() => router.push(`/(tabs)/two?categoria=${encodeURIComponent(cat.query)}` as Href)} activeOpacity={0.75}>
-              <View className={`w-14 h-14 rounded-2xl ${cat.color} border items-center justify-center mb-2`}>
-                <FontAwesome name={cat.icon} size={22} color={cat.iconColor} />
-              </View>
-              <Text className="text-neutral-700 text-xs font-bold">{cat.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </ScreenContent>
+      {categorias.length > 0 ? (
+        <ScreenContent className="px-4 mt-5">
+          <SectionHeader title="Categorías" />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 20 }}>
+            {categorias.map((cat) => (
+              <TouchableOpacity key={cat.id} className="items-center mr-4" onPress={() => router.push(`/(tabs)/two?categoria=${encodeURIComponent(cat.id)}` as Href)} activeOpacity={0.75}>
+                <View className="w-14 h-14 rounded-2xl border items-center justify-center mb-2" style={{ backgroundColor: cat.backgroundColor, borderColor: cat.borderColor }}>
+                  <FontAwesome name={cat.icon} size={22} color={cat.iconColor} />
+                </View>
+                <Text className="text-neutral-700 text-xs font-bold">{cat.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </ScreenContent>
+      ) : null}
 
-      <ScreenContent className="px-4 mt-6 pb-6">
+      <ScreenContent className="px-4 mt-6 pb-2">
         <SectionHeader title="Cerca de ti" actionLabel="Ver todo" onActionPress={() => router.push('/(tabs)/two' as Href)} />
 
         {isLoadingProductos ? (

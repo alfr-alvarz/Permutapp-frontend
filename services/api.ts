@@ -381,6 +381,7 @@ export interface Producto {
   prod_id: number;
   prod_nombre: string;
   prod_est: string;
+  prod_categoria?: string | null;
   prod_precio: number;
   publ_id: number;
   prod_imagenes?: string[];
@@ -388,6 +389,18 @@ export interface Producto {
   prod_ubicacion_referencia?: string | null;
   prod_latitud_aprox?: number | null;
   prod_longitud_aprox?: number | null;
+}
+
+export interface ProductoCategoria {
+  cat_id: string;
+  cat_nombre: string;
+  cat_query: string;
+  cat_icon: string;
+  cat_bg_color: string;
+  cat_border_color: string;
+  cat_icon_color: string;
+  cat_keywords?: string[];
+  cat_orden: number;
 }
 
 export interface CrearPublicacionPayload {
@@ -408,6 +421,7 @@ export interface Publicacion {
 export interface CrearProductoPayload {
   prod_nombre: string;
   prod_est: string;
+  prod_categoria?: string | null;
   prod_precio: number;
   publ_id: number;
   prod_imagenes?: string[];
@@ -425,6 +439,7 @@ export interface ActualizarPublicacionPayload {
 export interface ActualizarProductoPayload {
   prod_nombre: string;
   prod_est: string;
+  prod_categoria?: string | null;
   prod_precio: number;
   prod_ubicacion_comuna?: string | null;
   prod_ubicacion_referencia?: string | null;
@@ -434,6 +449,10 @@ export interface ActualizarProductoPayload {
 
 export function obtenerProductos(): Promise<Producto[]> {
   return request<Producto[]>(PRODUCTOS_API_BASE_URL, '/producto');
+}
+
+export function obtenerCategoriasProducto(): Promise<ProductoCategoria[]> {
+  return request<ProductoCategoria[]>(PRODUCTOS_API_BASE_URL, '/producto/categorias');
 }
 
 export function obtenerProductoPorId(idProducto: number): Promise<Producto> {

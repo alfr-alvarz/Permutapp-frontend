@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import { InfoBanner, PrimaryButton, SectionHeader } from '@/components/ui';
+import { ProductCategory, ProductCategoryId, toProductCategory } from '@/constants/categories';
 import {
   ApiError,
   Ciudad,
@@ -15,6 +16,7 @@ import {
   crearPublicacion,
   obtenerCiudadesPorRegion,
   obtenerComunasPorCiudad,
+  obtenerCategoriasProducto,
   obtenerEstacionesMetro,
   obtenerPaisesConRegiones,
 } from '../services/api';
@@ -51,6 +53,7 @@ interface PublishErrors {
   descripcion?: string;
   nombre?: string;
   precio?: string;
+  categoria?: string;
   ubicacionComuna?: string;
   metro?: string;
   fotos?: string;
@@ -102,6 +105,9 @@ export default function PublishScreen() {
   const [nombre, setNombre] = useState('');
   const [estado, setEstado] = useState(ESTADOS[1]);
   const [precio, setPrecio] = useState('');
+  const [categoria, setCategoria] = useState<ProductCategoryId | null>(null);
+  const [categorias, setCategorias] = useState<ProductCategory[]>([]);
+  const [isLoadingCategorias, setIsLoadingCategorias] = useState(false);
   const [regiones, setRegiones] = useState<Region[]>([]);
   const [regionSeleccionada, setRegionSeleccionada] = useState<Region | null>(null);
   const [ciudades, setCiudades] = useState<Ciudad[]>([]);
@@ -225,6 +231,7 @@ export default function PublishScreen() {
     if (!titulo.trim()) nextErrors.titulo = 'El título es obligatorio.';
     if (!descripcion.trim()) nextErrors.descripcion = 'La descripción es obligatoria.';
     if (!nombre.trim()) nextErrors.nombre = 'El nombre del producto es obligatorio.';
+    if (!categoria) nextErrors.categoria = categorias.length === 0 ? 'No fue posible cargar categorías desde ServicioProducto.' : 'Selecciona una categoría.';
     if (!Number.isInteger(precioNumerico) || precioNumerico < 0) nextErrors.precio = 'Ingresa un valor referencial válido.';
     if (precioNumerico > MAX_REFERENCE_PRICE) nextErrors.precio = 'El valor referencial máximo es $5.000.000.';
     if (!comunaSeleccionada) nextErrors.ubicacionComuna = 'Selecciona una comuna cargada desde ServicioLocalizacion.';
@@ -256,6 +263,7 @@ export default function PublishScreen() {
       const producto = await crearProducto({
         prod_nombre: nombre.trim(),
         prod_est: estado,
+        prod_categoria: categoria ?? undefined,
         prod_precio: Number(normalizarPrecio(precio)),
         publ_id: publicacion.publ_id,
         prod_imagenes: fotos.map((foto) => foto.dataUrl),
@@ -279,6 +287,25 @@ export default function PublishScreen() {
     if (!isRestoring && !isAuthenticated) router.replace('/login');
   }, [isAuthenticated, isRestoring, router]);
 
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function cargarCategoriasPublicacion() {
+      try {
+        setIsLoadingCategorias(true);
+        const data = await obtenerCategoriasProducto();
+        if (mounted) setCategorias(data.map(toProductCategory));
+      } catch {
+        if (mounted) setCategorias([]);
+      } finally {
+        if (mounted) setIsLoadingCategorias(false);
+      }
+    }
+
+    cargarCategoriasPublicacion();
+    return () => { mounted = false; };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -397,6 +424,31 @@ export default function PublishScreen() {
                   <Text className="text-neutral-800 font-bold mb-2 text-base">Descripción</Text>
                   <TextInput className={`bg-neutral-50 border rounded-2xl px-4 py-4 min-h-32 text-neutral-900 text-base ${errors.descripcion ? 'border-red-400' : 'border-neutral-200'}`} placeholder="Cuenta el estado, uso y qué buscas a cambio." placeholderTextColor="#a3a3a3" value={descripcion} onChangeText={(text) => { setDescripcion(text); clearError('descripcion'); }} multiline textAlignVertical="top" editable={!isSubmitting} />
                   <FieldError message={errors.descripcion} />
+                </View>
+
+                <View className="mb-4">
+                  <Text className="text-neutral-800 font-bold mb-2 text-base">Categoría</Text>
+                  {isLoadingCategorias ? (
+                    <View className="flex-row items-center bg-neutral-50 border border-neutral-200 rounded-2xl px-4 h-12">
+                      <ActivityIndicator color="#047857" size="small" />
+                      <Text className="text-neutral-500 text-sm font-bold ml-3">Cargando categorías</Text>
+                    </View>
+                  ) : categorias.length > 0 ? (
+                    <View className="flex-row flex-wrap">
+                      {categorias.map((item) => {
+                        const selected = categoria === item.id;
+                        return (
+                          <TouchableOpacity key={item.id} className={`mr-2 mb-2 px-3 min-h-10 rounded-2xl border flex-row items-center ${selected ? 'bg-brand-700 border-brand-700' : 'bg-neutral-50 border-neutral-200'}`} onPress={() => { setCategoria(item.id); clearError('categoria'); }} activeOpacity={0.75} disabled={isSubmitting}>
+                            <FontAwesome name={item.icon} size={13} color={selected ? '#ffffff' : item.iconColor} />
+                            <Text className={`text-sm font-bold ml-2 ${selected ? 'text-white' : 'text-neutral-700'}`}>{item.label}</Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  ) : (
+                    <InfoBanner icon="exclamation-circle" title="Categorías no disponibles" body="ServicioProducto no entregó categorías." tone="red" />
+                  )}
+                  <FieldError message={errors.categoria} />
                 </View>
 
                 <View className="mb-4">

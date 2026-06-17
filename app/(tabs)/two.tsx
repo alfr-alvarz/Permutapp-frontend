@@ -4,23 +4,11 @@ import { Href, useLocalSearchParams, useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import { EmptyState, FeedEnd, InfoBanner, ProductCard, SectionHeader } from '@/components/ui';
-import { Producto } from '../../services/api';
+import { ProductCategory, ProductCategoryId, findCategoryByValue, normalizeCategoryText, toProductCategory } from '@/constants/categories';
+import { Producto, obtenerCategoriasProducto } from '../../services/api';
 import { obtenerProductosActivos } from '../../services/catalog';
 
 const ESTADOS = ['Todos', 'Nuevo', 'Como nuevo', 'Buen estado', 'Aceptable'];
-const CATEGORIAS = [
-  'Electrónica',
-  'Deportes',
-  'Hogar',
-  'Moda',
-  'Libros',
-  'Juguetes',
-  'Herramientas',
-  'Muebles',
-  'Infantil',
-  'Mascotas',
-];
-
 function normalizarTexto(value: string): string {
   return value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }
@@ -30,6 +18,8 @@ export default function CatalogScreen() {
   const params = useLocalSearchParams<{ categoria?: string }>();
   const [busqueda, setBusqueda] = useState('');
   const [estadoActivo, setEstadoActivo] = useState('Todos');
+  const [categoriaActiva, setCategoriaActiva] = useState<ProductCategoryId | null>(null);
+  const [categorias, setCategorias] = useState<ProductCategory[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,31 +47,62 @@ export default function CatalogScreen() {
   }, []);
 
   useEffect(() => {
-    if (typeof params.categoria === 'string') {
+    let mounted = true;
+
+    async function cargarCategoriasCatalogo() {
+      try {
+        const data = await obtenerCategoriasProducto();
+        if (mounted) setCategorias(data.map(toProductCategory));
+      } catch {
+        if (mounted) setCategorias([]);
+      }
+    }
+
+    cargarCategoriasCatalogo();
+    return () => { mounted = false; };
+  }, []);
+
+  useEffect(() => {
+    if (typeof params.categoria !== 'string') return;
+
+    const categoria = findCategoryByValue(categorias, params.categoria);
+    if (categoria) {
+      setCategoriaActiva(categoria.id);
+      setBusqueda('');
+      return;
+    }
+
+    if (categorias.length > 0) {
+      setCategoriaActiva(null);
       setBusqueda(params.categoria);
     }
-  }, [params.categoria]);
+  }, [params.categoria, categorias]);
 
   const itemsFiltrados = useMemo(
     () => productos.filter((item) => {
       const busquedaNormalizada = normalizarTexto(busqueda);
+      const categoriaProducto = findCategoryByValue(categorias, item.prod_categoria)?.id ?? normalizeCategoryText(item.prod_categoria);
+      const categoriaSeleccionada = categorias.find((category) => category.id === categoriaActiva);
       const textoProducto = normalizarTexto([
         item.prod_nombre,
         item.prod_est,
+        item.prod_categoria ?? '',
         item.prod_ubicacion_comuna ?? '',
         item.prod_ubicacion_referencia ?? '',
       ].join(' '));
       const coincideBusqueda = !busquedaNormalizada || textoProducto.includes(busquedaNormalizada);
       const coincideEstado = estadoActivo === 'Todos' || item.prod_est === estadoActivo;
-      return coincideBusqueda && coincideEstado;
+      const coincideCategoria = !categoriaActiva
+        || categoriaProducto === categoriaActiva
+        || Boolean(categoriaSeleccionada?.keywords.some((keyword) => textoProducto.includes(normalizarTexto(keyword))));
+      return coincideBusqueda && coincideEstado && coincideCategoria;
     }),
-    [busqueda, estadoActivo, productos],
+    [busqueda, estadoActivo, categoriaActiva, categorias, productos],
   );
 
   return (
-    <ScrollView className="flex-1 bg-neutral-50" contentContainerStyle={{ paddingBottom: 104 }} showsVerticalScrollIndicator={false}>
-      <View className="px-5 pt-6 pb-2">
-        <Text className="text-brand-700 text-sm font-bold mb-1">Catálogo</Text>
+    <ScrollView className="flex-1 bg-neutral-50" contentContainerStyle={{ paddingBottom: 18 }} showsVerticalScrollIndicator={false}>
+      <View className="px-5 pt-7 pb-2">
         <Text className="text-3xl font-bold text-neutral-950 leading-10">Encuentra algo útil</Text>
       </View>
 
@@ -97,22 +118,23 @@ export default function CatalogScreen() {
         </View>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-4" contentContainerStyle={{ paddingHorizontal: 20 }}>
-        {CATEGORIAS.map((categoria) => {
-          const query = normalizarTexto(categoria);
-          const selected = normalizarTexto(busqueda) === query;
-          return (
-            <TouchableOpacity
-              key={categoria}
-              className={`mr-2 px-4 h-11 rounded-2xl items-center justify-center border ${selected ? 'bg-brand-700 border-brand-700' : 'bg-white border-neutral-100'}`}
-              onPress={() => setBusqueda(selected ? '' : query)}
-              activeOpacity={0.75}
-            >
-              <Text className={`text-sm font-bold ${selected ? 'text-white' : 'text-neutral-600'}`}>{categoria}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+      {categorias.length > 0 ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-4" contentContainerStyle={{ paddingHorizontal: 20 }}>
+          {categorias.map((categoria) => {
+            const selected = categoriaActiva === categoria.id;
+            return (
+              <TouchableOpacity
+                key={categoria.id}
+                className={`mr-2 px-4 h-11 rounded-2xl items-center justify-center border ${selected ? 'bg-brand-700 border-brand-700' : 'bg-white border-neutral-100'}`}
+                onPress={() => setCategoriaActiva(selected ? null : categoria.id)}
+                activeOpacity={0.75}
+              >
+                <Text className={`text-sm font-bold ${selected ? 'text-white' : 'text-neutral-600'}`}>{categoria.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      ) : null}
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-3" contentContainerStyle={{ paddingHorizontal: 20 }}>
         {ESTADOS.map((estado) => (
@@ -122,7 +144,7 @@ export default function CatalogScreen() {
         ))}
       </ScrollView>
 
-      <View className="px-5 mt-7 pb-6">
+      <View className="px-5 mt-7 pb-2">
         <SectionHeader title={`${itemsFiltrados.length} disponibles`} />
         {isLoading ? (
           <View className="items-center py-16 bg-white rounded-2xl border border-neutral-100">
