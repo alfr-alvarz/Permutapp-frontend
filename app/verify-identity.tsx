@@ -133,7 +133,7 @@ export default function VerifyIdentityScreen() {
 
       <Text className="text-3xl font-bold text-neutral-950 mb-2">Verificar identidad</Text>
       <Text className="text-neutral-500 text-base leading-6 mb-6">
-        Sube una foto de tu carnet y toma una selfie para confirmar que la cuenta corresponde a tu identidad.
+        Esto nos ayuda a cuidar tu seguridad y la de los demás usuarios. Solo el proveedor de reconocimiento accede a la imagen para validar. En Permutapp no guardamos tu rostro ni lo usamos para nada más.
       </Text>
 
       <View className="gap-4 mb-5">

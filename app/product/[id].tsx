@@ -1,7 +1,7 @@
-import { ActivityIndicator, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import type { DimensionValue } from 'react-native';
+import { ActivityIndicator, Image, ScrollView, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import type { DimensionValue, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { Href, useLocalSearchParams, useRouter } from 'expo-router';
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import { EmptyState, InfoBanner, PrimaryButton } from '@/components/ui';
@@ -94,6 +94,16 @@ export default function ProductDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [publicacionError, setPublicacionError] = useState<string | null>(null);
   const [chatError, setChatError] = useState<string | null>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [galleryWidth, setGalleryWidth] = useState(0);
+  const { width: windowWidth } = useWindowDimensions();
+  const galleryScrollRef = useRef<ScrollView | null>(null);
+  const productImages = useMemo(
+    () => (producto?.prod_imagenes ?? []).filter((imagen) => Boolean(imagen)),
+    [producto?.prod_imagenes],
+  );
+  const fallbackGalleryWidth = Math.max(Math.min(windowWidth, 448) - 40, 1);
+  const activeGalleryWidth = galleryWidth || fallbackGalleryWidth;
 
   useEffect(() => {
     let mounted = true;
@@ -164,6 +174,11 @@ export default function ProductDetailScreen() {
     return () => { mounted = false; };
   }, [idProducto, token]);
 
+  useEffect(() => {
+    setSelectedImageIndex(0);
+    galleryScrollRef.current?.scrollTo({ x: 0, animated: false });
+  }, [producto?.prod_id]);
+
   const handleProponerPermuta = async () => {
     if (!producto) return;
 
@@ -209,6 +224,20 @@ export default function ProductDetailScreen() {
       : 'Vendedor no disponible';
   const vendedorReputacion = vendedor ? vendedor.usu_prom_rep.toFixed(1) : null;
 
+  const handleSelectImage = (index: number) => {
+    setSelectedImageIndex(index);
+    galleryScrollRef.current?.scrollTo({
+      x: activeGalleryWidth * index,
+      animated: true,
+    });
+  };
+
+  const handleGalleryScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const nextIndex = Math.round(event.nativeEvent.contentOffset.x / activeGalleryWidth);
+    const boundedIndex = Math.max(0, Math.min(nextIndex, productImages.length - 1));
+    setSelectedImageIndex(boundedIndex);
+  };
+
   return (
     <MainLayout>
       <ScrollView className="flex-1 bg-neutral-50" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 36 }} stickyHeaderIndices={[0]}>
@@ -244,23 +273,59 @@ export default function ProductDetailScreen() {
 
           {producto ? (
             <>
-              <View className="h-72 rounded-2xl bg-teal-50 items-center justify-center border border-teal-100 overflow-hidden mb-4">
-                {producto.prod_imagenes?.[0] ? (
-                  <Image source={{ uri: producto.prod_imagenes[0] }} className="w-full h-full" resizeMode="cover" />
+              <View
+                className="h-72 rounded-2xl bg-teal-50 items-center justify-center border border-teal-100 overflow-hidden mb-4"
+                onLayout={(event) => {
+                  const nextWidth = Math.round(event.nativeEvent.layout.width);
+                  setGalleryWidth((currentWidth) => (currentWidth === nextWidth ? currentWidth : nextWidth));
+                }}
+              >
+                {productImages.length > 0 ? (
+                  <ScrollView
+                    ref={galleryScrollRef}
+                    horizontal
+                    pagingEnabled
+                    scrollEnabled={productImages.length > 1}
+                    showsHorizontalScrollIndicator={false}
+                    onMomentumScrollEnd={handleGalleryScrollEnd}
+                    scrollEventThrottle={16}
+                    className="w-full h-full"
+                  >
+                    {productImages.map((imagen, index) => (
+                      <View key={`${imagen}-${index}`} className="h-full bg-neutral-100" style={{ width: activeGalleryWidth }}>
+                        <Image source={{ uri: imagen }} className="w-full h-full" resizeMode="cover" />
+                      </View>
+                    ))}
+                  </ScrollView>
                 ) : (
                   <View className="w-28 h-28 rounded-2xl bg-white border border-teal-100 items-center justify-center">
                     <FontAwesome name="cube" size={64} color="#0f766e" />
                   </View>
                 )}
+                {productImages.length > 1 ? (
+                  <View className="absolute right-3 bottom-3 rounded-full bg-black/60 px-2.5 py-1">
+                    <Text className="text-white text-xs font-bold">{selectedImageIndex + 1}/{productImages.length}</Text>
+                  </View>
+                ) : null}
               </View>
 
-              {producto.prod_imagenes && producto.prod_imagenes.length > 1 ? (
+              {productImages.length > 1 ? (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4" contentContainerStyle={{ paddingRight: 12 }}>
-                  {producto.prod_imagenes.map((imagen, index) => (
-                    <View key={`${imagen}-${index}`} className="w-20 h-20 rounded-2xl overflow-hidden border border-neutral-100 mr-3 bg-neutral-100">
-                      <Image source={{ uri: imagen }} className="w-full h-full" resizeMode="cover" />
-                    </View>
-                  ))}
+                  {productImages.map((imagen, index) => {
+                    const isSelected = selectedImageIndex === index;
+                    return (
+                      <TouchableOpacity
+                        key={`${imagen}-${index}`}
+                        className={`w-20 h-20 rounded-2xl overflow-hidden mr-3 bg-neutral-100 ${isSelected ? 'border-2 border-brand-700' : 'border border-neutral-100'}`}
+                        onPress={() => handleSelectImage(index)}
+                        activeOpacity={0.82}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Ver foto ${index + 1} de ${productImages.length}`}
+                      >
+                        <Image source={{ uri: imagen }} className="w-full h-full" resizeMode="cover" />
+                      </TouchableOpacity>
+                    );
+                  })}
                 </ScrollView>
               ) : null}
 

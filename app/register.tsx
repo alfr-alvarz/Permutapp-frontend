@@ -223,8 +223,8 @@ export default function Register() {
               Verifica tu identidad
             </Text>
             <Text className="text-neutral-500 text-sm text-center leading-5 max-w-xs">
-              Para tu seguridad y la de la comunidad, compararemos tu selfie con el carnet
-              y validaremos el RUN mediante OCR.
+              Esto nos ayuda a cuidar tu seguridad y la de los demás usuarios.
+              En Permutapp no guardamos tu rostro ni lo usamos para nada más.
             </Text>
           </View>
 
@@ -269,7 +269,7 @@ export default function Register() {
           </TouchableOpacity>
 
           <Text className="text-neutral-400 text-xs text-center mb-6 leading-4">
-            Amazon Rekognition + OCR · Datos protegidos
+            Solo el proveedor de reconocimiento accede a la imagen para hacer esta verificación.
           </Text>
 
           {/* Botón: Verificar más tarde */}

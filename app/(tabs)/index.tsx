@@ -63,7 +63,7 @@ export default function HomeScreen() {
   const hayMasProductos = totalProductos > productos.length;
 
   return (
-    <ScrollView className="flex-1 bg-neutral-50" contentContainerStyle={{ paddingBottom: 18 }} showsVerticalScrollIndicator={false}>
+    <ScrollView className="flex-1 bg-neutral-50" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: 18 }} showsVerticalScrollIndicator={false}>
       <ScreenContent className="px-4 pt-5 pb-2">
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center flex-1 pr-3">
@@ -79,8 +79,8 @@ export default function HomeScreen() {
           {isAuthenticated ? (
             <View className="flex-row gap-2">
               <NotificationBell />
-              <TouchableOpacity className="w-11 h-11 rounded-2xl bg-white border border-neutral-100 items-center justify-center" onPress={() => router.push('/(tabs)/profile' as Href)} activeOpacity={0.75}>
-                <Text className="text-brand-700 font-bold text-base">{user?.name?.charAt(0) ?? 'U'}</Text>
+              <TouchableOpacity className="w-11 h-11 rounded-2xl bg-brand-700 border border-brand-700 items-center justify-center" onPress={() => router.push('/(tabs)/profile' as Href)} activeOpacity={0.82} accessibilityRole="button" accessibilityLabel="Ir a mi perfil">
+                <FontAwesome name="user" size={18} color="#ffffff" />
               </TouchableOpacity>
             </View>
           ) : (
