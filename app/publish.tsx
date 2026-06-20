@@ -106,6 +106,7 @@ export default function PublishScreen() {
   const [estado, setEstado] = useState(ESTADOS[1]);
   const [precio, setPrecio] = useState('');
   const [categoria, setCategoria] = useState<ProductCategoryId | null>(null);
+  const [categoriaAbierta, setCategoriaAbierta] = useState(false);
   const [categorias, setCategorias] = useState<ProductCategory[]>([]);
   const [isLoadingCategorias, setIsLoadingCategorias] = useState(false);
   const [regiones, setRegiones] = useState<Region[]>([]);
@@ -217,11 +218,26 @@ export default function PublishScreen() {
 
   const seleccionarComuna = (comuna: Comuna) => {
     setComunaSeleccionada(comuna);
+    setBusquedaComuna(comuna.nombre);
     clearError('ubicacionComuna');
     const estacionMismaComuna = estacionesMetro.find(
       (estacion) => estacion.comuna && normalizarTexto(estacion.comuna) === normalizarTexto(comuna.nombre),
     );
     if (estacionMismaComuna) setLineaSeleccionada(estacionMismaComuna.linea);
+  };
+
+  const handleBusquedaComunaChange = (text: string) => {
+    setBusquedaComuna(text);
+    clearError('ubicacionComuna');
+    if (comunaSeleccionada && normalizarTexto(text.trim()) !== normalizarTexto(comunaSeleccionada.nombre)) {
+      setComunaSeleccionada(null);
+    }
+  };
+
+  const seleccionarCategoria = (item: ProductCategory) => {
+    setCategoria(item.id);
+    setCategoriaAbierta(false);
+    clearError('categoria');
   };
 
   const validate = () => {
@@ -375,11 +391,22 @@ export default function PublishScreen() {
     [estacionesMetro, lineaSeleccionada],
   );
 
-  const comunasFiltradas = useMemo(() => {
-    const query = normalizarTexto(busquedaComuna.trim());
-    if (!query) return comunas;
-    return comunas.filter((comuna) => normalizarTexto(comuna.nombre).includes(query));
-  }, [busquedaComuna, comunas]);
+  const categoriaSeleccionada = useMemo(
+    () => categorias.find((item) => item.id === categoria) ?? null,
+    [categorias, categoria],
+  );
+
+  const comunasSugeridas = useMemo(() => {
+    const queryOriginal = busquedaComuna.trim();
+    const query = normalizarTexto(queryOriginal);
+    if (!query || normalizarTexto(comunaSeleccionada?.nombre ?? '') === query) return [];
+    return comunas
+      .filter((comuna) => normalizarTexto(comuna.nombre).includes(query))
+      .slice(0, 6);
+  }, [busquedaComuna, comunaSeleccionada?.nombre, comunas]);
+
+  const mostrarSugerenciasComuna = busquedaComuna.trim().length > 0 && comunasSugeridas.length > 0;
+  const mostrarSinResultadosComuna = busquedaComuna.trim().length > 0 && !comunaSeleccionada && !isLoadingGeografia && comunasSugeridas.length === 0;
 
   const lineaActiva = METRO_LINEAS.find((linea) => linea.id === lineaSeleccionada);
   const colorLineaActiva = lineaActiva?.color ?? LINEA_FALLBACK;
@@ -434,16 +461,46 @@ export default function PublishScreen() {
                       <Text className="text-neutral-500 text-sm font-bold ml-3">Cargando categorías</Text>
                     </View>
                   ) : categorias.length > 0 ? (
-                    <View className="flex-row flex-wrap">
-                      {categorias.map((item) => {
-                        const selected = categoria === item.id;
-                        return (
-                          <TouchableOpacity key={item.id} className={`mr-2 mb-2 px-3 min-h-10 rounded-2xl border flex-row items-center ${selected ? 'bg-brand-700 border-brand-700' : 'bg-neutral-50 border-neutral-200'}`} onPress={() => { setCategoria(item.id); clearError('categoria'); }} activeOpacity={0.75} disabled={isSubmitting}>
-                            <FontAwesome name={item.icon} size={13} color={selected ? '#ffffff' : item.iconColor} />
-                            <Text className={`text-sm font-bold ml-2 ${selected ? 'text-white' : 'text-neutral-700'}`}>{item.label}</Text>
-                          </TouchableOpacity>
-                        );
-                      })}
+                    <View>
+                      <TouchableOpacity
+                        className={`bg-neutral-50 border rounded-2xl px-4 h-14 flex-row items-center justify-between ${errors.categoria ? 'border-red-400' : categoriaAbierta ? 'border-brand-700' : 'border-neutral-200'}`}
+                        onPress={() => setCategoriaAbierta((abierta) => !abierta)}
+                        activeOpacity={0.82}
+                        disabled={isSubmitting}
+                        accessibilityRole="button"
+                        accessibilityLabel="Seleccionar categoría del producto"
+                      >
+                        <View className="flex-row items-center flex-1 pr-3">
+                          {categoriaSeleccionada ? <FontAwesome name={categoriaSeleccionada.icon} size={15} color={categoriaSeleccionada.iconColor} /> : null}
+                          <Text className={`text-base font-bold ${categoriaSeleccionada ? 'text-neutral-900 ml-2' : 'text-neutral-400'}`} numberOfLines={1}>
+                            {categoriaSeleccionada?.label ?? 'Seleccionar categoría'}
+                          </Text>
+                        </View>
+                        <FontAwesome name={categoriaAbierta ? 'chevron-up' : 'chevron-down'} size={12} color="#047857" />
+                      </TouchableOpacity>
+
+                      {categoriaAbierta ? (
+                        <View className="bg-white border border-neutral-100 rounded-2xl overflow-hidden mt-2">
+                          {categorias.map((item, index) => {
+                            const selected = categoria === item.id;
+                            return (
+                              <TouchableOpacity
+                                key={item.id}
+                                className={`px-4 h-12 flex-row items-center justify-between ${index < categorias.length - 1 ? 'border-b border-neutral-100' : ''}`}
+                                onPress={() => seleccionarCategoria(item)}
+                                activeOpacity={0.75}
+                                disabled={isSubmitting}
+                              >
+                                <View className="flex-row items-center flex-1 pr-3">
+                                  <FontAwesome name={item.icon} size={14} color={selected ? '#047857' : item.iconColor} />
+                                  <Text className={`text-sm font-bold ml-2 ${selected ? 'text-brand-700' : 'text-neutral-700'}`}>{item.label}</Text>
+                                </View>
+                                {selected ? <FontAwesome name="check" size={13} color="#047857" /> : null}
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      ) : null}
                     </View>
                   ) : (
                     <InfoBanner icon="exclamation-circle" title="Categorías no disponibles" body="ServicioProducto no entregó categorías." tone="red" />
@@ -535,18 +592,41 @@ export default function PublishScreen() {
                     </ScrollView>
                   ) : null}
 
-                  <TextInput className={`bg-neutral-50 border rounded-2xl px-4 h-12 text-neutral-900 mt-3 ${errors.ubicacionComuna ? 'border-red-400' : 'border-neutral-200'}`} placeholder="Buscar comuna" placeholderTextColor="#a3a3a3" value={busquedaComuna} onChangeText={setBusquedaComuna} editable={!isSubmitting && !isLoadingGeografia} />
-                  <View className="flex-row flex-wrap mt-3">
-                    {comunasFiltradas.map((comuna) => {
-                      const selected = comunaSeleccionada?.id === comuna.id;
-                      return (
-                        <TouchableOpacity key={comuna.id} className={`mr-2 mb-2 px-3 min-h-10 rounded-2xl border items-center justify-center ${selected ? 'bg-brand-700 border-brand-700' : 'bg-white border-neutral-200'}`} onPress={() => seleccionarComuna(comuna)} disabled={isSubmitting} activeOpacity={0.75}>
-                          <Text className={`text-sm font-bold ${selected ? 'text-white' : 'text-neutral-700'}`}>{comuna.nombre}</Text>
+                  <TextInput
+                    className={`bg-neutral-50 border rounded-2xl px-4 h-12 text-neutral-900 mt-3 ${errors.ubicacionComuna ? 'border-red-400' : 'border-neutral-200'}`}
+                    placeholder="Escribe tu comuna"
+                    placeholderTextColor="#a3a3a3"
+                    value={busquedaComuna}
+                    onChangeText={handleBusquedaComunaChange}
+                    editable={!isSubmitting && !isLoadingGeografia}
+                  />
+                  {comunaSeleccionada ? (
+                    <View className="bg-brand-50 border border-brand-100 rounded-2xl px-4 py-3 mt-3 flex-row items-center justify-between">
+                      <View className="flex-row items-center flex-1 pr-3">
+                        <FontAwesome name="check-circle" size={15} color="#047857" />
+                        <Text className="text-brand-800 text-sm font-bold ml-2" numberOfLines={1}>{comunaSeleccionada.nombre}</Text>
+                      </View>
+                      <Text className="text-brand-700 text-xs font-bold">Seleccionada</Text>
+                    </View>
+                  ) : null}
+                  {mostrarSugerenciasComuna ? (
+                    <View className="bg-white border border-neutral-100 rounded-2xl overflow-hidden mt-3">
+                      {comunasSugeridas.map((comuna, index) => (
+                        <TouchableOpacity
+                          key={comuna.id}
+                          className={`px-4 h-12 flex-row items-center justify-between ${index < comunasSugeridas.length - 1 ? 'border-b border-neutral-100' : ''}`}
+                          onPress={() => seleccionarComuna(comuna)}
+                          disabled={isSubmitting}
+                          activeOpacity={0.75}
+                        >
+                          <Text className="text-neutral-800 text-sm font-bold">{comuna.nombre}</Text>
+                          <FontAwesome name="map-marker" size={13} color="#047857" />
                         </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                  {!isLoadingGeografia && comunasFiltradas.length === 0 ? <Text className="text-amber-700 text-sm leading-5 mt-1">No hay comunas cargadas en Supabase para esta ciudad o la búsqueda no tiene resultados.</Text> : null}
+                      ))}
+                    </View>
+                  ) : null}
+                  {!busquedaComuna.trim() && !comunaSeleccionada ? <Text className="text-neutral-500 text-sm leading-5 mt-2">Escribe el nombre y te sugerimos comunas cargadas desde el servicio.</Text> : null}
+                  {mostrarSinResultadosComuna ? <Text className="text-amber-700 text-sm leading-5 mt-2">No encontramos comunas con ese nombre en la ciudad seleccionada.</Text> : null}
                   <FieldError message={errors.ubicacionComuna} />
                   <TextInput className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 h-14 text-neutral-900 text-base mt-3" placeholder="Referencia opcional: sector, barrio o cruce cercano" placeholderTextColor="#a3a3a3" value={ubicacionReferencia} onChangeText={setUbicacionReferencia} editable={!isSubmitting} />
 

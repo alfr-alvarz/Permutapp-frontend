@@ -9,6 +9,7 @@ import { Producto, obtenerCategoriasProducto } from '../../services/api';
 import { obtenerProductosActivos } from '../../services/catalog';
 
 const ESTADOS = ['Todos', 'Nuevo', 'Como nuevo', 'Buen estado', 'Aceptable'];
+type FiltroAbierto = 'categoria' | 'estado' | null;
 function normalizarTexto(value: string): string {
   return value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }
@@ -19,6 +20,7 @@ export default function CatalogScreen() {
   const [busqueda, setBusqueda] = useState('');
   const [estadoActivo, setEstadoActivo] = useState('Todos');
   const [categoriaActiva, setCategoriaActiva] = useState<ProductCategoryId | null>(null);
+  const [filtroAbierto, setFiltroAbierto] = useState<FiltroAbierto>(null);
   const [categorias, setCategorias] = useState<ProductCategory[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -78,11 +80,15 @@ export default function CatalogScreen() {
     }
   }, [params.categoria, categorias]);
 
+  const categoriaSeleccionada = useMemo(
+    () => categorias.find((category) => category.id === categoriaActiva) ?? null,
+    [categorias, categoriaActiva],
+  );
+
   const itemsFiltrados = useMemo(
     () => productos.filter((item) => {
       const busquedaNormalizada = normalizarTexto(busqueda);
       const categoriaProducto = findCategoryByValue(categorias, item.prod_categoria)?.id ?? normalizeCategoryText(item.prod_categoria);
-      const categoriaSeleccionada = categorias.find((category) => category.id === categoriaActiva);
       const textoProducto = normalizarTexto([
         item.prod_nombre,
         item.prod_est,
@@ -97,8 +103,22 @@ export default function CatalogScreen() {
         || Boolean(categoriaSeleccionada?.keywords.some((keyword) => textoProducto.includes(normalizarTexto(keyword))));
       return coincideBusqueda && coincideEstado && coincideCategoria;
     }),
-    [busqueda, estadoActivo, categoriaActiva, categorias, productos],
+    [busqueda, estadoActivo, categoriaActiva, categoriaSeleccionada, categorias, productos],
   );
+
+  const toggleFiltro = (filtro: Exclude<FiltroAbierto, null>) => {
+    setFiltroAbierto((actual) => (actual === filtro ? null : filtro));
+  };
+
+  const seleccionarCategoria = (categoria: ProductCategoryId | null) => {
+    setCategoriaActiva(categoria);
+    setFiltroAbierto(null);
+  };
+
+  const seleccionarEstado = (estado: string) => {
+    setEstadoActivo(estado);
+    setFiltroAbierto(null);
+  };
 
   return (
     <ScrollView className="flex-1 bg-neutral-50" contentContainerStyle={{ paddingBottom: 18 }} showsVerticalScrollIndicator={false}>
@@ -118,31 +138,77 @@ export default function CatalogScreen() {
         </View>
       </View>
 
-      {categorias.length > 0 ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-4" contentContainerStyle={{ paddingHorizontal: 20 }}>
-          {categorias.map((categoria) => {
-            const selected = categoriaActiva === categoria.id;
-            return (
-              <TouchableOpacity
-                key={categoria.id}
-                className={`mr-2 px-4 h-11 rounded-2xl items-center justify-center border ${selected ? 'bg-brand-700 border-brand-700' : 'bg-white border-neutral-100'}`}
-                onPress={() => setCategoriaActiva(selected ? null : categoria.id)}
-                activeOpacity={0.75}
-              >
-                <Text className={`text-sm font-bold ${selected ? 'text-white' : 'text-neutral-600'}`}>{categoria.label}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      ) : null}
-
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-3" contentContainerStyle={{ paddingHorizontal: 20 }}>
-        {ESTADOS.map((estado) => (
-          <TouchableOpacity key={estado} className={`mr-2 px-4 h-11 rounded-2xl items-center justify-center border ${estadoActivo === estado ? 'bg-neutral-950 border-neutral-950' : 'bg-white border-neutral-100'}`} onPress={() => setEstadoActivo(estado)} activeOpacity={0.75}>
-            <Text className={`text-sm font-bold ${estadoActivo === estado ? 'text-white' : 'text-neutral-600'}`}>{estado}</Text>
+      <View className="px-5 mt-4">
+        <View className="flex-row gap-3">
+          <TouchableOpacity
+            className={`flex-1 bg-white border rounded-2xl px-4 h-14 justify-center ${filtroAbierto === 'categoria' ? 'border-brand-700' : 'border-neutral-100'}`}
+            onPress={() => toggleFiltro('categoria')}
+            activeOpacity={0.82}
+            accessibilityRole="button"
+            accessibilityLabel="Filtrar por categoría"
+          >
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1 pr-2">
+                <Text className="text-neutral-500 text-xs font-bold">Categoría</Text>
+                <Text className="text-neutral-950 text-sm font-bold mt-0.5" numberOfLines={1}>
+                  {categoriaSeleccionada?.label ?? 'Todas'}
+                </Text>
+              </View>
+              <FontAwesome name={filtroAbierto === 'categoria' ? 'chevron-up' : 'chevron-down'} size={12} color="#047857" />
+            </View>
           </TouchableOpacity>
-        ))}
-      </ScrollView>
+
+          <TouchableOpacity
+            className={`flex-1 bg-white border rounded-2xl px-4 h-14 justify-center ${filtroAbierto === 'estado' ? 'border-brand-700' : 'border-neutral-100'}`}
+            onPress={() => toggleFiltro('estado')}
+            activeOpacity={0.82}
+            accessibilityRole="button"
+            accessibilityLabel="Filtrar por estado"
+          >
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1 pr-2">
+                <Text className="text-neutral-500 text-xs font-bold">Estado</Text>
+                <Text className="text-neutral-950 text-sm font-bold mt-0.5" numberOfLines={1}>
+                  {estadoActivo}
+                </Text>
+              </View>
+              <FontAwesome name={filtroAbierto === 'estado' ? 'chevron-up' : 'chevron-down'} size={12} color="#047857" />
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {filtroAbierto === 'categoria' ? (
+          <View className="bg-white border border-neutral-100 rounded-2xl overflow-hidden mt-3">
+            <TouchableOpacity className="px-4 h-12 flex-row items-center justify-between border-b border-neutral-100" onPress={() => seleccionarCategoria(null)} activeOpacity={0.75}>
+              <Text className={`text-sm font-bold ${!categoriaActiva ? 'text-brand-700' : 'text-neutral-700'}`}>Todas las categorías</Text>
+              {!categoriaActiva ? <FontAwesome name="check" size={13} color="#047857" /> : null}
+            </TouchableOpacity>
+            {categorias.map((categoria) => {
+              const selected = categoriaActiva === categoria.id;
+              return (
+                <TouchableOpacity key={categoria.id} className="px-4 h-12 flex-row items-center justify-between border-b border-neutral-100" onPress={() => seleccionarCategoria(categoria.id)} activeOpacity={0.75}>
+                  <Text className={`text-sm font-bold ${selected ? 'text-brand-700' : 'text-neutral-700'}`}>{categoria.label}</Text>
+                  {selected ? <FontAwesome name="check" size={13} color="#047857" /> : null}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        ) : null}
+
+        {filtroAbierto === 'estado' ? (
+          <View className="bg-white border border-neutral-100 rounded-2xl overflow-hidden mt-3">
+            {ESTADOS.map((estado, index) => {
+              const selected = estadoActivo === estado;
+              return (
+                <TouchableOpacity key={estado} className={`px-4 h-12 flex-row items-center justify-between ${index < ESTADOS.length - 1 ? 'border-b border-neutral-100' : ''}`} onPress={() => seleccionarEstado(estado)} activeOpacity={0.75}>
+                  <Text className={`text-sm font-bold ${selected ? 'text-brand-700' : 'text-neutral-700'}`}>{estado}</Text>
+                  {selected ? <FontAwesome name="check" size={13} color="#047857" /> : null}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        ) : null}
+      </View>
 
       <View className="px-5 mt-7 pb-2">
         <SectionHeader title={`${itemsFiltrados.length} disponibles`} />
