@@ -186,6 +186,18 @@ async function readApiErrorMessage(response: Response, fallback: string): Promis
   }
 }
 
+async function readApiResponse<TResponse>(response: Response): Promise<TResponse> {
+  const responseText = await response.text();
+  if (!responseText) {
+    return undefined as TResponse;
+  }
+
+  try {
+    return JSON.parse(responseText) as TResponse;
+  } catch {
+    return responseText as TResponse;
+  }
+}
 
 function getImageName(uri: string, fallback: string): string {
   const rawName = uri.split('/').pop() || fallback;
@@ -249,7 +261,7 @@ async function multipartRequest<TResponse>(
     throw new ApiError(message, response.status);
   }
 
-  return (await response.json()) as TResponse;
+  return readApiResponse<TResponse>(response);
 }
 
 async function request<TResponse, TBody = undefined>(
@@ -293,17 +305,7 @@ async function request<TResponse, TBody = undefined>(
     throw new ApiError(message, response.status);
   }
 
-  if (response.status === 204) {
-    return undefined as TResponse;
-  }
-
-  const responseText = await response.text();
-  if (!responseText) {
-    return undefined as TResponse;
-  }
-
-  const contentType = response.headers.get('content-type') ?? '';
-  return (contentType.includes('application/json') ? JSON.parse(responseText) : responseText) as TResponse;
+  return readApiResponse<TResponse>(response);
 }
 
 export function login(payload: LoginPayload): Promise<AuthResponse> {

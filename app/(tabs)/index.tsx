@@ -63,8 +63,8 @@ export default function HomeScreen() {
   const hayMasProductos = totalProductos > productos.length;
 
   return (
-    <ScrollView className="flex-1 bg-neutral-50" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: 18 }} showsVerticalScrollIndicator={false}>
-      <ScreenContent className="px-4 pt-5 pb-2">
+    <ScrollView className="flex-1 bg-neutral-50" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: 18 }} showsVerticalScrollIndicator={false} stickyHeaderIndices={[0]}>
+      <ScreenContent className="px-4 pt-5 pb-3 bg-neutral-50">
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center flex-1 pr-3">
             <BrandMark size="sm" />
@@ -89,8 +89,10 @@ export default function HomeScreen() {
             </TouchableOpacity>
           )}
         </View>
+      </ScreenContent>
 
-        <View className="bg-brand-900 rounded-2xl p-5 mt-4 min-h-[176px] justify-between">
+      <ScreenContent className="px-4 pb-2">
+        <View className="bg-brand-900 rounded-2xl p-5 min-h-[176px] justify-between">
           <Text className="text-white text-2xl font-bold leading-8">Permuta simple</Text>
           <Text className="text-brand-100 text-sm leading-5 mt-1" numberOfLines={2}>Publica o explora objetos cerca de ti.</Text>
           <View className="flex-row gap-2 mt-7">
