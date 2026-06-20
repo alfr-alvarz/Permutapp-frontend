@@ -80,6 +80,14 @@ function nombreVendedor(vendedor: Usuario): string {
   return `${vendedor.usu_pri_nombre} ${vendedor.usu_pri_apellido}`.trim();
 }
 
+function formatearNombreMetro(nombre: string): string {
+  return nombre.replace(/\bNunoa\b/g, 'Ñuñoa').replace(/\bnunoa\b/g, 'ñuñoa');
+}
+
+function esReferenciaMetroAutomatica(referencia?: string | null): boolean {
+  return Boolean(referencia?.trim().match(/^cerca de metro .+ \([^)]+\)$/i));
+}
+
 export default function ProductDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -223,6 +231,10 @@ export default function ProductDetailScreen() {
       ? 'Cargando vendedor'
       : 'Vendedor no disponible';
   const vendedorReputacion = vendedor ? vendedor.usu_prom_rep.toFixed(1) : null;
+  const estacionMetroNombre = estacionMetro ? formatearNombreMetro(estacionMetro.nombre) : null;
+  const ubicacionReferenciaVisible = producto?.prod_ubicacion_referencia && !esReferenciaMetroAutomatica(producto.prod_ubicacion_referencia)
+    ? producto.prod_ubicacion_referencia
+    : null;
 
   const handleSelectImage = (index: number) => {
     setSelectedImageIndex(index);
@@ -366,7 +378,7 @@ export default function ProductDetailScreen() {
                 </View>
               ) : null}
 
-              {producto.prod_ubicacion_comuna || producto.prod_ubicacion_referencia || estacionMetro ? (
+              {producto.prod_ubicacion_comuna || ubicacionReferenciaVisible || estacionMetro ? (
                 <View className="bg-white border border-neutral-100 rounded-2xl p-5 mb-4">
                   <Text className="text-neutral-950 text-xl font-bold mb-3">Ubicación</Text>
                   <View className="flex-row items-start">
@@ -375,11 +387,11 @@ export default function ProductDetailScreen() {
                       {producto.prod_ubicacion_comuna ? <Text className="text-neutral-950 text-lg font-bold">{producto.prod_ubicacion_comuna}</Text> : null}
                       {estacionMetro ? (
                         <View className="bg-brand-50 border border-brand-100 rounded-2xl px-3 py-2 mt-2 self-start">
-                          <Text className="text-brand-800 text-sm font-bold">Metro {estacionMetro.nombre} · {estacionMetro.linea}</Text>
+                          <Text className="text-brand-800 text-sm font-bold">Metro {estacionMetroNombre} · {estacionMetro.linea}</Text>
                         </View>
                       ) : null}
-                      {producto.prod_ubicacion_referencia ? (
-                        <Text className="text-neutral-600 text-base leading-6 mt-2" numberOfLines={2}>{producto.prod_ubicacion_referencia}</Text>
+                      {ubicacionReferenciaVisible ? (
+                        <Text className="text-neutral-600 text-base leading-6 mt-2" numberOfLines={2}>{ubicacionReferenciaVisible}</Text>
                       ) : null}
                     </View>
                   </View>
