@@ -247,7 +247,7 @@ export default function ProductDetailScreen() {
   const handleGalleryScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const nextIndex = Math.round(event.nativeEvent.contentOffset.x / activeGalleryWidth);
     const boundedIndex = Math.max(0, Math.min(nextIndex, productImages.length - 1));
-    setSelectedImageIndex(boundedIndex);
+    setSelectedImageIndex((currentIndex) => (currentIndex === boundedIndex ? currentIndex : boundedIndex));
   };
 
   return (
@@ -299,6 +299,7 @@ export default function ProductDetailScreen() {
                     pagingEnabled
                     scrollEnabled={productImages.length > 1}
                     showsHorizontalScrollIndicator={false}
+                    onScroll={handleGalleryScrollEnd}
                     onMomentumScrollEnd={handleGalleryScrollEnd}
                     scrollEventThrottle={16}
                     className="w-full h-full"
