@@ -26,10 +26,12 @@ import {
   Producto,
   Publicacion,
   SugerenciaPuntoMedio,
+  Usuario,
   eliminarConversacion,
   obtenerEstacionesMetro,
   obtenerProductos,
   obtenerPublicaciones,
+  obtenerUsuarioPorId,
   sugerirMetroPuntoMedio,
 } from '../../services/api';
 import {
@@ -55,6 +57,11 @@ function formatMessageDate(value: string) {
 
 function formatPrice(value: number) {
   return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(value);
+}
+
+function nombreUsuario(usuario?: Usuario | null): string {
+  if (!usuario) return 'Cargando persona';
+  return `${usuario.usu_pri_nombre} ${usuario.usu_pri_apellido}`.trim() || 'Persona no disponible';
 }
 
 function normalizeSearch(value: string) {
@@ -96,6 +103,7 @@ export default function ChatDetailScreen() {
 
   const [conversacion, setConversacion] = useState<ConversacionPermuta | null>(null);
   const [mensajes, setMensajes] = useState<MensajePermuta[]>([]);
+  const [participante, setParticipante] = useState<Usuario | null>(null);
   const [contenido, setContenido] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isWorking, setIsWorking] = useState(false);
@@ -178,6 +186,24 @@ export default function ChatDetailScreen() {
   }, [cargarChat, isAuthenticated, token]));
 
   useEffect(() => {
+    if (!token || !conversacion?.otro_usuario_id) {
+      setParticipante(null);
+      return undefined;
+    }
+
+    let active = true;
+    obtenerUsuarioPorId(conversacion.otro_usuario_id, token)
+      .then((usuario) => {
+        if (active) setParticipante(usuario);
+      })
+      .catch(() => {
+        if (active) setParticipante(null);
+      });
+
+    return () => { active = false; };
+  }, [conversacion?.otro_usuario_id, token]);
+
+  useEffect(() => {
     if (mensajes.length === 0) return;
     const timeout = setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: !isLoading }), 0);
     return () => clearTimeout(timeout);
@@ -185,6 +211,8 @@ export default function ChatDetailScreen() {
 
   const esInteresado = conversacion?.interesado_id === usuarioId;
   const esNegociando = conversacion?.conv_estado === 'NEGOCIANDO';
+  const participanteReputacion = participante ? participante.usu_prom_rep.toFixed(1) : null;
+  const participanteVerificado = Boolean(participante?.usu_identidad_verificada);
 
   const ejecutar = async (action: () => Promise<unknown>) => {
     try {
@@ -320,12 +348,22 @@ export default function ChatDetailScreen() {
   return (
     <MainLayout>
       <KeyboardAvoidingView className="flex-1 bg-neutral-50" behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <View className="px-5 pt-4 pb-3 border-b border-neutral-100">
-          <View className="flex-row items-center justify-between mb-3">
-            <TouchableOpacity className="w-11 h-11 rounded-2xl bg-white items-center justify-center" onPress={() => router.back()}>
+        <View className="px-5 pt-4 pb-3 bg-neutral-50 border-b border-neutral-100">
+          <View className="flex-row items-center mb-3">
+            <TouchableOpacity className="w-11 h-11 rounded-2xl bg-white border border-neutral-100 items-center justify-center mr-3" onPress={() => router.back()} activeOpacity={0.75}>
               <FontAwesome name="chevron-left" size={14} color="#404040" />
             </TouchableOpacity>
-            <TouchableOpacity className="w-11 h-11 rounded-2xl bg-white items-center justify-center" onPress={() => setShowMenu(true)}>
+            <View className="flex-1 bg-white border border-neutral-100 rounded-2xl px-4 h-14 justify-center">
+              <View className="flex-row items-center">
+                <Text className="text-neutral-950 text-base font-bold flex-1" numberOfLines={1}>{nombreUsuario(participante)}</Text>
+                {participanteVerificado ? <FontAwesome name="check-circle" size={16} color="#047857" /> : null}
+              </View>
+              <View className="flex-row items-center mt-0.5">
+                <FontAwesome name="star" size={12} color="#f59e0b" />
+                <Text className="text-neutral-500 text-xs font-bold ml-1">{participanteReputacion ?? '0.0'}</Text>
+              </View>
+            </View>
+            <TouchableOpacity className="w-11 h-11 rounded-2xl bg-white border border-neutral-100 items-center justify-center ml-3" onPress={() => setShowMenu(true)} activeOpacity={0.75}>
               <FontAwesome name="ellipsis-v" size={18} color="#404040" />
             </TouchableOpacity>
           </View>
