@@ -19,9 +19,9 @@ export async function obtenerSuscripcionPush(
 ): Promise<RegistrarSuscripcionNotificacionPayload> {
   if (Platform.OS === 'web') {
     if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
-      throw new Error('Este navegador no admite notificaciones push.');
+      throw new Error('Este navegador no permite activar notificaciones.');
     }
-    if (!vapidPublicKey) throw new Error('Web Push todavía no tiene configuradas sus claves VAPID.');
+    if (!vapidPublicKey) throw new Error('Las notificaciones aún no están configuradas.');
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') throw new Error('El permiso de notificaciones fue rechazado.');
 
@@ -33,7 +33,7 @@ export async function obtenerSuscripcionPush(
     });
     const json = subscription.toJSON();
     if (!json.endpoint || !json.keys?.p256dh || !json.keys.auth) {
-      throw new Error('El navegador no entregó una suscripción push válida.');
+      throw new Error('No se pudo activar las notificaciones en este navegador.');
     }
     return {
       canal: 'WEB',
@@ -45,11 +45,11 @@ export async function obtenerSuscripcionPush(
   }
 
   if (isExpoGo()) {
-    throw new Error('Las notificaciones push requieren un development build; Expo Go no las admite.');
+    throw new Error('Las notificaciones no están disponibles en esta versión de prueba.');
   }
   const Device = await import('expo-device');
   const Notifications = await import('expo-notifications');
-  if (!Device.isDevice) throw new Error('Las notificaciones push nativas requieren un dispositivo físico.');
+  if (!Device.isDevice) throw new Error('Las notificaciones solo funcionan en un teléfono real.');
 
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
@@ -68,7 +68,7 @@ export async function obtenerSuscripcionPush(
   const projectId = process.env.EXPO_PUBLIC_EAS_PROJECT_ID
     ?? Constants.easConfig?.projectId
     ?? Constants.expoConfig?.extra?.eas?.projectId;
-  if (!projectId) throw new Error('Falta EXPO_PUBLIC_EAS_PROJECT_ID para obtener el token Expo Push.');
+  if (!projectId) throw new Error('Las notificaciones aún no están configuradas para esta app.');
   const expoToken = await Notifications.getExpoPushTokenAsync({ projectId });
   return { canal: 'EXPO', destino: expoToken.data, plataforma: Platform.OS };
 }

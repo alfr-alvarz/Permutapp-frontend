@@ -61,6 +61,9 @@ export default function HomeScreen() {
 
   const nombre = isAuthenticated ? user?.name?.split(' ')[0] : null;
   const hayMasProductos = totalProductos > productos.length;
+  const feedEndBody = hayMasProductos
+    ? 'Revisa el catálogo completo para ver más permutas.'
+    : 'No hay más permutas nuevas por ver.';
 
   return (
     <ScrollView className="flex-1 bg-neutral-50" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: 18 }} showsVerticalScrollIndicator={false} stickyHeaderIndices={[0]}>
@@ -152,25 +155,29 @@ export default function HomeScreen() {
           />
         ))}
 
-        {!isLoadingProductos && !productosError && productos.length > 0 ? (
-          <FeedEnd
-            body={hayMasProductos
-              ? 'Revisa el catálogo completo para ver más permutas.'
-              : 'No hay más permutas nuevas por ver.'}
-          />
+        {isAuthenticated && !isLoadingProductos && !productosError && productos.length > 0 ? (
+          <FeedEnd body={feedEndBody} />
         ) : null}
       </ScreenContent>
 
       {!isAuthenticated ? (
-        <ScreenContent className="px-4 pb-8">
-          <TouchableOpacity className="bg-white rounded-2xl p-5 border border-neutral-100 flex-row items-center justify-between" onPress={() => router.push('/register' as Href)} activeOpacity={0.82}>
-            <View className="flex-1 pr-4">
-              <Text className="text-neutral-950 font-bold text-xl">Crea tu cuenta</Text>
-              <Text className="text-neutral-500 text-base mt-1">Publica y negocia tus permutas.</Text>
-            </View>
-            <FontAwesome name="chevron-right" size={14} color="#a3a3a3" />
-          </TouchableOpacity>
-        </ScreenContent>
+        <>
+          <ScreenContent className="px-4 pb-3">
+            <TouchableOpacity className="bg-white rounded-2xl p-5 border border-neutral-100 flex-row items-center justify-between" onPress={() => router.push('/register' as Href)} activeOpacity={0.82}>
+              <View className="flex-1 pr-4">
+                <Text className="text-neutral-950 font-bold text-xl">Crea tu cuenta</Text>
+                <Text className="text-neutral-500 text-base mt-1">Publica y negocia tus permutas.</Text>
+              </View>
+              <FontAwesome name="chevron-right" size={14} color="#a3a3a3" />
+            </TouchableOpacity>
+          </ScreenContent>
+
+          {!isLoadingProductos && !productosError && productos.length > 0 ? (
+            <ScreenContent className="px-4 pb-8">
+              <FeedEnd body={feedEndBody} />
+            </ScreenContent>
+          ) : null}
+        </>
       ) : null}
     </ScrollView>
   );

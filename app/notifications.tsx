@@ -120,9 +120,9 @@ export default function NotificationsScreen() {
 
       {isAuthenticated && pushStatus !== 'enabled' ? (
         <View className="bg-white border border-neutral-100 rounded-2xl p-5 mb-5">
-          <Text className="text-neutral-950 font-bold text-base">Activa los avisos push</Text>
+          <Text className="text-neutral-950 font-bold text-base">Activa las notificaciones</Text>
           <Text className="text-neutral-500 text-sm leading-5 mt-2 mb-4">
-            Recibe mensajes, propuestas de permuta y resultados de verificación aunque no tengas esta pantalla abierta.
+            Te avisaremos sobre mensajes, propuestas y cambios importantes.
           </Text>
           <PrimaryButton icon="bell" loading={pushStatus === 'enabling'} onPress={enablePush}>
             Activar notificaciones
@@ -131,7 +131,7 @@ export default function NotificationsScreen() {
       ) : null}
 
       {pushStatus === 'enabled' ? (
-        <InfoBanner icon="check-circle" title="Notificaciones activadas" body="Este dispositivo ya puede recibir avisos de PermutApp." />
+        <InfoBanner icon="check-circle" title="Notificaciones activadas" body="Este dispositivo ya puede recibir notificaciones de PermutApp." />
       ) : null}
       {error ? <View className="mt-3"><InfoBanner icon="exclamation-circle" title="Notificaciones no disponibles" body={error} tone="amber" /></View> : null}
       {deleteError ? <View className="mt-3"><InfoBanner icon="exclamation-circle" title="No se pudo eliminar" body={deleteError} tone="red" /></View> : null}
@@ -141,7 +141,7 @@ export default function NotificationsScreen() {
           <View className="py-12 items-center"><ActivityIndicator color="#047857" /></View>
         ) : null}
         {!isLoading && isAuthenticated && notifications.length === 0 ? (
-          <EmptyState icon="bell-o" title="Todavía no hay avisos" body="Tus mensajes, propuestas y cambios importantes aparecerán aquí." />
+          <EmptyState icon="bell-o" title="Todavía no hay notificaciones" body="Tus mensajes, propuestas y cambios importantes aparecerán aquí." />
         ) : null}
         {notifications.map((notification) => (
           <NotificationItem
