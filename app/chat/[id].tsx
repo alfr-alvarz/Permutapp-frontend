@@ -123,6 +123,7 @@ export default function ChatDetailScreen() {
   const [estacionElegida, setEstacionElegida] = useState<EstacionMetro | null>(null);
   const [lineaMetroSeleccionada, setLineaMetroSeleccionada] = useState<string | null>(null);
   const [showLineasMetro, setShowLineasMetro] = useState(false);
+  const [showEstacionesMetro, setShowEstacionesMetro] = useState(false);
   const [metroSearch, setMetroSearch] = useState('');
   const [sugerencia, setSugerencia] = useState<SugerenciaPuntoMedio | null>(null);
   const [locationBusy, setLocationBusy] = useState(false);
@@ -294,11 +295,15 @@ export default function ChatDetailScreen() {
   const abrirPuntoSeguro = async () => {
     setShowMenu(false);
     setShowLocationPanel(true);
+    setError(null);
     setMetroSearch('');
     setLineaMetroSeleccionada(null);
     setShowLineasMetro(false);
+    setShowEstacionesMetro(false);
     setEstacionElegida(null);
     setSugerencia(null);
+    setProductoOriginal(null);
+    setEstaciones([]);
     if (!conversacion?.prod_id) return;
     try {
       setLocationBusy(true);
@@ -313,6 +318,7 @@ export default function ChatDetailScreen() {
   };
 
   const calcularPuntoSeguro = async () => {
+    if (locationBusy) return;
     if (
       !productoOriginal
       || productoOriginal.prod_latitud_aprox == null
@@ -321,13 +327,15 @@ export default function ChatDetailScreen() {
       || estacionElegida.longitud == null
     ) return;
     try {
+      setError(null);
       setLocationBusy(true);
-      setSugerencia(await sugerirMetroPuntoMedio({
+      const nuevaSugerencia = await sugerirMetroPuntoMedio({
         latitudOrigen: productoOriginal.prod_latitud_aprox,
         longitudOrigen: productoOriginal.prod_longitud_aprox,
         latitudDestino: estacionElegida.latitud,
         longitudDestino: estacionElegida.longitud,
-      }));
+      });
+      setSugerencia(nuevaSugerencia);
     } catch {
       setError('No fue posible calcular la estación intermedia.');
     } finally {
@@ -336,14 +344,22 @@ export default function ChatDetailScreen() {
   };
 
   const compartirPuntoSeguro = () => {
-    if (!sugerencia) return;
+    if (!sugerencia || !token) return;
     const station = sugerencia.estacionSugerida;
-    setContenido(`Punto de encuentro seguro sugerido: Metro ${station.nombre} (${station.linea}), ${station.comuna ?? 'Santiago'}.`);
-    setShowLineasMetro(false);
-    setShowLocationPanel(false);
+    const message = `Punto de encuentro seguro sugerido: Metro ${station.nombre} (${station.linea}), ${station.comuna ?? 'Santiago'}.`;
+    ejecutar(async () => {
+      const sentMessage = await enviarMensajePermuta(conversacionId, usuarioId, message, token);
+      setMensajes((current) => mergeMessages(current, [sentMessage]));
+      setShowLineasMetro(false);
+      setShowEstacionesMetro(false);
+      setShowLocationPanel(false);
+      setSugerencia(null);
+      setEstacionElegida(null);
+    });
   };
 
   const progress = Math.min(100, ((conversacion?.cantidad_mensajes ?? 0) / 10) * 100);
+  const cargandoDatosPuntoSeguro = locationBusy && estaciones.length === 0;
 
   return (
     <MainLayout>
@@ -370,7 +386,7 @@ export default function ChatDetailScreen() {
           <SectionHeader title={conversacion?.publ_titulo ?? 'Conversación'} eyebrow="Permuta" />
         </View>
 
-        <ScrollView ref={scrollViewRef} className="flex-1" contentContainerStyle={{ paddingBottom: 24 }}>
+        <ScrollView ref={scrollViewRef} className="flex-1" contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
           <View className="px-5 pt-4">
             {error ? <InfoBanner icon="exclamation-circle" title="No se pudo completar" body={error} tone="red" /> : null}
 
@@ -393,146 +409,6 @@ export default function ChatDetailScreen() {
                 {conversacion.puede_solicitar_finalizacion ? (
                   <PrimaryButton icon="check" loading={isWorking} onPress={handleSolicitar} className="mt-4">
                     Proponer finalizar permuta
-                  </PrimaryButton>
-                ) : null}
-              </View>
-            ) : null}
-
-            {showLocationPanel ? (
-              <View className="bg-white border border-neutral-100 rounded-3xl p-5 mb-4">
-                <View className="flex-row justify-between">
-                  <Text className="text-neutral-950 text-base font-bold">Proponer punto seguro</Text>
-                  <TouchableOpacity onPress={() => setShowLocationPanel(false)}>
-                    <FontAwesome name="times" size={17} color="#525252" />
-                  </TouchableOpacity>
-                </View>
-                {locationBusy ? <ActivityIndicator color="#047857" className="my-5" /> : null}
-                {!locationBusy ? (
-                  <>
-                    <View className="mt-3">
-                      <Text className="text-neutral-800 text-sm font-bold mb-2">Línea de Metro</Text>
-                      <TouchableOpacity
-                        className="h-12 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 flex-row items-center justify-between"
-                        onPress={() => setShowLineasMetro((current) => !current)}
-                        accessibilityRole="button"
-                        accessibilityLabel="Seleccionar línea de Metro"
-                        accessibilityState={{ expanded: showLineasMetro }}
-                      >
-                        <View className="flex-row items-center flex-1 pr-3">
-                          <View
-                            className="w-3 h-3 rounded-full mr-2"
-                            style={{ backgroundColor: lineaMetroSeleccionada ? metroLineColor(lineaMetroSeleccionada) : '#d4d4d4' }}
-                          />
-                          <Text className="text-neutral-900 text-sm font-bold" numberOfLines={1}>
-                            {lineaMetroSeleccionada ? formatMetroLine(lineaMetroSeleccionada) : 'Seleccionar línea'}
-                          </Text>
-                        </View>
-                        <FontAwesome name={showLineasMetro ? 'chevron-up' : 'chevron-down'} size={13} color="#737373" />
-                      </TouchableOpacity>
-
-                      {showLineasMetro ? (
-                        <View className="mt-2 rounded-2xl border border-neutral-100 bg-white overflow-hidden">
-                          <ScrollView style={{ maxHeight: 220 }} nestedScrollEnabled showsVerticalScrollIndicator>
-                            {lineasMetro.map(({ line, count }) => {
-                              const selected = line === lineaMetroSeleccionada;
-                              return (
-                                <TouchableOpacity
-                                  key={line}
-                                  className={`px-4 py-3 flex-row items-center border-b border-neutral-100 ${selected ? 'bg-brand-50' : 'bg-white'}`}
-                                  onPress={() => {
-                                    setLineaMetroSeleccionada(line);
-                                    setShowLineasMetro(false);
-                                    setMetroSearch('');
-                                    setEstacionElegida(null);
-                                    setSugerencia(null);
-                                  }}
-                                  accessibilityRole="button"
-                                  accessibilityState={{ selected }}
-                                >
-                                  <View className="w-3 h-3 rounded-full mr-3" style={{ backgroundColor: metroLineColor(line) }} />
-                                  <Text className={`flex-1 text-sm font-bold ${selected ? 'text-brand-800' : 'text-neutral-800'}`}>
-                                    {formatMetroLine(line)}
-                                  </Text>
-                                  <Text className="text-neutral-400 text-xs font-bold mr-3">{count}</Text>
-                                  {selected ? <FontAwesome name="check" size={13} color="#047857" /> : null}
-                                </TouchableOpacity>
-                              );
-                            })}
-                            {lineasMetro.length === 0 ? (
-                              <Text className="text-neutral-500 text-sm text-center py-5">No hay líneas cargadas.</Text>
-                            ) : null}
-                          </ScrollView>
-                        </View>
-                      ) : null}
-                    </View>
-
-                    {lineaMetroSeleccionada ? (
-                      <>
-                        <TextInput
-                          className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 h-12 mt-3"
-                          value={metroSearch}
-                          onChangeText={setMetroSearch}
-                          placeholder={`Buscar estación en ${formatMetroLine(lineaMetroSeleccionada)}`}
-                          accessibilityLabel="Buscar estación de Metro"
-                        />
-                        <ScrollView
-                          className="mt-3 border border-neutral-100 rounded-2xl"
-                          contentContainerStyle={{ padding: 12 }}
-                          style={{ maxHeight: 260 }}
-                          nestedScrollEnabled
-                          showsVerticalScrollIndicator
-                        >
-                          {estacionesLineaSeleccionada.map((station) => {
-                            const selected = estacionElegida?.id === station.id;
-                            return (
-                              <TouchableOpacity
-                                key={station.id}
-                                className={`flex-row items-center rounded-2xl border px-3 py-3 mb-2 ${selected ? 'bg-brand-50 border-brand-500' : 'bg-white border-neutral-100'}`}
-                                onPress={() => { setEstacionElegida(station); setSugerencia(null); }}
-                                accessibilityRole="button"
-                                accessibilityState={{ selected }}
-                              >
-                                <View className="flex-1">
-                                  <Text className={`text-sm font-bold ${selected ? 'text-brand-800' : 'text-neutral-800'}`}>
-                                    {station.nombre}
-                                  </Text>
-                                  {station.comuna ? (
-                                    <Text className="text-neutral-500 text-xs mt-1">{station.comuna}</Text>
-                                  ) : null}
-                                </View>
-                                {station.esCombinacion ? (
-                                  <Text className="text-neutral-400 text-[10px] font-bold mr-2">COMBINACIÓN</Text>
-                                ) : null}
-                                <FontAwesome
-                                  name={selected ? 'check-circle' : 'circle-o'}
-                                  size={18}
-                                  color={selected ? '#047857' : '#a3a3a3'}
-                                />
-                              </TouchableOpacity>
-                            );
-                          })}
-                          {estacionesLineaSeleccionada.length === 0 ? (
-                            <Text className="text-neutral-500 text-sm text-center py-5">No encontramos estaciones en esta línea.</Text>
-                          ) : null}
-                        </ScrollView>
-                      </>
-                    ) : (
-                      <Text className="text-neutral-500 text-sm leading-5 mt-3">Elige una línea para ver solo sus estaciones.</Text>
-                    )}
-
-                    {estacionElegida ? (
-                      <Text className="text-brand-700 text-xs font-bold mt-3">
-                        Seleccionada: Metro {estacionElegida.nombre} · {estacionElegida.linea}
-                      </Text>
-                    ) : null}
-                  </>
-                ) : null}
-                <PrimaryButton disabled={!estacionElegida} loading={locationBusy} onPress={calcularPuntoSeguro} className="mt-4">
-                  Calcular estación intermedia
-                </PrimaryButton>
-                {sugerencia ? (
-                  <PrimaryButton icon="send" onPress={compartirPuntoSeguro} className="mt-3">
-                    Compartir Metro {sugerencia.estacionSugerida.nombre}
                   </PrimaryButton>
                 ) : null}
               </View>
@@ -661,6 +537,197 @@ export default function ChatDetailScreen() {
           </View>
         ) : null}
       </KeyboardAvoidingView>
+
+      <Modal visible={showLocationPanel} transparent animationType="slide" onRequestClose={() => setShowLocationPanel(false)}>
+        <View className="flex-1 bg-black/30 justify-end">
+          <View className="bg-white rounded-t-3xl px-5 pt-5 pb-8 max-h-[82%]">
+            <View className="flex-row justify-between items-start mb-4">
+              <View className="flex-1 pr-4">
+                <Text className="text-neutral-950 text-xl font-bold">Punto seguro</Text>
+                <Text className="text-neutral-500 text-sm leading-5 mt-1">Elige tu Metro cercano y calculamos una estación intermedia.</Text>
+              </View>
+              <TouchableOpacity
+                className="w-10 h-10 rounded-2xl bg-neutral-100 items-center justify-center"
+                onPress={() => setShowLocationPanel(false)}
+                accessibilityLabel="Cerrar punto seguro"
+              >
+                <FontAwesome name="times" size={17} color="#525252" />
+              </TouchableOpacity>
+            </View>
+
+            {error ? <InfoBanner icon="exclamation-circle" title="No se pudo completar" body={error} tone="red" /> : null}
+
+            {cargandoDatosPuntoSeguro ? (
+              <View className="items-center py-12">
+                <ActivityIndicator color="#047857" />
+              </View>
+            ) : (
+              <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                <View className="mb-3">
+                  <Text className="text-neutral-800 text-sm font-bold mb-2">Línea de Metro</Text>
+                  <TouchableOpacity
+                    className="h-14 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 flex-row items-center justify-between"
+                    onPress={() => {
+                      setShowLineasMetro((current) => !current);
+                      setShowEstacionesMetro(false);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Seleccionar línea de Metro"
+                    accessibilityState={{ expanded: showLineasMetro }}
+                  >
+                    <View className="flex-row items-center flex-1 pr-3">
+                      <View
+                        className="w-3 h-3 rounded-full mr-3"
+                        style={{ backgroundColor: lineaMetroSeleccionada ? metroLineColor(lineaMetroSeleccionada) : '#d4d4d4' }}
+                      />
+                      <Text className={`text-sm font-bold ${lineaMetroSeleccionada ? 'text-neutral-950' : 'text-neutral-400'}`} numberOfLines={1}>
+                        {lineaMetroSeleccionada ? formatMetroLine(lineaMetroSeleccionada) : 'Elegir línea'}
+                      </Text>
+                    </View>
+                    <FontAwesome name={showLineasMetro ? 'chevron-up' : 'chevron-down'} size={13} color="#737373" />
+                  </TouchableOpacity>
+
+                  {showLineasMetro ? (
+                    <View className="mt-2 rounded-2xl border border-neutral-100 bg-white overflow-hidden">
+                      <ScrollView style={{ maxHeight: 220 }} nestedScrollEnabled showsVerticalScrollIndicator keyboardShouldPersistTaps="handled">
+                        {lineasMetro.map(({ line, count }) => {
+                          const selected = line === lineaMetroSeleccionada;
+                          return (
+                            <TouchableOpacity
+                              key={line}
+                              className={`px-4 py-3 flex-row items-center border-b border-neutral-100 ${selected ? 'bg-brand-50' : 'bg-white'}`}
+                              onPress={() => {
+                                setLineaMetroSeleccionada(line);
+                                setShowLineasMetro(false);
+                                setShowEstacionesMetro(true);
+                                setMetroSearch('');
+                                setEstacionElegida(null);
+                                setSugerencia(null);
+                              }}
+                              accessibilityRole="button"
+                              accessibilityState={{ selected }}
+                            >
+                              <View className="w-3 h-3 rounded-full mr-3" style={{ backgroundColor: metroLineColor(line) }} />
+                              <Text className={`flex-1 text-sm font-bold ${selected ? 'text-brand-800' : 'text-neutral-800'}`}>
+                                {formatMetroLine(line)}
+                              </Text>
+                              <Text className="text-neutral-400 text-xs font-bold mr-3">{count}</Text>
+                              {selected ? <FontAwesome name="check" size={13} color="#047857" /> : null}
+                            </TouchableOpacity>
+                          );
+                        })}
+                        {lineasMetro.length === 0 ? (
+                          <Text className="text-neutral-500 text-sm text-center py-5">No hay líneas cargadas.</Text>
+                        ) : null}
+                      </ScrollView>
+                    </View>
+                  ) : null}
+                </View>
+
+                <View className="mb-3">
+                  <Text className="text-neutral-800 text-sm font-bold mb-2">Tu estación cercana</Text>
+                  <TouchableOpacity
+                    className={`h-14 rounded-2xl border px-4 flex-row items-center justify-between ${lineaMetroSeleccionada ? 'bg-neutral-50 border-neutral-200' : 'bg-neutral-100 border-neutral-100'}`}
+                    onPress={() => {
+                      if (!lineaMetroSeleccionada) return;
+                      setShowEstacionesMetro((current) => !current);
+                      setShowLineasMetro(false);
+                    }}
+                    disabled={!lineaMetroSeleccionada}
+                    accessibilityRole="button"
+                    accessibilityLabel="Seleccionar estación de Metro"
+                    accessibilityState={{ expanded: showEstacionesMetro, disabled: !lineaMetroSeleccionada }}
+                  >
+                    <Text className={`text-sm font-bold flex-1 pr-3 ${estacionElegida ? 'text-neutral-950' : 'text-neutral-400'}`} numberOfLines={1}>
+                      {estacionElegida ? `Metro ${estacionElegida.nombre}` : lineaMetroSeleccionada ? 'Elegir estación' : 'Primero elige una línea'}
+                    </Text>
+                    <FontAwesome name={showEstacionesMetro ? 'chevron-up' : 'chevron-down'} size={13} color="#737373" />
+                  </TouchableOpacity>
+
+                  {showEstacionesMetro && lineaMetroSeleccionada ? (
+                    <View className="mt-2 rounded-2xl border border-neutral-100 bg-white p-3">
+                      <TextInput
+                        className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 h-12"
+                        value={metroSearch}
+                        onChangeText={setMetroSearch}
+                        placeholder="Buscar estación"
+                        accessibilityLabel="Buscar estación de Metro"
+                      />
+                      <ScrollView
+                        className="mt-3"
+                        style={{ maxHeight: 240 }}
+                        nestedScrollEnabled
+                        showsVerticalScrollIndicator
+                        keyboardShouldPersistTaps="handled"
+                      >
+                        {estacionesLineaSeleccionada.map((station) => {
+                          const selected = estacionElegida?.id === station.id;
+                          return (
+                            <TouchableOpacity
+                              key={station.id}
+                              className={`flex-row items-center rounded-2xl border px-3 py-3 mb-2 ${selected ? 'bg-brand-50 border-brand-500' : 'bg-white border-neutral-100'}`}
+                              onPress={() => {
+                                setEstacionElegida(station);
+                                setShowEstacionesMetro(false);
+                                setSugerencia(null);
+                              }}
+                              accessibilityRole="button"
+                              accessibilityState={{ selected }}
+                            >
+                              <View className="flex-1">
+                                <Text className={`text-sm font-bold ${selected ? 'text-brand-800' : 'text-neutral-800'}`} numberOfLines={1}>
+                                  {station.nombre}
+                                </Text>
+                                {station.comuna ? (
+                                  <Text className="text-neutral-500 text-xs mt-1" numberOfLines={1}>{station.comuna}</Text>
+                                ) : null}
+                              </View>
+                              {station.esCombinacion ? (
+                                <Text className="text-neutral-400 text-[10px] font-bold mr-2">COMBINACIÓN</Text>
+                              ) : null}
+                              <FontAwesome
+                                name={selected ? 'check-circle' : 'circle-o'}
+                                size={18}
+                                color={selected ? '#047857' : '#a3a3a3'}
+                              />
+                            </TouchableOpacity>
+                          );
+                        })}
+                        {estacionesLineaSeleccionada.length === 0 ? (
+                          <Text className="text-neutral-500 text-sm text-center py-5">No encontramos estaciones.</Text>
+                        ) : null}
+                      </ScrollView>
+                    </View>
+                  ) : null}
+                </View>
+
+                {sugerencia ? (
+                  <View className="bg-brand-50 border border-brand-100 rounded-2xl px-4 py-3 mt-1">
+                    <Text className="text-brand-900 text-sm font-bold" numberOfLines={1}>Metro {sugerencia.estacionSugerida.nombre}</Text>
+                    <Text className="text-brand-800 text-xs mt-1" numberOfLines={1}>
+                      {sugerencia.estacionSugerida.linea}{sugerencia.estacionSugerida.comuna ? ` · ${sugerencia.estacionSugerida.comuna}` : ''}
+                    </Text>
+                  </View>
+                ) : null}
+
+                <PrimaryButton
+                  disabled={!estacionElegida || locationBusy}
+                  loading={locationBusy && estaciones.length > 0}
+                  onPress={calcularPuntoSeguro}
+                  className="mt-4"
+                >
+                  {sugerencia ? 'Recalcular estación' : 'Calcular estación'}
+                </PrimaryButton>
+                {sugerencia ? (
+                  <PrimaryButton icon="send" loading={isWorking} disabled={isWorking} onPress={compartirPuntoSeguro} className="mt-3">
+                    Compartir en el chat
+                  </PrimaryButton>
+                ) : null}
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
 
       <Modal visible={showRatingModal} transparent animationType="slide" onRequestClose={() => setShowRatingModal(false)}>
         <View className="flex-1 bg-black/30 justify-end">
