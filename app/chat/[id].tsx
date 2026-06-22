@@ -17,7 +17,7 @@ import {
   View,
 } from 'react-native';
 
-import { EmptyState, InfoBanner, PrimaryButton, SectionHeader } from '@/components/ui';
+import { EmptyState, InfoBanner, PrimaryButton } from '@/components/ui';
 import MainLayout from '../../layouts/MainLayout';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -244,7 +244,7 @@ export default function ChatDetailScreen() {
           .map((product) => ({ producto: product, publicacion: byId.get(product.publ_id)! })),
       );
     } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : 'No fue posible cargar tus permutas.');
+      setError(requestError instanceof ApiError ? requestError.message : 'No fue posible cargar tus publicaciones.');
     } finally {
       setIsLoadingOffers(false);
     }
@@ -346,7 +346,7 @@ export default function ChatDetailScreen() {
   const compartirPuntoSeguro = () => {
     if (!sugerencia || !token) return;
     const station = sugerencia.estacionSugerida;
-    const message = `Punto de encuentro seguro sugerido: Metro ${station.nombre} (${station.linea}), ${station.comuna ?? 'Santiago'}.`;
+    const message = `Punto de encuentro seguro sugerido: Metro ${station.nombre} (${station.linea}).`;
     ejecutar(async () => {
       const sentMessage = await enviarMensajePermuta(conversacionId, usuarioId, message, token);
       setMensajes((current) => mergeMessages(current, [sentMessage]));
@@ -358,18 +358,18 @@ export default function ChatDetailScreen() {
     });
   };
 
-  const progress = Math.min(100, ((conversacion?.cantidad_mensajes ?? 0) / 10) * 100);
+  const puedeProponerCierre = esNegociando && Boolean(conversacion?.puede_solicitar_finalizacion);
   const cargandoDatosPuntoSeguro = locationBusy && estaciones.length === 0;
 
   return (
     <MainLayout>
       <KeyboardAvoidingView className="flex-1 bg-neutral-50" behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <View className="px-5 pt-4 pb-3 bg-neutral-50 border-b border-neutral-100">
-          <View className="flex-row items-center mb-3">
-            <TouchableOpacity className="w-11 h-11 rounded-2xl bg-white border border-neutral-100 items-center justify-center mr-3" onPress={() => router.back()} activeOpacity={0.75}>
+        <View className="px-5 pt-3 pb-2 bg-neutral-50 border-b border-neutral-100">
+          <View className="flex-row items-center mb-2">
+            <TouchableOpacity className="w-10 h-10 rounded-2xl bg-white border border-neutral-100 items-center justify-center mr-3" onPress={() => router.back()} activeOpacity={0.75}>
               <FontAwesome name="chevron-left" size={14} color="#404040" />
             </TouchableOpacity>
-            <View className="flex-1 bg-white border border-neutral-100 rounded-2xl px-4 h-14 justify-center">
+            <View className="flex-1 bg-white border border-neutral-100 rounded-2xl px-4 h-[52px] justify-center">
               <View className="flex-row items-center">
                 <Text className="text-neutral-950 text-base font-bold flex-1" numberOfLines={1}>{nombreUsuario(participante)}</Text>
                 {participanteVerificado ? <FontAwesome name="check-circle" size={16} color="#047857" /> : null}
@@ -379,40 +379,18 @@ export default function ChatDetailScreen() {
                 <Text className="text-neutral-500 text-xs font-bold ml-1">{participanteReputacion ?? '0.0'}</Text>
               </View>
             </View>
-            <TouchableOpacity className="w-11 h-11 rounded-2xl bg-white border border-neutral-100 items-center justify-center ml-3" onPress={() => setShowMenu(true)} activeOpacity={0.75}>
-              <FontAwesome name="ellipsis-v" size={18} color="#404040" />
+            <TouchableOpacity className="w-10 h-10 rounded-2xl bg-white border border-neutral-100 items-center justify-center ml-3" onPress={() => setShowMenu(true)} activeOpacity={0.75}>
+              <FontAwesome name="ellipsis-v" size={17} color="#404040" />
             </TouchableOpacity>
           </View>
-          <SectionHeader title={conversacion?.publ_titulo ?? 'Conversación'} eyebrow="Permuta" />
+          <Text className="text-neutral-950 text-[22px] font-bold leading-7" numberOfLines={2}>
+            {conversacion?.publ_titulo ?? 'Conversación'}
+          </Text>
         </View>
 
         <ScrollView ref={scrollViewRef} className="flex-1" contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
-          <View className="px-5 pt-4">
+          <View className="px-5 pt-3">
             {error ? <InfoBanner icon="exclamation-circle" title="No se pudo completar" body={error} tone="red" /> : null}
-
-            {conversacion?.conv_estado === 'NEGOCIANDO' ? (
-              <View className="bg-white border border-neutral-100 rounded-3xl p-5 mb-4">
-                <View className="flex-row justify-between">
-                  <Text className="text-neutral-950 font-bold">Progreso para finalizar</Text>
-                  <Text className="text-brand-700 font-bold">{conversacion.cantidad_mensajes}/10</Text>
-                </View>
-                <View className="h-2 bg-neutral-100 rounded-full mt-3 overflow-hidden">
-                  <View className="h-full bg-brand-600 rounded-full" style={{ width: `${progress}%` }} />
-                </View>
-                <Text className="text-neutral-500 text-xs leading-5 mt-2">
-                  {conversacion.mensajes_para_finalizar > 0
-                    ? `Faltan ${conversacion.mensajes_para_finalizar} mensajes entre ambos. La oferta también cuenta.`
-                    : conversacion.oferta
-                      ? 'Ya pueden proponer el cierre de esta permuta.'
-                      : 'Ya llegaron a 10 mensajes. Falta compartir una oferta.'}
-                </Text>
-                {conversacion.puede_solicitar_finalizacion ? (
-                  <PrimaryButton icon="check" loading={isWorking} onPress={handleSolicitar} className="mt-4">
-                    Proponer finalizar permuta
-                  </PrimaryButton>
-                ) : null}
-              </View>
-            ) : null}
 
             {isLoading ? (
               <View className="items-center py-16"><ActivityIndicator color="#047857" /></View>
@@ -440,7 +418,7 @@ export default function ChatDetailScreen() {
                         <Image source={{ uri: mensaje.oferta.imagen }} className="w-full h-36 bg-neutral-100" resizeMode="cover" />
                       ) : null}
                       <View className="p-4">
-                        <Text className="text-brand-700 text-xs font-bold uppercase">Oferta de permuta</Text>
+                        <Text className="text-brand-700 text-xs font-bold uppercase">Oferta</Text>
                         <Text className="text-neutral-950 text-base font-bold mt-1">{mensaje.oferta.nombre}</Text>
                         <Text className="text-neutral-500 text-xs mt-1">{mensaje.oferta.estado}</Text>
                         <Text className="text-neutral-800 font-bold mt-2">{formatPrice(mensaje.oferta.precio)}</Text>
@@ -466,7 +444,7 @@ export default function ChatDetailScreen() {
 
         {conversacion?.conv_estado === 'FINALIZACION_PENDIENTE' ? (
           <View className="px-5 py-4 bg-amber-50 border-t border-amber-100">
-            <Text className="text-neutral-950 font-bold">Confirmación de la permuta</Text>
+            <Text className="text-neutral-950 font-bold">Confirmación</Text>
             <Text className="text-neutral-600 text-xs leading-5 mt-1">
               {conversacion.puede_confirmar_finalizacion
                 ? 'La otra persona propuso finalizar. Confirma que realizaron el intercambio.'
@@ -474,7 +452,7 @@ export default function ChatDetailScreen() {
             </Text>
             {conversacion.puede_confirmar_finalizacion ? (
               <PrimaryButton icon="check-circle" loading={isWorking} onPress={handleConfirmar} className="mt-3">
-                Confirmar permuta realizada
+                Confirmar intercambio
               </PrimaryButton>
             ) : null}
           </View>
@@ -482,7 +460,7 @@ export default function ChatDetailScreen() {
 
         {conversacion?.conv_estado === 'FINALIZADA' ? (
           <View className="px-5 py-4 bg-brand-50 border-t border-brand-100">
-            <Text className="text-brand-900 font-bold">Permuta finalizada</Text>
+            <Text className="text-brand-900 font-bold">Intercambio finalizado</Text>
             <Text className="text-neutral-600 text-xs leading-5 mt-1">
               Ambas publicaciones fueron retiradas. Ahora pueden valorar cómo resultó el intercambio.
             </Text>
@@ -504,6 +482,37 @@ export default function ChatDetailScreen() {
           </View>
         ) : null}
 
+        {puedeProponerCierre ? (
+          <View className="px-5 pt-3 pb-2 bg-white border-t border-neutral-100">
+            <View className="bg-brand-50 border border-brand-100 rounded-2xl p-3 flex-row items-center">
+              <View className="w-9 h-9 rounded-xl bg-brand-100 items-center justify-center mr-3">
+                <FontAwesome name="check" size={14} color="#047857" />
+              </View>
+              <View className="flex-1 pr-3">
+                <Text className="text-brand-900 text-sm font-bold">Listo para cerrar</Text>
+                <Text className="text-brand-800 text-xs leading-4 mt-0.5">Ya pueden proponer el cierre cuando estén de acuerdo.</Text>
+              </View>
+              <TouchableOpacity
+                className={`h-10 px-4 rounded-2xl flex-row items-center justify-center ${isWorking ? 'bg-brand-400' : 'bg-brand-700'}`}
+                onPress={handleSolicitar}
+                disabled={isWorking}
+                accessibilityRole="button"
+                accessibilityLabel="Proponer cierre"
+                activeOpacity={0.85}
+              >
+                {isWorking ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <>
+                    <FontAwesome name="check" size={13} color="#fff" />
+                    <Text className="text-white text-sm font-bold ml-2">Cerrar</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : null}
+
         {esNegociando ? (
           <View className="px-5 pb-5 pt-3 border-t border-neutral-100">
             <View className="flex-row items-end">
@@ -511,7 +520,7 @@ export default function ChatDetailScreen() {
                 <TouchableOpacity
                   className="w-12 h-12 rounded-2xl bg-brand-700 items-center justify-center mr-2"
                   onPress={abrirOfertas}
-                  accessibilityLabel="Compartir una de mis permutas"
+                  accessibilityLabel="Compartir una publicación"
                 >
                   <FontAwesome name="plus" size={17} color="white" />
                 </TouchableOpacity>
@@ -678,9 +687,6 @@ export default function ChatDetailScreen() {
                                 <Text className={`text-sm font-bold ${selected ? 'text-brand-800' : 'text-neutral-800'}`} numberOfLines={1}>
                                   {station.nombre}
                                 </Text>
-                                {station.comuna ? (
-                                  <Text className="text-neutral-500 text-xs mt-1" numberOfLines={1}>{station.comuna}</Text>
-                                ) : null}
                               </View>
                               {station.esCombinacion ? (
                                 <Text className="text-neutral-400 text-[10px] font-bold mr-2">COMBINACIÓN</Text>
@@ -705,7 +711,7 @@ export default function ChatDetailScreen() {
                   <View className="bg-brand-50 border border-brand-100 rounded-2xl px-4 py-3 mt-1">
                     <Text className="text-brand-900 text-sm font-bold" numberOfLines={1}>Metro {sugerencia.estacionSugerida.nombre}</Text>
                     <Text className="text-brand-800 text-xs mt-1" numberOfLines={1}>
-                      {sugerencia.estacionSugerida.linea}{sugerencia.estacionSugerida.comuna ? ` · ${sugerencia.estacionSugerida.comuna}` : ''}
+                      {sugerencia.estacionSugerida.linea}
                     </Text>
                   </View>
                 ) : null}
@@ -735,7 +741,7 @@ export default function ChatDetailScreen() {
             <View className="flex-row justify-between items-center">
               <View className="flex-1 pr-4">
                 <Text className="text-neutral-950 text-xl font-bold">Valora a la otra persona</Text>
-                <Text className="text-neutral-500 text-xs leading-5 mt-1">Tu opinión quedará asociada a esta permuta finalizada.</Text>
+                <Text className="text-neutral-500 text-xs leading-5 mt-1">Tu opinión quedará asociada a este intercambio.</Text>
               </View>
               <TouchableOpacity onPress={() => setShowRatingModal(false)} accessibilityLabel="Cerrar valoración">
                 <FontAwesome name="times" size={18} color="#525252" />
@@ -757,7 +763,7 @@ export default function ChatDetailScreen() {
               className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 py-3 min-h-28 mt-5"
               value={comment}
               onChangeText={setComment}
-              placeholder="Cuenta brevemente cómo fue la permuta"
+              placeholder="Cuenta brevemente cómo fue el intercambio"
               maxLength={300}
               multiline
               textAlignVertical="top"
@@ -781,7 +787,7 @@ export default function ChatDetailScreen() {
           <View className="bg-white rounded-t-3xl px-5 pt-5 pb-8 max-h-[75%]">
             <View className="flex-row justify-between items-center mb-4">
               <View>
-                <Text className="text-neutral-950 text-xl font-bold">Compartir mi permuta</Text>
+                <Text className="text-neutral-950 text-xl font-bold">Compartir publicación</Text>
                 <Text className="text-neutral-500 text-xs mt-1">La nueva selección reemplaza la oferta activa.</Text>
               </View>
               <TouchableOpacity onPress={() => setShowOfferSelector(false)}>
@@ -790,7 +796,7 @@ export default function ChatDetailScreen() {
             </View>
             {isLoadingOffers ? <ActivityIndicator color="#047857" className="my-8" /> : null}
             {!isLoadingOffers && misPermutas.length === 0 ? (
-              <EmptyState icon="inbox" title="No tienes permutas activas" body="Publica un producto para poder ofrecerlo." />
+              <EmptyState icon="inbox" title="No tienes publicaciones activas" body="Publica un producto para poder ofrecerlo." />
             ) : null}
             <ScrollView showsVerticalScrollIndicator={false}>
               {misPermutas.map(({ producto, publicacion }) => (
