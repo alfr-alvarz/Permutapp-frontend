@@ -422,22 +422,33 @@ export default function ChatDetailScreen() {
                 );
               }
               if (mensaje.mens_tipo === 'OFERTA' && mensaje.oferta) {
+                const oferta = mensaje.oferta;
                 return (
                   <View key={mensaje.mens_id} className={`mb-3 ${own ? 'items-end' : 'items-start'}`}>
-                    <View className="w-[82%] bg-white border border-brand-100 rounded-2xl overflow-hidden">
-                      {mensaje.oferta.imagen ? (
-                        <Image source={{ uri: mensaje.oferta.imagen }} className="w-full h-32 bg-neutral-100" resizeMode="cover" />
+                    <TouchableOpacity
+                      className="w-[82%] bg-white border border-brand-100 rounded-2xl overflow-hidden"
+                      activeOpacity={0.86}
+                      onPress={() => router.push(`/product/${oferta.prod_id}` as Href)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Ver publicación ${oferta.nombre}`}
+                    >
+                      {oferta.imagen ? (
+                        <Image source={{ uri: oferta.imagen }} className="w-full h-32 bg-neutral-100" resizeMode="cover" />
                       ) : null}
                       <View className="p-3">
                         <Text className="text-brand-700 text-xs font-bold">Oferta de permuta</Text>
-                        <Text className="text-neutral-950 text-base font-bold mt-1" numberOfLines={2}>{mensaje.oferta.nombre}</Text>
-                        <Text className="text-neutral-500 text-xs mt-1">{mensaje.oferta.estado}</Text>
+                        <Text className="text-neutral-950 text-base font-bold mt-1" numberOfLines={2}>{oferta.nombre}</Text>
+                        <Text className="text-neutral-500 text-xs mt-1">{oferta.estado}</Text>
                         <View className="flex-row items-center justify-between mt-2">
-                          <Text className="text-neutral-800 font-bold">{formatPrice(mensaje.oferta.precio)}</Text>
+                          <Text className="text-neutral-800 font-bold">{formatPrice(oferta.precio)}</Text>
                           <Text className="text-neutral-400 text-[11px] font-semibold">{formatMessageDate(mensaje.mens_fech_envio)}</Text>
                         </View>
+                        <View className="flex-row items-center mt-3 pt-3 border-t border-neutral-100">
+                          <Text className="text-brand-700 text-xs font-bold flex-1">Ver publicación</Text>
+                          <FontAwesome name="chevron-right" size={11} color="#047857" />
+                        </View>
                       </View>
-                    </View>
+                    </TouchableOpacity>
                   </View>
                 );
               }
