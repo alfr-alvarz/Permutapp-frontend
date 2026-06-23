@@ -364,33 +364,44 @@ export default function ChatDetailScreen() {
   return (
     <MainLayout>
       <KeyboardAvoidingView className="flex-1 bg-neutral-50" behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <View className="px-5 pt-3 pb-2 bg-neutral-50 border-b border-neutral-100">
-          <View className="flex-row items-center mb-2">
-            <TouchableOpacity className="w-10 h-10 rounded-2xl bg-white border border-neutral-100 items-center justify-center mr-3" onPress={() => router.back()} activeOpacity={0.75}>
+        <View className="px-4 pt-3 pb-3 bg-neutral-50 border-b border-neutral-100">
+          <View className="flex-row items-center">
+            <TouchableOpacity
+              className="w-11 h-11 rounded-2xl bg-white border border-neutral-100 items-center justify-center mr-3"
+              onPress={() => router.back()}
+              activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityLabel="Volver a chats"
+            >
               <FontAwesome name="chevron-left" size={14} color="#404040" />
             </TouchableOpacity>
-            <View className="flex-1 bg-white border border-neutral-100 rounded-2xl px-4 h-[52px] justify-center">
+            <View className="flex-1 pr-3">
               <View className="flex-row items-center">
                 <Text className="text-neutral-950 text-base font-bold flex-1" numberOfLines={1}>{nombreUsuario(participante)}</Text>
                 {participanteVerificado ? <FontAwesome name="check-circle" size={16} color="#047857" /> : null}
               </View>
-              <View className="flex-row items-center mt-0.5">
+              <View className="flex-row items-center mt-1">
                 <FontAwesome name="star" size={12} color="#f59e0b" />
                 <Text className="text-neutral-500 text-xs font-bold ml-1">{participanteReputacion ?? '0.0'}</Text>
+                <Text className="text-neutral-400 text-xs mx-2">•</Text>
+                <Text className="text-neutral-500 text-xs font-bold flex-1" numberOfLines={1}>{conversacion?.publ_titulo ?? 'Conversación'}</Text>
               </View>
             </View>
-            <TouchableOpacity className="w-10 h-10 rounded-2xl bg-white border border-neutral-100 items-center justify-center ml-3" onPress={() => setShowMenu(true)} activeOpacity={0.75}>
+            <TouchableOpacity
+              className="w-11 h-11 rounded-2xl bg-white border border-neutral-100 items-center justify-center"
+              onPress={() => setShowMenu(true)}
+              activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityLabel="Acciones del chat"
+            >
               <FontAwesome name="ellipsis-v" size={17} color="#404040" />
             </TouchableOpacity>
           </View>
-          <Text className="text-neutral-950 text-[22px] font-bold leading-7" numberOfLines={2}>
-            {conversacion?.publ_titulo ?? 'Conversación'}
-          </Text>
         </View>
 
-        <ScrollView ref={scrollViewRef} className="flex-1" contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
-          <View className="px-5 pt-3">
-            {error ? <InfoBanner icon="exclamation-circle" title="No se pudo completar" body={error} tone="red" /> : null}
+        <ScrollView ref={scrollViewRef} className="flex-1" contentContainerStyle={{ paddingBottom: 20 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <View className="px-4 pt-3">
+            {error ? <View className="mb-3"><InfoBanner icon="exclamation-circle" title="No se pudo completar" body={error} tone="red" /></View> : null}
 
             {isLoading ? (
               <View className="items-center py-16"><ActivityIndicator color="#047857" /></View>
@@ -413,16 +424,18 @@ export default function ChatDetailScreen() {
               if (mensaje.mens_tipo === 'OFERTA' && mensaje.oferta) {
                 return (
                   <View key={mensaje.mens_id} className={`mb-3 ${own ? 'items-end' : 'items-start'}`}>
-                    <View className="w-[84%] bg-white border border-brand-100 rounded-3xl overflow-hidden">
+                    <View className="w-[82%] bg-white border border-brand-100 rounded-2xl overflow-hidden">
                       {mensaje.oferta.imagen ? (
-                        <Image source={{ uri: mensaje.oferta.imagen }} className="w-full h-36 bg-neutral-100" resizeMode="cover" />
+                        <Image source={{ uri: mensaje.oferta.imagen }} className="w-full h-32 bg-neutral-100" resizeMode="cover" />
                       ) : null}
-                      <View className="p-4">
-                        <Text className="text-brand-700 text-xs font-bold uppercase">Oferta</Text>
-                        <Text className="text-neutral-950 text-base font-bold mt-1">{mensaje.oferta.nombre}</Text>
+                      <View className="p-3">
+                        <Text className="text-brand-700 text-xs font-bold">Oferta de permuta</Text>
+                        <Text className="text-neutral-950 text-base font-bold mt-1" numberOfLines={2}>{mensaje.oferta.nombre}</Text>
                         <Text className="text-neutral-500 text-xs mt-1">{mensaje.oferta.estado}</Text>
-                        <Text className="text-neutral-800 font-bold mt-2">{formatPrice(mensaje.oferta.precio)}</Text>
-                        <Text className="text-neutral-400 text-[11px] mt-2">{formatMessageDate(mensaje.mens_fech_envio)}</Text>
+                        <View className="flex-row items-center justify-between mt-2">
+                          <Text className="text-neutral-800 font-bold">{formatPrice(mensaje.oferta.precio)}</Text>
+                          <Text className="text-neutral-400 text-[11px] font-semibold">{formatMessageDate(mensaje.mens_fech_envio)}</Text>
+                        </View>
                       </View>
                     </View>
                   </View>
@@ -430,8 +443,8 @@ export default function ChatDetailScreen() {
               }
               return (
                 <View key={mensaje.mens_id} className={`mb-3 ${own ? 'items-end' : 'items-start'}`}>
-                  <View className={`max-w-[84%] rounded-3xl px-4 py-3 ${own ? 'bg-brand-700' : 'bg-white border border-neutral-100'}`}>
-                    <Text className={`${own ? 'text-white' : 'text-neutral-800'} text-sm leading-5`}>{mensaje.mens_contenido}</Text>
+                  <View className={`max-w-[82%] rounded-2xl px-4 py-3 ${own ? 'bg-brand-700' : 'bg-white border border-neutral-100'}`}>
+                    <Text className={`${own ? 'text-white' : 'text-neutral-800'} text-[15px] leading-5`}>{mensaje.mens_contenido}</Text>
                     <Text className={`${own ? 'text-brand-100' : 'text-neutral-400'} text-[11px] mt-2 font-semibold`}>
                       {formatMessageDate(mensaje.mens_fech_envio)}
                     </Text>
@@ -443,47 +456,53 @@ export default function ChatDetailScreen() {
         </ScrollView>
 
         {conversacion?.conv_estado === 'FINALIZACION_PENDIENTE' ? (
-          <View className="px-5 py-4 bg-amber-50 border-t border-amber-100">
-            <Text className="text-neutral-950 font-bold">Confirmación</Text>
-            <Text className="text-neutral-600 text-xs leading-5 mt-1">
-              {conversacion.puede_confirmar_finalizacion
-                ? 'La otra persona propuso finalizar. Confirma que realizaron el intercambio.'
-                : 'Tu propuesta fue enviada. Esperando la confirmación de la otra persona.'}
-            </Text>
-            {conversacion.puede_confirmar_finalizacion ? (
-              <PrimaryButton icon="check-circle" loading={isWorking} onPress={handleConfirmar} className="mt-3">
-                Confirmar intercambio
-              </PrimaryButton>
-            ) : null}
+          <View className="px-4 py-3 bg-white border-t border-neutral-100">
+            <View className="bg-amber-50 border border-amber-100 rounded-2xl p-3">
+              <View className="flex-row items-start">
+                <View className="w-9 h-9 rounded-xl bg-amber-100 items-center justify-center mr-3">
+                  <FontAwesome name="clock-o" size={14} color="#d97706" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-amber-950 text-sm font-bold">Confirmación pendiente</Text>
+                  <Text className="text-amber-800 text-xs leading-4 mt-0.5">
+                    {conversacion.puede_confirmar_finalizacion
+                      ? 'La otra persona propuso finalizar. Confirma si el intercambio ya se realizó.'
+                      : 'Tu propuesta fue enviada. Falta la confirmación de la otra persona.'}
+                  </Text>
+                </View>
+              </View>
+              {conversacion.puede_confirmar_finalizacion ? (
+                <PrimaryButton icon="check-circle" loading={isWorking} onPress={handleConfirmar} className="mt-3 h-12">
+                  Confirmar intercambio
+                </PrimaryButton>
+              ) : null}
+            </View>
           </View>
         ) : null}
 
         {conversacion?.conv_estado === 'FINALIZADA' ? (
-          <View className="px-5 py-4 bg-brand-50 border-t border-brand-100">
-            <Text className="text-brand-900 font-bold">Intercambio finalizado</Text>
-            <Text className="text-neutral-600 text-xs leading-5 mt-1">
-              Ambas publicaciones fueron retiradas. Ahora pueden valorar cómo resultó el intercambio.
-            </Text>
-            {conversacion.puede_valorar ? (
-              <PrimaryButton icon="star" onPress={() => setShowRatingModal(true)} className="mt-3">
-                Valorar a la otra persona
-              </PrimaryButton>
-            ) : null}
-            {conversacion.usuario_ya_valoro ? (
-              <PrimaryButton
-                icon="trash"
-                loading={isWorking}
-                onPress={() => setShowDeleteConfirmation(true)}
-                className="mt-3 bg-red-600"
-              >
-                Eliminar chat
-              </PrimaryButton>
-            ) : null}
+          <View className="px-4 py-3 bg-white border-t border-neutral-100">
+            <View className="bg-brand-50 border border-brand-100 rounded-2xl p-3">
+              <View className="flex-row items-start">
+                <View className="w-9 h-9 rounded-xl bg-brand-100 items-center justify-center mr-3">
+                  <FontAwesome name="check" size={14} color="#047857" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-brand-900 text-sm font-bold">Intercambio finalizado</Text>
+                  <Text className="text-brand-800 text-xs leading-4 mt-0.5">Ambas publicaciones fueron retiradas.</Text>
+                </View>
+              </View>
+              {conversacion.puede_valorar ? (
+                <PrimaryButton icon="star" onPress={() => setShowRatingModal(true)} className="mt-3 h-12">
+                  Valorar a la otra persona
+                </PrimaryButton>
+              ) : null}
+            </View>
           </View>
         ) : null}
 
         {puedeProponerCierre ? (
-          <View className="px-5 pt-3 pb-2 bg-white border-t border-neutral-100">
+          <View className="px-4 pt-3 pb-2 bg-white border-t border-neutral-100">
             <View className="bg-brand-50 border border-brand-100 rounded-2xl p-3 flex-row items-center">
               <View className="w-9 h-9 rounded-xl bg-brand-100 items-center justify-center mr-3">
                 <FontAwesome name="check" size={14} color="#047857" />
@@ -505,7 +524,7 @@ export default function ChatDetailScreen() {
                 ) : (
                   <>
                     <FontAwesome name="check" size={13} color="#fff" />
-                    <Text className="text-white text-sm font-bold ml-2">Cerrar</Text>
+                    <Text className="text-white text-sm font-bold ml-2">Proponer</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -514,22 +533,26 @@ export default function ChatDetailScreen() {
         ) : null}
 
         {esNegociando ? (
-          <View className="px-5 pb-5 pt-3 border-t border-neutral-100">
+          <View className="px-4 pb-5 pt-3 bg-white border-t border-neutral-100">
             <View className="flex-row items-end">
               {conversacion?.puede_ofertar ? (
                 <TouchableOpacity
-                  className="w-12 h-12 rounded-2xl bg-brand-700 items-center justify-center mr-2"
+                  className="h-12 px-3 rounded-2xl bg-brand-50 border border-brand-100 items-center justify-center mr-2"
                   onPress={abrirOfertas}
+                  accessibilityRole="button"
                   accessibilityLabel="Compartir una publicación"
+                  activeOpacity={0.8}
                 >
-                  <FontAwesome name="plus" size={17} color="white" />
+                  <FontAwesome name="cube" size={14} color="#047857" />
+                  <Text className="text-brand-700 text-[11px] font-bold mt-0.5">Oferta</Text>
                 </TouchableOpacity>
               ) : null}
               <TextInput
-                className="flex-1 bg-white border border-neutral-200 rounded-3xl px-4 py-3 min-h-12 max-h-28"
+                className="flex-1 bg-neutral-50 border border-neutral-200 rounded-2xl px-4 py-3 min-h-12 max-h-28 text-neutral-900 text-[15px]"
                 value={contenido}
                 onChangeText={setContenido}
-                placeholder="Escribe un mensaje"
+                placeholder="Mensaje sobre la permuta"
+                placeholderTextColor="#a3a3a3"
                 multiline
                 editable={!isWorking}
               />
@@ -540,7 +563,7 @@ export default function ChatDetailScreen() {
                 loading={isWorking}
                 disabled={!contenido.trim()}
                 onPress={handleEnviar}
-                className="w-14 ml-2 px-0"
+                className="w-12 h-12 ml-2 px-0 rounded-2xl"
               />
             </View>
           </View>
@@ -825,26 +848,52 @@ export default function ChatDetailScreen() {
         </View>
       </Modal>
 
-      <Modal visible={showMenu} transparent animationType="fade" onRequestClose={() => setShowMenu(false)}>
-        <View className="flex-1 items-center">
-          <Pressable style={StyleSheet.absoluteFillObject} className="bg-black/20" onPress={() => setShowMenu(false)} />
-          <View pointerEvents="box-none" className="w-full max-w-[480px] flex-1">
-            <View className="absolute top-20 right-5 w-72 bg-white rounded-3xl p-2">
-              {esInteresado && esNegociando ? (
-                <TouchableOpacity className="flex-row items-center px-4 py-4" onPress={abrirPuntoSeguro}>
-                  <FontAwesome name="map-marker" size={17} color="#047857" />
-                  <Text className="text-neutral-900 font-bold ml-3">Proponer punto seguro</Text>
-                </TouchableOpacity>
-              ) : null}
-              <TouchableOpacity className="flex-row items-center px-4 py-4" onPress={() => { setShowMenu(false); cargarChat(); }}>
-                <FontAwesome name="refresh" size={15} color="#525252" />
-                <Text className="text-neutral-900 font-bold ml-3">Actualizar chat</Text>
-              </TouchableOpacity>
-              <TouchableOpacity className="flex-row items-center px-4 py-4" onPress={() => { setShowMenu(false); setShowDeleteConfirmation(true); }}>
-                <FontAwesome name="trash" size={15} color="#dc2626" />
-                <Text className="text-red-600 font-bold ml-3">Eliminar chat</Text>
+      <Modal visible={showMenu} transparent animationType="slide" onRequestClose={() => setShowMenu(false)}>
+        <View className="flex-1 justify-end">
+          <Pressable style={StyleSheet.absoluteFillObject} className="bg-black/25" onPress={() => setShowMenu(false)} />
+          <View className="w-full max-w-md self-center bg-white rounded-t-3xl px-5 pt-4 pb-8">
+            <View className="w-12 h-1.5 rounded-full bg-neutral-200 self-center mb-5" />
+            <View className="flex-row items-center justify-between mb-2">
+              <View className="flex-1 pr-4">
+                <Text className="text-neutral-950 text-xl font-bold">Acciones del chat</Text>
+                <Text className="text-neutral-500 text-xs mt-1" numberOfLines={1}>{conversacion?.publ_titulo ?? 'Permuta'}</Text>
+              </View>
+              <TouchableOpacity className="w-10 h-10 rounded-2xl bg-neutral-100 items-center justify-center" onPress={() => setShowMenu(false)} accessibilityRole="button" accessibilityLabel="Cerrar acciones del chat">
+                <FontAwesome name="times" size={16} color="#525252" />
               </TouchableOpacity>
             </View>
+
+            {esInteresado && esNegociando ? (
+              <TouchableOpacity className="flex-row items-center py-4 border-b border-neutral-100" onPress={abrirPuntoSeguro} activeOpacity={0.8} accessibilityRole="button">
+                <View className="w-10 h-10 rounded-2xl bg-brand-50 border border-brand-100 items-center justify-center mr-3">
+                  <FontAwesome name="map-marker" size={17} color="#047857" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-neutral-950 font-bold">Proponer punto seguro</Text>
+                  <Text className="text-neutral-500 text-xs mt-0.5">Sugiere una estación intermedia.</Text>
+                </View>
+              </TouchableOpacity>
+            ) : null}
+
+            <TouchableOpacity className="flex-row items-center py-4 border-b border-neutral-100" onPress={() => { setShowMenu(false); cargarChat(); }} activeOpacity={0.8} accessibilityRole="button">
+              <View className="w-10 h-10 rounded-2xl bg-neutral-100 items-center justify-center mr-3">
+                <FontAwesome name="refresh" size={15} color="#525252" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-neutral-950 font-bold">Actualizar chat</Text>
+                <Text className="text-neutral-500 text-xs mt-0.5">Trae los mensajes más recientes.</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity className="flex-row items-center py-4" onPress={() => { setShowMenu(false); setShowDeleteConfirmation(true); }} activeOpacity={0.8} accessibilityRole="button">
+              <View className="w-10 h-10 rounded-2xl bg-red-50 border border-red-100 items-center justify-center mr-3">
+                <FontAwesome name="trash" size={15} color="#dc2626" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-red-600 font-bold">Eliminar chat</Text>
+                <Text className="text-neutral-500 text-xs mt-0.5">Lo ocultará solo de tu lista.</Text>
+              </View>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
