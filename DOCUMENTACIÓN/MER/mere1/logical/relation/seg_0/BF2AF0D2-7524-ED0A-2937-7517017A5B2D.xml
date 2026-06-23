@@ -1,0 +1,21 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Relation class="oracle.dbtools.crest.model.design.logical.Relation" name="CONTENER" directorySegmentName="seg_0" id="BF2AF0D2-7524-ED0A-2937-7517017A5B2D">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-15 13:04:51 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<sourcePk>A24FD635-BE11-51A5-FAF7-4163A3D4BCF2</sourcePk>
+<identifying>false</identifying>
+<nameOnSource>contiene</nameOnSource>
+<nameOnTarget>esta contenido</nameOnTarget>
+<optionalSource>false</optionalSource>
+<optionalTarget>false</optionalTarget>
+<sourceCardinality>1</sourceCardinality>
+<sourceEntity>C4F46AC3-FD19-7B93-9DD7-D49CA89171A0</sourceEntity>
+<targetCardinalityString>*</targetCardinalityString>
+<targetEntity>5C706AAB-BDFA-997F-F835-C118A133FEF3</targetEntity>
+<transferable>true</transferable>
+<deleteRule>NO ACTION</deleteRule>
+</Relation>

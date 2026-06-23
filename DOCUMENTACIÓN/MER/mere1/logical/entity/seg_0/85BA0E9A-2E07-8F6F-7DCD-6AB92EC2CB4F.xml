@@ -1,0 +1,149 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Entity class="oracle.dbtools.crest.model.design.logical.Entity" directorySegmentName="seg_0" id="85BA0E9A-2E07-8F6F-7DCD-6AB92EC2CB4F" name="FOTOS_PRODUCTOS">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-15 13:20:37 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<adequatelyNormalized>NO</adequatelyNormalized>
+<expectedVolumes>0</expectedVolumes>
+<fwdEngineeringStrategyName>Single Table</fwdEngineeringStrategyName>
+<growthPercent>0</growthPercent>
+<growthType>Year</growthType>
+<maxVolumes>9999999</maxVolumes>
+<minVolumes>0</minVolumes>
+<normalForm>Third</normalForm>
+<attributes itemClass="oracle.dbtools.crest.model.design.logical.Attribute">
+<Attribute name="prod_id" id="428C1291-BE6B-9D1C-9244-4E0EE90CB553">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-15 13:20:37 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<dataTypePrecision>10</dataTypePrecision>
+<ownDataTypeParameters>,10,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="prod_foto_1" id="464B9E7F-9142-2100-6787-2DE3ACA84B9E">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-15 13:21:57 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT029</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="prod_foto_2" id="28653FEF-3AEF-6CA7-BE1B-D39A2E818D34">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-15 13:21:59 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT029</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="prod_foto_3" id="DB64AB3B-8506-6AC4-AED5-31FD1AA205F3">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-15 13:22:00 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT029</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="prod_foto_4" id="05221F79-1AC6-CDB6-B11C-82BC021F3616">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-15 13:22:00 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT029</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="prod_foto_5" id="BA18A64B-B06F-50F5-BB10-9012FB5BA63A">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-15 13:22:00 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT029</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="prod_foto_6" id="8B06AE8E-358E-3137-1D53-BCBFAF5E4487">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-15 13:22:00 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT029</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="prod_foto_7" id="A9D2ED64-7AB0-D5DE-8733-DB4458F77941">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-15 13:22:01 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT029</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="prod_foto_8" id="81AE8FDA-424D-98B2-88DD-81CE194C349C">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-15 13:22:01 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT029</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+</attributes>
+<identifiers itemClass="oracle.dbtools.crest.model.design.logical.CandidateKey">
+<identifier id="1FEA5370-3AFE-61FE-2BF3-F2DCF5D00D57" name="FOTOS_USUARIOS PK">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-15 13:20:37 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<pk>true</pk>
+<usedAttributes>
+<attributeRef>428C1291-BE6B-9D1C-9244-4E0EE90CB553</attributeRef>
+</usedAttributes>
+</identifier>
+</identifiers>
+</Entity>

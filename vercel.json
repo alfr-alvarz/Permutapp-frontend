@@ -1,0 +1,5 @@
+{
+  "installCommand": "cd \"PRODUCTO/Codigo fuente\" && npm ci",
+  "buildCommand": "cd \"PRODUCTO/Codigo fuente\" && npm run build",
+  "outputDirectory": "PRODUCTO/Codigo fuente/dist"
+}

@@ -1,0 +1,109 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Entity class="oracle.dbtools.crest.model.design.logical.Entity" directorySegmentName="seg_0" id="0CA4CC4F-9634-1C88-6811-C50DC3CF997D" name="Estacion_Metro">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-10 16:20:08 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<adequatelyNormalized>NO</adequatelyNormalized>
+<expectedVolumes>0</expectedVolumes>
+<fwdEngineeringStrategyName>Single Table</fwdEngineeringStrategyName>
+<growthPercent>0</growthPercent>
+<growthType>Year</growthType>
+<maxVolumes>9999999</maxVolumes>
+<minVolumes>0</minVolumes>
+<normalForm>Third</normalForm>
+<attributes itemClass="oracle.dbtools.crest.model.design.logical.Attribute">
+<Attribute name="est_id" id="92FD7A2C-20A7-F6C9-BDD5-DC4686B7381B">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-10 16:20:18 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="est_nombre" id="BD2B4F17-7637-F85A-EF93-FD068C7416E6">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-10 16:20:36 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>100</dataTypeSize>
+<ownDataTypeParameters>100,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="est_linea" id="CE496374-CADC-21CE-DDD5-60D7FA9F063A">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-10 16:21:04 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="est_orden" id="FBFC54B4-F8C2-4E66-D477-1D998BCF2C17">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-10 16:21:21 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="est_es_combinacion" id="CCAA85B3-1665-908A-CD66-AAF7F696299B">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-10 16:37:50 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT006</logicalDatatype>
+<dataTypeSize>1</dataTypeSize>
+<ownDataTypeParameters>1,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="sug_id_punto_encuentro" id="949FF4E5-C15A-FD4F-3B6D-7A38BEC23D1F">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-15 13:15:01 UTC</createdTime>
+<generatorID>A081533A-F69A-5F52-E90D-59AE6DB37198</generatorID>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<referedAttribute>DFF75AB4-1647-F0C3-AC6A-B8A28E9C5953</referedAttribute>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+</attributes>
+<identifiers itemClass="oracle.dbtools.crest.model.design.logical.CandidateKey">
+<identifier id="A9F3DA33-D952-8D47-53E1-4B0F5BCAA0B7" name="Estacion_Metro PK">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-10 16:20:35 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<pk>true</pk>
+<usedAttributes>
+<attributeRef>92FD7A2C-20A7-F6C9-BDD5-DC4686B7381B</attributeRef>
+</usedAttributes>
+</identifier>
+</identifiers>
+</Entity>

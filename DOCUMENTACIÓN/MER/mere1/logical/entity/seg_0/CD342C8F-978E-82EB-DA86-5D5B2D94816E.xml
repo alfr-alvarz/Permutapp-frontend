@@ -1,0 +1,81 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Entity class="oracle.dbtools.crest.model.design.logical.Entity" directorySegmentName="seg_0" id="CD342C8F-978E-82EB-DA86-5D5B2D94816E" name="Favoritos">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-10 15:54:25 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<adequatelyNormalized>NO</adequatelyNormalized>
+<expectedVolumes>0</expectedVolumes>
+<fwdEngineeringStrategyName>Single Table</fwdEngineeringStrategyName>
+<growthPercent>0</growthPercent>
+<growthType>Year</growthType>
+<maxVolumes>9999999</maxVolumes>
+<minVolumes>0</minVolumes>
+<normalForm>Third</normalForm>
+<attributes itemClass="oracle.dbtools.crest.model.design.logical.Attribute">
+<Attribute name="fav_id" id="7D974927-6504-F6BE-ABEB-2ABE556F9B02">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-10 16:05:42 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="fav_id_usu" id="312EA68A-635A-AF9F-1AE8-20495F25A727">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-10 16:05:53 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="fav_id_publ" id="21BEE032-18A4-9C61-8BDD-5D8BD9F772A9">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-10 16:07:25 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="publ_fech_agregado" id="D8207702-E70D-DECA-053D-03B06FCCD3C1">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-10 16:07:47 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT007</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+</attributes>
+<identifiers itemClass="oracle.dbtools.crest.model.design.logical.CandidateKey">
+<identifier id="11AE4C5C-9358-5B3C-647E-3C3E882E88E0" name="Favoritos PK">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-10 16:05:51 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<pk>true</pk>
+<usedAttributes>
+<attributeRef>7D974927-6504-F6BE-ABEB-2ABE556F9B02</attributeRef>
+</usedAttributes>
+</identifier>
+</identifiers>
+</Entity>

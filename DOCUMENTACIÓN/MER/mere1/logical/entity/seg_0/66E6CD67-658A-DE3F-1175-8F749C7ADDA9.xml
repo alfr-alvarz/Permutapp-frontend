@@ -1,0 +1,98 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Entity class="oracle.dbtools.crest.model.design.logical.Entity" directorySegmentName="seg_0" id="66E6CD67-658A-DE3F-1175-8F749C7ADDA9" name="PUNTO_ENCUENTRO">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-10 15:52:51 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<adequatelyNormalized>NO</adequatelyNormalized>
+<expectedVolumes>0</expectedVolumes>
+<fwdEngineeringStrategyName>Single Table</fwdEngineeringStrategyName>
+<growthPercent>0</growthPercent>
+<growthType>Year</growthType>
+<maxVolumes>9999999</maxVolumes>
+<minVolumes>0</minVolumes>
+<normalForm>Third</normalForm>
+<attributes itemClass="oracle.dbtools.crest.model.design.logical.Attribute">
+<Attribute name="sug_id_punto_encuentro" id="DFF75AB4-1647-F0C3-AC6A-B8A28E9C5953">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-10 16:33:31 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="publ_id" id="C6C88E8A-5076-4E84-B14C-3C0CEA34022E">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-15 13:10:40 UTC</createdTime>
+<generatorID>E8ED2C97-D0FC-0CC6-CED6-E219CE06B3D5</generatorID>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<referedAttribute>4496B054-D810-5F12-148F-F1AB385B398D</referedAttribute>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="pun_enc_latitud" id="AC0AEDF5-0DA8-331D-1075-8DC1FB0E6795">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-15 13:11:22 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>50</dataTypeSize>
+<ownDataTypeParameters>50,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="pun_enc_longitud" id="7D6D1308-DFDF-26B3-7690-70684D105843">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-15 13:11:46 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>50</dataTypeSize>
+<ownDataTypeParameters>50,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="pun_enc_referencias" id="6BD56D2F-48BF-FDBF-D38C-CD4A2E214C7D">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-15 13:11:56 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>150</dataTypeSize>
+<ownDataTypeParameters>150,,</ownDataTypeParameters>
+</Attribute>
+</attributes>
+<identifiers itemClass="oracle.dbtools.crest.model.design.logical.CandidateKey">
+<identifier id="9E882D16-7A14-31BD-24D4-FADC8595BA8B" name="Encuentro_Sugerencia PK">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-10 16:33:49 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<pk>true</pk>
+<usedAttributes>
+<attributeRef>DFF75AB4-1647-F0C3-AC6A-B8A28E9C5953</attributeRef>
+</usedAttributes>
+</identifier>
+</identifiers>
+</Entity>

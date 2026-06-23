@@ -1,0 +1,19 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Relation class="oracle.dbtools.crest.model.design.logical.Relation" name="Relation_13" directorySegmentName="seg_0" id="0116652D-D580-1080-6DEF-317209173C4B">
+<createdBy>sebit</createdBy>
+<createdTime>2026-04-15 00:55:12 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<sourcePk>52512055-65F3-F776-F7EE-37B418F0F0C8</sourcePk>
+<identifying>false</identifying>
+<optionalSource>false</optionalSource>
+<optionalTarget>false</optionalTarget>
+<sourceCardinality>1</sourceCardinality>
+<sourceEntity>BADEC3AF-95B9-2346-5190-E8FA403B5866</sourceEntity>
+<targetCardinalityString>*</targetCardinalityString>
+<targetEntity>66E6CD67-658A-DE3F-1175-8F749C7ADDA9</targetEntity>
+<transferable>true</transferable>
+<deleteRule>NO ACTION</deleteRule>
+</Relation>

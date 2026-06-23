@@ -1,0 +1,8 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<OSDM_Design class="oracle.dbtools.crest.model.design.Design" name="mereIncompleto1" id="9887CD20-B5A1-51BF-C4AA-6F5D96AA063A" version="3.5">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-10 15:47:04 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<capitalNames>false</capitalNames>
+<designId>9887CD20-B5A1-51BF-C4AA-6F5D96AA063A</designId>
+</OSDM_Design>

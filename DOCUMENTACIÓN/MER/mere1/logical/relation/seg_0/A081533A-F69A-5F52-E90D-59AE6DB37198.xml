@@ -1,0 +1,21 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Relation class="oracle.dbtools.crest.model.design.logical.Relation" name="MENCIONAR" directorySegmentName="seg_0" id="A081533A-F69A-5F52-E90D-59AE6DB37198">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-15 13:15:01 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<sourcePk>9E882D16-7A14-31BD-24D4-FADC8595BA8B</sourcePk>
+<identifying>false</identifying>
+<nameOnSource>menciona</nameOnSource>
+<nameOnTarget>menciona</nameOnTarget>
+<optionalSource>true</optionalSource>
+<optionalTarget>false</optionalTarget>
+<sourceCardinality>1</sourceCardinality>
+<sourceEntity>66E6CD67-658A-DE3F-1175-8F749C7ADDA9</sourceEntity>
+<targetCardinalityString>*</targetCardinalityString>
+<targetEntity>0CA4CC4F-9634-1C88-6811-C50DC3CF997D</targetEntity>
+<transferable>true</transferable>
+<deleteRule>NO ACTION</deleteRule>
+</Relation>

@@ -1,0 +1,21 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Relation class="oracle.dbtools.crest.model.design.logical.Relation" name="TENER" directorySegmentName="seg_0" id="8D16ED49-F5C7-CAB6-DD31-ABC9CFC0E844">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-15 13:04:34 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<sourcePk>D4AC64C8-D61D-3728-5EA0-EC1BB800E86F</sourcePk>
+<identifying>false</identifying>
+<nameOnSource>tiene</nameOnSource>
+<nameOnTarget>tiene</nameOnTarget>
+<optionalSource>false</optionalSource>
+<optionalTarget>false</optionalTarget>
+<sourceCardinality>1</sourceCardinality>
+<sourceEntity>2013393C-20DA-F5E4-9B70-1A4858E034BB</sourceEntity>
+<targetCardinalityString>*</targetCardinalityString>
+<targetEntity>C4F46AC3-FD19-7B93-9DD7-D49CA89171A0</targetEntity>
+<transferable>true</transferable>
+<deleteRule>NO ACTION</deleteRule>
+</Relation>

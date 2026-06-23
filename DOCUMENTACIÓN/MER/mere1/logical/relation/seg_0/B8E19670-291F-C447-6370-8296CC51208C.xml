@@ -1,0 +1,21 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Relation class="oracle.dbtools.crest.model.design.logical.Relation" name="VIVIR" directorySegmentName="seg_0" id="B8E19670-291F-C447-6370-8296CC51208C">
+<createdBy>Cetecom</createdBy>
+<createdTime>2026-04-15 13:09:53 UTC</createdTime>
+<ownerDesignName>mereIncompleto1</ownerDesignName>
+<engineerTo>
+<item key="8D7C4E91-EF43-838E-8454-FF442D43F1E0" value="true"/>
+</engineerTo>
+<sourcePk>1446D97F-311B-C5F5-DA0B-E060DC2FA778</sourcePk>
+<identifying>false</identifying>
+<nameOnSource>vive</nameOnSource>
+<nameOnTarget>viven</nameOnTarget>
+<optionalSource>false</optionalSource>
+<optionalTarget>true</optionalTarget>
+<sourceCardinality>1</sourceCardinality>
+<sourceEntity>350141FD-582D-385D-1079-2A9C23CBDD24</sourceEntity>
+<targetCardinalityString>*</targetCardinalityString>
+<targetEntity>D1E6BE5E-A53F-C5F2-8334-5B9327C2AB84</targetEntity>
+<transferable>true</transferable>
+<deleteRule>NO ACTION</deleteRule>
+</Relation>
