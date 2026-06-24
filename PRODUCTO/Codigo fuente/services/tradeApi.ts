@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 
-import { ApiError } from './api';
+import { ApiError, notifyUnauthorizedSession } from './api';
 
 function resolveLocalUrl(url: string): string {
   if (Platform.OS === 'web') return url.replace('http://127.0.0.1:', 'http://localhost:');
@@ -112,6 +112,7 @@ async function request<T>(
     } catch {
       // Keep the plain server response.
     }
+    notifyUnauthorizedSession(response.status, Boolean(token));
     throw new ApiError(message, response.status);
   }
   if (response.status === 204) return undefined as T;

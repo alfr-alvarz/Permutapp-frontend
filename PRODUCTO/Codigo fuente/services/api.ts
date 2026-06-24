@@ -86,6 +86,27 @@ export class ApiError extends Error {
   }
 }
 
+type UnauthorizedSessionHandler = () => void | Promise<void>;
+
+let unauthorizedSessionHandler: UnauthorizedSessionHandler | null = null;
+
+export function setUnauthorizedSessionHandler(handler: UnauthorizedSessionHandler | null): () => void {
+  unauthorizedSessionHandler = handler;
+  return () => {
+    if (unauthorizedSessionHandler === handler) {
+      unauthorizedSessionHandler = null;
+    }
+  };
+}
+
+export function notifyUnauthorizedSession(status: number, hasToken: boolean): void {
+  if (!hasToken || (status !== 401 && status !== 403)) {
+    return;
+  }
+
+  void unauthorizedSessionHandler?.();
+}
+
 type ApiErrorPayload = {
   message?: string;
   error?: string;
@@ -258,6 +279,7 @@ async function multipartRequest<TResponse>(
 
   if (!response.ok) {
     const message = await readApiErrorMessage(response, 'No fue posible completar la solicitud.');
+    notifyUnauthorizedSession(response.status, Boolean(token));
     throw new ApiError(message, response.status);
   }
 
@@ -302,6 +324,7 @@ async function request<TResponse, TBody = undefined>(
 
   if (!response.ok) {
     const message = await readApiErrorMessage(response, 'No fue posible completar la solicitud.');
+    notifyUnauthorizedSession(response.status, Boolean(options.token));
     throw new ApiError(message, response.status);
   }
 
