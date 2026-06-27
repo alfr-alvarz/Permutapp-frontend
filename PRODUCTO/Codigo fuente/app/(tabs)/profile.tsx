@@ -6,6 +6,14 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { BrandMark, InfoBanner, PrimaryButton, SectionHeader } from '@/components/ui';
 import { NotificationBell } from '@/components/NotificationBell';
 import {
+  LOCATION_REFERENCE_MAX_LENGTH,
+  PRODUCT_DESCRIPTION_MAX_LENGTH,
+  PRODUCT_NAME_MAX_LENGTH,
+  PUBLICATION_TITLE_MAX_LENGTH,
+  REFERENCE_PRICE_MAX_LENGTH,
+  REFERENCE_PRICE_MAX_VALUE,
+} from '@/constants/input-limits';
+import {
   ApiError,
   EstacionMetro,
   Producto,
@@ -155,12 +163,37 @@ export default function ProfileScreen() {
 
     const precioNumerico = Number(editForm.precio.replace(/\D/g, ''));
     if (!editForm.titulo.trim() || !editForm.descripcion.trim() || !editForm.nombre.trim()) {
-      setPermutasError('Completa titulo, descripcion y nombre antes de guardar.');
+      setPermutasError('Completa título, descripción y nombre antes de guardar.');
+      return;
+    }
+
+    if (editForm.titulo.trim().length > PUBLICATION_TITLE_MAX_LENGTH) {
+      setPermutasError(`El título puede tener hasta ${PUBLICATION_TITLE_MAX_LENGTH} caracteres.`);
+      return;
+    }
+
+    if (editForm.descripcion.trim().length > PRODUCT_DESCRIPTION_MAX_LENGTH) {
+      setPermutasError(`La descripción puede tener hasta ${PRODUCT_DESCRIPTION_MAX_LENGTH} caracteres.`);
+      return;
+    }
+
+    if (editForm.nombre.trim().length > PRODUCT_NAME_MAX_LENGTH) {
+      setPermutasError(`El nombre puede tener hasta ${PRODUCT_NAME_MAX_LENGTH} caracteres.`);
+      return;
+    }
+
+    if (editForm.ubicacionReferencia.trim().length > LOCATION_REFERENCE_MAX_LENGTH) {
+      setPermutasError(`La referencia puede tener hasta ${LOCATION_REFERENCE_MAX_LENGTH} caracteres.`);
       return;
     }
 
     if (!Number.isInteger(precioNumerico) || precioNumerico < 0) {
-      setPermutasError('Ingresa un valor referencial valido.');
+      setPermutasError('Ingresa un valor referencial válido.');
+      return;
+    }
+
+    if (precioNumerico > REFERENCE_PRICE_MAX_VALUE) {
+      setPermutasError('El valor referencial máximo es $5.000.000.');
       return;
     }
 
@@ -331,9 +364,9 @@ export default function ProfileScreen() {
               <View key={permuta.producto.prod_id} className="bg-white border border-neutral-100 rounded-2xl p-4 mb-3">
                 {isEditing ? (
                   <View className="gap-3">
-                    <TextInput className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 h-12 text-neutral-900" placeholder="Título" value={editForm.titulo} onChangeText={(titulo) => setEditForm((prev) => prev ? { ...prev, titulo } : prev)} />
-                    <TextInput className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 min-h-24 text-neutral-900" placeholder="Descripción" value={editForm.descripcion} onChangeText={(descripcion) => setEditForm((prev) => prev ? { ...prev, descripcion } : prev)} multiline textAlignVertical="top" />
-                    <TextInput className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 h-12 text-neutral-900" placeholder="Producto" value={editForm.nombre} onChangeText={(nombre) => setEditForm((prev) => prev ? { ...prev, nombre } : prev)} />
+                    <TextInput className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 h-12 text-neutral-900" placeholder="Título" value={editForm.titulo} onChangeText={(titulo) => setEditForm((prev) => prev ? { ...prev, titulo } : prev)} maxLength={PUBLICATION_TITLE_MAX_LENGTH} />
+                    <TextInput className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 min-h-24 text-neutral-900" placeholder="Descripción" value={editForm.descripcion} onChangeText={(descripcion) => setEditForm((prev) => prev ? { ...prev, descripcion } : prev)} maxLength={PRODUCT_DESCRIPTION_MAX_LENGTH} multiline textAlignVertical="top" />
+                    <TextInput className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 h-12 text-neutral-900" placeholder="Producto" value={editForm.nombre} onChangeText={(nombre) => setEditForm((prev) => prev ? { ...prev, nombre } : prev)} maxLength={PRODUCT_NAME_MAX_LENGTH} />
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 8 }}>
                       {ESTADOS_PRODUCTO.map((estado) => {
                         const selected = editForm.estado === estado;
@@ -344,12 +377,12 @@ export default function ProfileScreen() {
                         );
                       })}
                     </ScrollView>
-                    <TextInput className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 h-12 text-neutral-900" placeholder="Valor referencial" value={editForm.precio} onChangeText={(precio) => setEditForm((prev) => prev ? { ...prev, precio: precio.replace(/\D/g, '') } : prev)} keyboardType="number-pad" inputMode="numeric" />
+                    <TextInput className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 h-12 text-neutral-900" placeholder="Valor referencial" value={editForm.precio} onChangeText={(precio) => setEditForm((prev) => prev ? { ...prev, precio: precio.replace(/\D/g, '') } : prev)} keyboardType="number-pad" inputMode="numeric" maxLength={REFERENCE_PRICE_MAX_LENGTH} />
                     <TextInput className="bg-neutral-100 border border-neutral-200 rounded-2xl px-4 h-12 text-neutral-500" placeholder="Comuna" value={editForm.ubicacionComuna} editable={false} />
                     <TextInput className="bg-brand-50 border border-brand-100 rounded-2xl px-4 h-12 text-brand-800 font-bold" placeholder="Metro no registrado" value={estacionMetro ? `Metro ${estacionMetro.nombre} · ${estacionMetro.linea}` : ''} editable={false} />
                     {!estacionMetro ? <Text className="text-amber-700 text-xs leading-5">Este producto no tiene coordenadas de Metro registradas.</Text> : null}
                     <Text className="text-neutral-500 text-sm leading-5">La comuna proviene de ServicioLocalizacion y no se edita como texto libre.</Text>
-                    <TextInput className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 h-12 text-neutral-900" placeholder="Referencia" value={editForm.ubicacionReferencia} onChangeText={(ubicacionReferencia) => setEditForm((prev) => prev ? { ...prev, ubicacionReferencia } : prev)} />
+                    <TextInput className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 h-12 text-neutral-900" placeholder="Referencia" value={editForm.ubicacionReferencia} onChangeText={(ubicacionReferencia) => setEditForm((prev) => prev ? { ...prev, ubicacionReferencia } : prev)} maxLength={LOCATION_REFERENCE_MAX_LENGTH} />
                     <View className="flex-row gap-2">
                       <TouchableOpacity className="flex-1 h-12 rounded-2xl bg-brand-700 items-center justify-center" onPress={() => saveEdit(permuta)} disabled={isSavingEdit} activeOpacity={0.75}>
                         {isSavingEdit ? <ActivityIndicator color="#fff" /> : <Text className="text-white font-bold">Guardar</Text>}

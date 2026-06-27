@@ -5,6 +5,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import { EmptyState, FeedEnd, InfoBanner, ProductCard, SectionHeader } from '@/components/ui';
 import { ProductCategory, ProductCategoryId, findCategoryByValue, normalizeCategoryText, toProductCategory } from '@/constants/categories';
+import { CATALOG_SEARCH_MAX_LENGTH } from '@/constants/input-limits';
 import { Producto, obtenerCategoriasProducto } from '../../services/api';
 import { obtenerProductosActivos } from '../../services/catalog';
 
@@ -76,7 +77,7 @@ export default function CatalogScreen() {
 
     if (categorias.length > 0) {
       setCategoriaActiva(null);
-      setBusqueda(params.categoria);
+      setBusqueda(params.categoria.slice(0, CATALOG_SEARCH_MAX_LENGTH));
     }
   }, [params.categoria, categorias]);
 
@@ -129,7 +130,7 @@ export default function CatalogScreen() {
       <View className="px-5 mt-5">
         <View className="flex-row items-center bg-white border border-neutral-100 rounded-2xl px-4 h-16">
           <FontAwesome name="search" size={17} color="#737373" />
-          <TextInput className="flex-1 text-neutral-900 text-base ml-3" placeholder="Buscar producto o comuna" placeholderTextColor="#a3a3a3" value={busqueda} onChangeText={setBusqueda} />
+          <TextInput className="flex-1 text-neutral-900 text-base ml-3" placeholder="Buscar producto o comuna" placeholderTextColor="#a3a3a3" value={busqueda} onChangeText={setBusqueda} maxLength={CATALOG_SEARCH_MAX_LENGTH} />
           {busqueda.length > 0 ? (
             <TouchableOpacity className="w-9 h-9 rounded-full items-center justify-center" onPress={() => setBusqueda('')} activeOpacity={0.7}>
               <FontAwesome name="times-circle" size={18} color="#a3a3a3" />

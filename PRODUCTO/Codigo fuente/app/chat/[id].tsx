@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 
 import { EmptyState, InfoBanner, PrimaryButton } from '@/components/ui';
+import { CHAT_MESSAGE_MAX_LENGTH, METRO_SEARCH_MAX_LENGTH } from '@/constants/input-limits';
 import MainLayout from '../../layouts/MainLayout';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -565,6 +566,7 @@ export default function ChatDetailScreen() {
                 placeholder="Mensaje sobre la permuta"
                 placeholderTextColor="#a3a3a3"
                 multiline
+                maxLength={CHAT_MESSAGE_MAX_LENGTH}
                 editable={!isWorking}
               />
               <PrimaryButton
@@ -694,6 +696,7 @@ export default function ChatDetailScreen() {
                         value={metroSearch}
                         onChangeText={setMetroSearch}
                         placeholder="Buscar estación"
+                        maxLength={METRO_SEARCH_MAX_LENGTH}
                         accessibilityLabel="Buscar estación de Metro"
                       />
                       <ScrollView

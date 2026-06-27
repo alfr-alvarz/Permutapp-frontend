@@ -7,6 +7,15 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { InfoBanner, PrimaryButton, SectionHeader } from '@/components/ui';
 import { ProductCategory, ProductCategoryId, toProductCategory } from '@/constants/categories';
 import {
+  COMMUNE_SEARCH_MAX_LENGTH,
+  LOCATION_REFERENCE_MAX_LENGTH,
+  PRODUCT_DESCRIPTION_MAX_LENGTH,
+  PRODUCT_NAME_MAX_LENGTH,
+  PUBLICATION_TITLE_MAX_LENGTH,
+  REFERENCE_PRICE_MAX_LENGTH,
+  REFERENCE_PRICE_MAX_VALUE,
+} from '@/constants/input-limits';
+import {
   ApiError,
   Ciudad,
   Comuna,
@@ -26,7 +35,6 @@ import MainLayout from '../layouts/MainLayout';
 const ESTADOS = ['Nuevo', 'Como nuevo', 'Buen estado', 'Aceptable'];
 type MetroSelectorAbierto = 'linea' | 'estacion' | null;
 const MAX_PRODUCT_PHOTOS = 5;
-const MAX_REFERENCE_PRICE = 5000000;
 
 const METRO_LINEAS = [
   { id: 'L1', label: 'Línea 1', color: '#C8102E' },
@@ -68,7 +76,7 @@ function normalizarTexto(value: string): string {
 function normalizarPrecio(value: string): string {
   const digits = value.replace(/\D/g, '');
   if (!digits) return '';
-  return String(Math.min(Number(digits), MAX_REFERENCE_PRICE));
+  return String(Math.min(Number(digits), REFERENCE_PRICE_MAX_VALUE));
 }
 
 function formatearNombreMetro(nombre: string): string {
@@ -278,7 +286,7 @@ export default function PublishScreen() {
     if (!nombre.trim()) nextErrors.nombre = 'El nombre del producto es obligatorio.';
     if (!categoria) nextErrors.categoria = categorias.length === 0 ? 'No fue posible cargar categorías desde ServicioProducto.' : 'Selecciona una categoría.';
     if (!Number.isInteger(precioNumerico) || precioNumerico < 0) nextErrors.precio = 'Ingresa un valor referencial válido.';
-    if (precioNumerico > MAX_REFERENCE_PRICE) nextErrors.precio = 'El valor referencial máximo es $5.000.000.';
+    if (precioNumerico > REFERENCE_PRICE_MAX_VALUE) nextErrors.precio = 'El valor referencial máximo es $5.000.000.';
     if (!comunaSeleccionada) nextErrors.ubicacionComuna = 'Selecciona una comuna cargada desde ServicioLocalizacion.';
 
     if (!estacionSeleccionada) nextErrors.metro = 'Selecciona un Metro cercano para calcular puntos seguros.';
@@ -438,6 +446,12 @@ export default function PublishScreen() {
   const colorLineaActiva = lineaActiva?.color ?? LINEA_FALLBACK;
 
   const FieldError = ({ message }: { message?: string }) => message ? <Text className="text-red-500 text-xs mt-1.5 ml-1">{message}</Text> : null;
+  const FieldLabel = ({ label, length, maxLength }: { label: string; length: number; maxLength: number }) => (
+    <View className="flex-row items-center justify-between mb-2">
+      <Text className="text-neutral-800 font-bold text-base">{label}</Text>
+      <Text className="text-neutral-400 text-xs font-bold" style={{ fontVariant: ['tabular-nums'] }}>{length}/{maxLength}</Text>
+    </View>
+  );
 
   return (
     <MainLayout>
@@ -462,20 +476,20 @@ export default function PublishScreen() {
               <View className="mt-6 bg-white border border-neutral-100 rounded-2xl p-5">
                 <Text className="text-neutral-950 text-xl font-bold mb-4">1. Producto</Text>
                 <View className="mb-4">
-                  <Text className="text-neutral-800 font-bold mb-2 text-base">Título de publicación</Text>
-                  <TextInput className={`bg-neutral-50 border rounded-2xl px-4 h-14 text-neutral-900 text-base ${errors.titulo ? 'border-red-400' : 'border-neutral-200'}`} placeholder="Ej: Cambio notebook por bicicleta" placeholderTextColor="#a3a3a3" value={titulo} onChangeText={(text) => { setTitulo(text); clearError('titulo'); }} editable={!isSubmitting} />
+                  <FieldLabel label="Título de publicación" length={titulo.length} maxLength={PUBLICATION_TITLE_MAX_LENGTH} />
+                  <TextInput className={`bg-neutral-50 border rounded-2xl px-4 h-14 text-neutral-900 text-base ${errors.titulo ? 'border-red-400' : 'border-neutral-200'}`} placeholder="Ej: Cambio notebook por bicicleta" placeholderTextColor="#a3a3a3" value={titulo} onChangeText={(text) => { setTitulo(text); clearError('titulo'); }} maxLength={PUBLICATION_TITLE_MAX_LENGTH} editable={!isSubmitting} />
                   <FieldError message={errors.titulo} />
                 </View>
 
                 <View className="mb-4">
-                  <Text className="text-neutral-800 font-bold mb-2 text-base">Nombre del producto</Text>
-                  <TextInput className={`bg-neutral-50 border rounded-2xl px-4 h-14 text-neutral-900 text-base ${errors.nombre ? 'border-red-400' : 'border-neutral-200'}`} placeholder="Ej: Notebook Lenovo ThinkPad" placeholderTextColor="#a3a3a3" value={nombre} onChangeText={(text) => { setNombre(text); clearError('nombre'); }} editable={!isSubmitting} />
+                  <FieldLabel label="Nombre del producto" length={nombre.length} maxLength={PRODUCT_NAME_MAX_LENGTH} />
+                  <TextInput className={`bg-neutral-50 border rounded-2xl px-4 h-14 text-neutral-900 text-base ${errors.nombre ? 'border-red-400' : 'border-neutral-200'}`} placeholder="Ej: Notebook Lenovo ThinkPad" placeholderTextColor="#a3a3a3" value={nombre} onChangeText={(text) => { setNombre(text); clearError('nombre'); }} maxLength={PRODUCT_NAME_MAX_LENGTH} editable={!isSubmitting} />
                   <FieldError message={errors.nombre} />
                 </View>
 
                 <View className="mb-4">
-                  <Text className="text-neutral-800 font-bold mb-2 text-base">Descripción</Text>
-                  <TextInput className={`bg-neutral-50 border rounded-2xl px-4 py-4 min-h-32 text-neutral-900 text-base ${errors.descripcion ? 'border-red-400' : 'border-neutral-200'}`} placeholder="Cuenta el estado, uso y qué buscas a cambio." placeholderTextColor="#a3a3a3" value={descripcion} onChangeText={(text) => { setDescripcion(text); clearError('descripcion'); }} multiline textAlignVertical="top" editable={!isSubmitting} />
+                  <FieldLabel label="Descripción" length={descripcion.length} maxLength={PRODUCT_DESCRIPTION_MAX_LENGTH} />
+                  <TextInput className={`bg-neutral-50 border rounded-2xl px-4 py-4 min-h-32 text-neutral-900 text-base ${errors.descripcion ? 'border-red-400' : 'border-neutral-200'}`} placeholder="Cuenta el estado, uso y qué buscas a cambio." placeholderTextColor="#a3a3a3" value={descripcion} onChangeText={(text) => { setDescripcion(text); clearError('descripcion'); }} maxLength={PRODUCT_DESCRIPTION_MAX_LENGTH} multiline textAlignVertical="top" editable={!isSubmitting} />
                   <FieldError message={errors.descripcion} />
                 </View>
 
@@ -648,6 +662,7 @@ export default function PublishScreen() {
                     placeholderTextColor="#a3a3a3"
                     value={busquedaComuna}
                     onChangeText={handleBusquedaComunaChange}
+                    maxLength={COMMUNE_SEARCH_MAX_LENGTH}
                     editable={!isSubmitting && !isLoadingGeografia}
                   />
                   {comunaSeleccionada ? (
@@ -677,7 +692,8 @@ export default function PublishScreen() {
                   ) : null}
                   {mostrarSinResultadosComuna ? <Text className="text-amber-700 text-sm leading-5 mt-2">No encontramos comunas con ese nombre en la ciudad seleccionada.</Text> : null}
                   <FieldError message={errors.ubicacionComuna} />
-                  <TextInput className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 h-14 text-neutral-900 text-base mt-3" placeholder="Referencia opcional: sector, barrio o cruce cercano" placeholderTextColor="#a3a3a3" value={ubicacionReferencia} onChangeText={setUbicacionReferencia} editable={!isSubmitting} />
+                  <TextInput className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 h-14 text-neutral-900 text-base mt-3" placeholder="Referencia opcional: sector, barrio o cruce cercano" placeholderTextColor="#a3a3a3" value={ubicacionReferencia} onChangeText={setUbicacionReferencia} maxLength={LOCATION_REFERENCE_MAX_LENGTH} editable={!isSubmitting} />
+                  <Text className="text-neutral-400 text-xs text-right mt-1" style={{ fontVariant: ['tabular-nums'] }}>{ubicacionReferencia.length}/{LOCATION_REFERENCE_MAX_LENGTH}</Text>
 
                   <View className="mt-4">
                     <View className="flex-row items-center justify-between mb-2">
@@ -790,6 +806,7 @@ export default function PublishScreen() {
                     }}
                     keyboardType="number-pad"
                     inputMode="numeric"
+                    maxLength={REFERENCE_PRICE_MAX_LENGTH}
                     editable={!isSubmitting}
                   />
                   <Text className="text-neutral-500 text-sm leading-5 mt-2">Máximo $5.000.000.</Text>
