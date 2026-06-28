@@ -74,7 +74,7 @@ export default function HomeScreen() {
             <View className="ml-3 flex-1">
               <Text className="text-brand-700 text-sm font-bold">Permutapp</Text>
               <Text className="text-neutral-950 text-2xl font-bold leading-8" numberOfLines={1}>
-                {nombre ? `Hola, ${nombre}` : 'Permuta simple'}
+                {nombre ? `Hola ${nombre}` : 'Permuta simple'}
               </Text>
             </View>
           </View>
