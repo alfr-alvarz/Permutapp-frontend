@@ -10,7 +10,7 @@ import { Producto, obtenerCategoriasProducto } from '../../services/api';
 import { obtenerProductosActivos } from '../../services/catalog';
 
 const ESTADOS = ['Todos', 'Nuevo', 'Como nuevo', 'Buen estado', 'Aceptable'];
-type FiltroAbierto = 'categoria' | 'estado' | null;
+type FiltroAbierto = 'categoria' | 'estado' | 'comuna' | null;
 function normalizarTexto(value: string): string {
   return value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }
@@ -21,6 +21,7 @@ export default function CatalogScreen() {
   const [busqueda, setBusqueda] = useState('');
   const [estadoActivo, setEstadoActivo] = useState('Todos');
   const [categoriaActiva, setCategoriaActiva] = useState<ProductCategoryId | null>(null);
+  const [comunaActiva, setComunaActiva] = useState<string | null>(null);
   const [filtroAbierto, setFiltroAbierto] = useState<FiltroAbierto>(null);
   const [categorias, setCategorias] = useState<ProductCategory[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -86,6 +87,19 @@ export default function CatalogScreen() {
     [categorias, categoriaActiva],
   );
 
+  const comunas = useMemo(() => {
+    const comunasUnicas = new Map<string, string>();
+
+    productos.forEach((producto) => {
+      const comuna = producto.prod_ubicacion_comuna?.trim();
+      if (!comuna) return;
+      const clave = normalizarTexto(comuna);
+      if (!comunasUnicas.has(clave)) comunasUnicas.set(clave, comuna);
+    });
+
+    return Array.from(comunasUnicas.values()).sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+  }, [productos]);
+
   const itemsFiltrados = useMemo(
     () => productos.filter((item) => {
       const busquedaNormalizada = normalizarTexto(busqueda);
@@ -102,9 +116,11 @@ export default function CatalogScreen() {
       const coincideCategoria = !categoriaActiva
         || categoriaProducto === categoriaActiva
         || Boolean(categoriaSeleccionada?.keywords.some((keyword) => textoProducto.includes(normalizarTexto(keyword))));
-      return coincideBusqueda && coincideEstado && coincideCategoria;
+      const coincideComuna = !comunaActiva
+        || normalizarTexto(item.prod_ubicacion_comuna ?? '') === normalizarTexto(comunaActiva);
+      return coincideBusqueda && coincideEstado && coincideCategoria && coincideComuna;
     }),
-    [busqueda, estadoActivo, categoriaActiva, categoriaSeleccionada, categorias, productos],
+    [busqueda, estadoActivo, categoriaActiva, categoriaSeleccionada, categorias, comunaActiva, productos],
   );
 
   const toggleFiltro = (filtro: Exclude<FiltroAbierto, null>) => {
@@ -118,6 +134,11 @@ export default function CatalogScreen() {
 
   const seleccionarEstado = (estado: string) => {
     setEstadoActivo(estado);
+    setFiltroAbierto(null);
+  };
+
+  const seleccionarComuna = (comuna: string | null) => {
+    setComunaActiva(comuna);
     setFiltroAbierto(null);
   };
 
@@ -178,6 +199,24 @@ export default function CatalogScreen() {
           </TouchableOpacity>
         </View>
 
+        <TouchableOpacity
+          className={`bg-white border rounded-2xl px-4 h-14 justify-center mt-3 ${filtroAbierto === 'comuna' ? 'border-brand-700' : 'border-neutral-100'}`}
+          onPress={() => toggleFiltro('comuna')}
+          activeOpacity={0.82}
+          accessibilityRole="button"
+          accessibilityLabel="Filtrar por comuna"
+        >
+          <View className="flex-row items-center justify-between">
+            <View className="flex-1 pr-2">
+              <Text className="text-neutral-500 text-xs font-bold">Comuna</Text>
+              <Text className="text-neutral-950 text-sm font-bold mt-0.5" numberOfLines={1}>
+                {comunaActiva ?? 'Todas'}
+              </Text>
+            </View>
+            <FontAwesome name={filtroAbierto === 'comuna' ? 'chevron-up' : 'chevron-down'} size={12} color="#047857" />
+          </View>
+        </TouchableOpacity>
+
         {filtroAbierto === 'categoria' ? (
           <View className="bg-white border border-neutral-100 rounded-2xl overflow-hidden mt-3">
             <TouchableOpacity className="px-4 h-12 flex-row items-center justify-between border-b border-neutral-100" onPress={() => seleccionarCategoria(null)} activeOpacity={0.75}>
@@ -203,6 +242,24 @@ export default function CatalogScreen() {
               return (
                 <TouchableOpacity key={estado} className={`px-4 h-12 flex-row items-center justify-between ${index < ESTADOS.length - 1 ? 'border-b border-neutral-100' : ''}`} onPress={() => seleccionarEstado(estado)} activeOpacity={0.75}>
                   <Text className={`text-sm font-bold ${selected ? 'text-brand-700' : 'text-neutral-700'}`}>{estado}</Text>
+                  {selected ? <FontAwesome name="check" size={13} color="#047857" /> : null}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        ) : null}
+
+        {filtroAbierto === 'comuna' ? (
+          <View className="bg-white border border-neutral-100 rounded-2xl overflow-hidden mt-3">
+            <TouchableOpacity className={`px-4 h-12 flex-row items-center justify-between ${comunas.length > 0 ? 'border-b border-neutral-100' : ''}`} onPress={() => seleccionarComuna(null)} activeOpacity={0.75}>
+              <Text className={`text-sm font-bold ${!comunaActiva ? 'text-brand-700' : 'text-neutral-700'}`}>Todas las comunas</Text>
+              {!comunaActiva ? <FontAwesome name="check" size={13} color="#047857" /> : null}
+            </TouchableOpacity>
+            {comunas.map((comuna, index) => {
+              const selected = comunaActiva === comuna;
+              return (
+                <TouchableOpacity key={comuna} className={`px-4 h-12 flex-row items-center justify-between ${index < comunas.length - 1 ? 'border-b border-neutral-100' : ''}`} onPress={() => seleccionarComuna(comuna)} activeOpacity={0.75}>
+                  <Text className={`text-sm font-bold ${selected ? 'text-brand-700' : 'text-neutral-700'}`}>{comuna}</Text>
                   {selected ? <FontAwesome name="check" size={13} color="#047857" /> : null}
                 </TouchableOpacity>
               );

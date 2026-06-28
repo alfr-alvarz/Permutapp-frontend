@@ -35,6 +35,8 @@ import MainLayout from '../layouts/MainLayout';
 const ESTADOS = ['Nuevo', 'Como nuevo', 'Buen estado', 'Aceptable'];
 type MetroSelectorAbierto = 'linea' | 'estacion' | null;
 const MAX_PRODUCT_PHOTOS = 5;
+const MAX_PRODUCT_PHOTO_BYTES = 5 * 1024 * 1024;
+const PRODUCT_PHOTO_FORMATS = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 const METRO_LINEAS = [
   { id: 'L1', label: 'Línea 1', color: '#C8102E' },
@@ -99,9 +101,40 @@ async function uriToDataUrl(uri: string, mimeType: string): Promise<string> {
   });
 }
 
+function resolveProductPhotoMimeType(asset: ImagePicker.ImagePickerAsset): string | null {
+  const reportedMimeType = asset.mimeType?.toLowerCase().split(';')[0];
+  if (reportedMimeType === 'image/jpg') return 'image/jpeg';
+  if (reportedMimeType && PRODUCT_PHOTO_FORMATS.has(reportedMimeType)) return reportedMimeType;
+
+  const fileName = (asset.fileName || asset.uri).toLowerCase().split('?')[0];
+  if (/\.jpe?g$/.test(fileName)) return 'image/jpeg';
+  if (fileName.endsWith('.png')) return 'image/png';
+  if (fileName.endsWith('.webp')) return 'image/webp';
+  return null;
+}
+
+function getBase64Size(dataUrl: string): number {
+  const separatorIndex = dataUrl.indexOf(',');
+  const base64 = separatorIndex >= 0 ? dataUrl.slice(separatorIndex + 1) : '';
+  if (!base64) return 0;
+
+  const padding = base64.endsWith('==') ? 2 : base64.endsWith('=') ? 1 : 0;
+  return Math.floor((base64.length * 3) / 4) - padding;
+}
+
 async function toSelectedProductPhoto(asset: ImagePicker.ImagePickerAsset, index: number): Promise<SelectedProductPhoto> {
-  const mimeType = asset.mimeType || (asset.uri.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg');
+  const mimeType = resolveProductPhotoMimeType(asset);
+  if (!mimeType) {
+    throw new Error('Formato no permitido. Usa fotos JPG, PNG o WebP.');
+  }
+  if (asset.fileSize !== undefined && asset.fileSize > MAX_PRODUCT_PHOTO_BYTES) {
+    throw new Error('Cada foto puede pesar como máximo 5 MB.');
+  }
+
   const dataUrl = asset.base64 ? `data:${mimeType};base64,${asset.base64}` : await uriToDataUrl(asset.uri, mimeType);
+  if (getBase64Size(dataUrl) > MAX_PRODUCT_PHOTO_BYTES) {
+    throw new Error('Cada foto puede pesar como máximo 5 MB.');
+  }
 
   return {
     id: `${Date.now()}-${index}-${asset.uri}`,
@@ -177,8 +210,11 @@ export default function PublishScreen() {
 
       const selected = await Promise.all(response.assets.slice(0, remainingSlots).map(toSelectedProductPhoto));
       setFotos((prev) => [...prev, ...selected].slice(0, MAX_PRODUCT_PHOTOS));
-    } catch {
-      setErrors((prev) => ({ ...prev, fotos: 'No fue posible cargar las fotos seleccionadas.' }));
+    } catch (error) {
+      setErrors((prev) => ({
+        ...prev,
+        fotos: error instanceof Error ? error.message : 'No fue posible cargar las fotos seleccionadas.',
+      }));
     } finally {
       setIsPickingPhotos(false);
     }
@@ -619,7 +655,7 @@ export default function PublishScreen() {
                       </TouchableOpacity>
                     ) : null}
                   </ScrollView>
-                  <Text className="text-neutral-500 text-sm leading-5 mt-2">Hasta 5 fotos. La primera será la portada.</Text>
+                  <Text className="text-neutral-500 text-sm leading-5 mt-2">Hasta 5 fotos, máximo 5 MB por foto. Formatos permitidos: JPG, PNG y WebP. La primera será la portada.</Text>
                   <FieldError message={errors.fotos} />
                 </View>
 
