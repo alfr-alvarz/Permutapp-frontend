@@ -469,7 +469,7 @@ export default function ProfileScreen() {
               <FontAwesome name="exclamation-triangle" size={20} color="#dc2626" />
             </View>
             <Text className="text-neutral-950 text-xl font-bold mb-2">Eliminar cuenta</Text>
-            <Text className="text-neutral-500 text-sm leading-5 mb-4">Para confirmar, escribe eliminar. Tu cuenta quedará desactivada y se cerrará la sesión.</Text>
+            <Text className="text-neutral-500 text-sm leading-5 mb-4">Para confirmar, escribe eliminar. Tus publicaciones dejarán de mostrarse, tus datos personales serán anonimizados y se cerrará la sesión.</Text>
             <TextInput className="bg-neutral-50 border border-neutral-200 rounded-2xl px-4 h-12 text-neutral-900 mb-3" placeholder="eliminar" placeholderTextColor="#a3a3a3" value={deleteAccountText} onChangeText={(text) => { setDeleteAccountText(text); setDeleteAccountError(null); }} autoCapitalize="none" />
             {deleteAccountError ? <Text className="text-red-500 text-xs mb-3">{deleteAccountError}</Text> : null}
             <View className="flex-row gap-2">

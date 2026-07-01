@@ -45,6 +45,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 const AUTH_TOKEN_KEY = 'permutapp.auth.token';
 const AUTH_USER_KEY = 'permutapp.auth.user';
 const SESSION_SYNC_INTERVAL_MS = 1500;
+const BACKEND_SESSION_CHECK_INTERVAL_MS = 30000;
 const BASE64_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 interface JwtClaims {
@@ -283,7 +284,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     let cancelled = false;
 
-    async function validatePersistedSession() {
+    async function validatePersistedSession(checkBackend = false) {
       const [storedToken, storedUserValue] = await Promise.all([
         getSessionItem(AUTH_TOKEN_KEY).catch(() => null),
         getSessionItem(AUTH_USER_KEY).catch(() => null),
@@ -297,22 +298,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const sameStoredUser = Boolean(storedUser
         && storedUser.id === currentUser.id
         && storedUser.email.trim().toLowerCase() === currentUser.email.trim().toLowerCase());
+      const localSessionValid = Boolean(storedToken
+        && storedToken === currentToken
+        && storedUser
+        && sameStoredUser
+        && isUsableJwt(storedToken, storedUser));
 
-      if (!storedToken || storedToken !== currentToken || !storedUser || !sameStoredUser || !isUsableJwt(storedToken, storedUser)) {
+      if (!localSessionValid) {
+        await endSession(true);
+        return;
+      }
+
+      if (checkBackend && !await isSessionAcceptedByBackend(currentToken, currentUser) && !cancelled) {
         await endSession(true);
       }
     }
 
     const interval = setInterval(validatePersistedSession, SESSION_SYNC_INTERVAL_MS);
+    const backendInterval = setInterval(
+      () => validatePersistedSession(true),
+      BACKEND_SESSION_CHECK_INTERVAL_MS,
+    );
     const appState = AppState.addEventListener('change', (nextState) => {
       if (nextState === 'active') {
-        validatePersistedSession();
+        validatePersistedSession(true);
       }
     });
 
     let removeWebListeners: (() => void) | undefined;
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      const onFocus = () => validatePersistedSession();
+      const onFocus = () => validatePersistedSession(true);
       const onStorage = (event: StorageEvent) => {
         if (event.key === AUTH_TOKEN_KEY || event.key === AUTH_USER_KEY) {
           validatePersistedSession();
@@ -320,7 +335,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       };
       const onVisibilityChange = () => {
         if (document.visibilityState === 'visible') {
-          validatePersistedSession();
+          validatePersistedSession(true);
         }
       };
 
@@ -337,6 +352,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => {
       cancelled = true;
       clearInterval(interval);
+      clearInterval(backendInterval);
       appState.remove();
       removeWebListeners?.();
     };

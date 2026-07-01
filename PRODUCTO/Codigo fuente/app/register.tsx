@@ -33,6 +33,8 @@ import { useAuth } from '../context/AuthContext';
 
 /** Expresión regular para validar el formato del correo electrónico. */
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const NAME_MAX_LENGTH = 15;
+const EMAIL_MAX_LENGTH = 25;
 
 /** Expresión regular para verificar la presencia de al menos un carácter especial. */
 const SPECIAL_CHAR_REGEX = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/;
@@ -403,6 +405,7 @@ export default function Register() {
                 value={firstName}
                 onChangeText={(t) => { setFirstName(t); clearError('usu_pri_nombre'); }}
                 autoCapitalize="words"
+                maxLength={NAME_MAX_LENGTH}
                 editable={!isLoading}
               />
             </View>
@@ -423,6 +426,7 @@ export default function Register() {
                 value={secondName}
                 onChangeText={setSecondName}
                 autoCapitalize="words"
+                maxLength={NAME_MAX_LENGTH}
                 editable={!isLoading}
               />
             </View>
@@ -446,6 +450,7 @@ export default function Register() {
                 value={firstLastName}
                 onChangeText={(t) => { setFirstLastName(t); clearError('usu_pri_apellido'); }}
                 autoCapitalize="words"
+                maxLength={NAME_MAX_LENGTH}
                 editable={!isLoading}
               />
             </View>
@@ -466,6 +471,7 @@ export default function Register() {
                 value={secondLastName}
                 onChangeText={setSecondLastName}
                 autoCapitalize="words"
+                maxLength={NAME_MAX_LENGTH}
                 editable={!isLoading}
               />
             </View>
@@ -491,6 +497,7 @@ export default function Register() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
+                maxLength={EMAIL_MAX_LENGTH}
                 editable={!isLoading}
               />
             </View>
