@@ -19,6 +19,7 @@ import {
   obtenerUsuarioPorId,
 } from '../../services/api';
 import RequireAuth from '../../components/RequireAuth';
+import { ProductImageViewer } from '../../components/product-image-viewer';
 import { useAuth } from '../../context/AuthContext';
 import MainLayout from '../../layouts/MainLayout';
 
@@ -103,6 +104,7 @@ export default function ProductDetailScreen() {
   const [publicacionError, setPublicacionError] = useState<string | null>(null);
   const [chatError, setChatError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [isImageViewerVisible, setIsImageViewerVisible] = useState(false);
   const [galleryWidth, setGalleryWidth] = useState(0);
   const { width: windowWidth } = useWindowDimensions();
   const galleryScrollRef = useRef<ScrollView | null>(null);
@@ -244,6 +246,11 @@ export default function ProductDetailScreen() {
     });
   };
 
+  const handleOpenImageViewer = (index: number) => {
+    setSelectedImageIndex(index);
+    setIsImageViewerVisible(true);
+  };
+
   const handleGalleryScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const nextIndex = Math.round(event.nativeEvent.contentOffset.x / activeGalleryWidth);
     const boundedIndex = Math.max(0, Math.min(nextIndex, productImages.length - 1));
@@ -305,9 +312,17 @@ export default function ProductDetailScreen() {
                     className="w-full h-full"
                   >
                     {productImages.map((imagen, index) => (
-                      <View key={`${imagen}-${index}`} className="h-full bg-neutral-100" style={{ width: activeGalleryWidth }}>
+                      <TouchableOpacity
+                        key={`${imagen}-${index}`}
+                        className="h-full bg-neutral-100"
+                        style={{ width: activeGalleryWidth }}
+                        onPress={() => handleOpenImageViewer(index)}
+                        activeOpacity={0.9}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Ampliar foto ${index + 1} de ${productImages.length}`}
+                      >
                         <Image source={{ uri: imagen }} className="w-full h-full" resizeMode="cover" />
-                      </View>
+                      </TouchableOpacity>
                     ))}
                   </ScrollView>
                 ) : (
@@ -316,8 +331,14 @@ export default function ProductDetailScreen() {
                   </View>
                 )}
                 {productImages.length > 1 ? (
-                  <View className="absolute right-3 bottom-3 rounded-full bg-black/60 px-2.5 py-1">
+                  <View pointerEvents="none" className="absolute right-3 bottom-3 rounded-full bg-black/60 px-2.5 py-1">
                     <Text className="text-white text-xs font-bold">{selectedImageIndex + 1}/{productImages.length}</Text>
+                  </View>
+                ) : null}
+                {productImages.length > 0 ? (
+                  <View pointerEvents="none" className="absolute left-3 bottom-3 rounded-full bg-black/60 px-3 py-1.5 flex-row items-center">
+                    <FontAwesome name="expand" size={12} color="#ffffff" />
+                    <Text className="text-white text-xs font-bold ml-2">Toca para ampliar</Text>
                   </View>
                 ) : null}
               </View>
@@ -431,6 +452,12 @@ export default function ProductDetailScreen() {
           {!isLoading && !error && !producto ? <EmptyState icon="cube" title="Producto no encontrado" body="Vuelve al catálogo para elegir otra publicación." /> : null}
         </View>
       </ScrollView>
+      <ProductImageViewer
+        images={productImages}
+        initialIndex={selectedImageIndex}
+        visible={isImageViewerVisible}
+        onClose={() => setIsImageViewerVisible(false)}
+      />
     </MainLayout>
   );
 }
